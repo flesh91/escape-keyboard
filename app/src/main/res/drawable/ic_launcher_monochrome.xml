@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed (monochrome) launcher icon: the Esc keycap as an outline, the letters cut through -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.8" android:scaleY="0.8">
+        <path android:pathData="M40,29H68A11,11 0 0 1 79,40V68A11,11 0 0 1 68,79H40A11,11 0 0 1 29,68V40A11,11 0 0 1 40,29Z"
+            android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
+            android:strokeLineJoin="round" />
+        <group android:pivotX="54.6" android:pivotY="54" android:scaleX="0.82" android:scaleY="0.82"
+            android:translateX="-0.6">
+            <path android:pathData="M45,47H35V61H45M35,54H43M58.6,49.4C57.6,47.9 55.9,47 54,47C51.4,47 49.4,48.5 49.4,50.6C49.4,52.8 51.3,53.5 54,54.1C56.8,54.7 58.8,55.6 58.8,57.8C58.8,59.8 56.8,61 54,61C51.8,61 50,60.1 49,58.6M74.2,50.3C73,48.3 71,47 68.8,47C65.5,47 63,50.1 63,54C63,57.9 65.5,61 68.8,61C71,61 73,59.7 74.2,57.7"
+                android:strokeColor="#FFFFFF" android:strokeWidth="3.8"
+                android:strokeLineCap="round" android:strokeLineJoin="round" />
+        </group>
+    </group>
+</vector>

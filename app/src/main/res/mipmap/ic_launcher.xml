@@ -6,7 +6,7 @@
     <path android:fillColor="#2B4ACB" android:pathData="M54,4a50,50 0 1 1 0,100a50,50 0 1 1 0,-100Z" />
     <group android:pivotX="54" android:pivotY="54" android:scaleX="0.8" android:scaleY="0.8">
         <path android:pathData="M40,29H68A11,11 0 0 1 79,40V68A11,11 0 0 1 68,79H40A11,11 0 0 1 29,68V40A11,11 0 0 1 40,29Z"
-            android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
+            android:fillColor="#000000" android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
             android:strokeLineJoin="round" />
         <group android:pivotX="54.6" android:pivotY="54" android:scaleX="0.82" android:scaleY="0.82"
             android:translateX="-0.6">

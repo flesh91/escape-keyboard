@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Escape Keyboard launcher icon: a minimal Esc keycap, white outline -->
+<!-- Escape Keyboard launcher icon: a black Esc keycap with a white outline -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
     <group android:pivotX="54" android:pivotY="54" android:scaleX="0.8" android:scaleY="0.8">
         <path android:pathData="M40,29H68A11,11 0 0 1 79,40V68A11,11 0 0 1 68,79H40A11,11 0 0 1 29,68V40A11,11 0 0 1 40,29Z"
-            android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
+            android:fillColor="#000000" android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
             android:strokeLineJoin="round" />
         <group android:pivotX="54.6" android:pivotY="54" android:scaleX="0.82" android:scaleY="0.82"
             android:translateX="-0.6">
