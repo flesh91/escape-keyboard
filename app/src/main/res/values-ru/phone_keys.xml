@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Letters on the phone keypad digits, in the alphabet of the input language -->
+<resources>
+    <string name="phone_key_letters_2">АБВГ</string>
+    <string name="phone_key_letters_3">ДЕЖЗ</string>
+    <string name="phone_key_letters_4">ИЙКЛ</string>
+    <string name="phone_key_letters_5">МНОП</string>
+    <string name="phone_key_letters_6">РСТУ</string>
+    <string name="phone_key_letters_7">ФХЦЧ</string>
+    <string name="phone_key_letters_8">ШЩЪЫ</string>
+    <string name="phone_key_letters_9">ЬЭЮЯ</string>
+</resources>

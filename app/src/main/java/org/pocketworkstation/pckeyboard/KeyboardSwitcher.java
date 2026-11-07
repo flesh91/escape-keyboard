@@ -313,10 +313,6 @@ public class KeyboardSwitcher implements
 
         KeyboardId id = getKeyboardId(mode, imeOptions, isSymbols);
         LatinKeyboard keyboard = null;
-        //*// Added by Maxim Pulya
-        //*// I made pin keyboard bigger
-        if (mode == MODE_PHONE && mInputMethodService.isPortrait())id.mKeyboardHeightPercent*=1.4;
-
         keyboard = getKeyboard(id);
 
         if (mode == MODE_PHONE)mInputView.setPhoneKeyboard(keyboard);

@@ -34,11 +34,11 @@
         <Key
             android:codes="50"
             android:keyLabel="2"
-            android:subLabel="ABC" />
+            android:subLabel="@string/phone_key_letters_2" />
         <Key
             android:codes="51"
             android:keyLabel="3"
-            android:subLabel="DEF" />
+            android:subLabel="@string/phone_key_letters_3" />
         <Key
             android:keyLabel="-"
             android:keyWidth="20%p"
@@ -49,16 +49,16 @@
         <Key
             android:codes="52"
             android:keyLabel="4"
-            android:subLabel="GHI"
+            android:subLabel="@string/phone_key_letters_4"
             android:keyEdgeFlags="left" />
         <Key
             android:codes="53"
             android:keyLabel="5"
-            android:subLabel="JKL" />
+            android:subLabel="@string/phone_key_letters_5" />
         <Key
             android:codes="54"
             android:keyLabel="6"
-            android:subLabel="MNO" />
+            android:subLabel="@string/phone_key_letters_6" />
         <Key
             android:keyLabel="."
             android:keyWidth="20%p"
@@ -69,16 +69,16 @@
         <Key
             android:codes="55"
             android:keyLabel="7"
-            android:subLabel="PQRS"
+            android:subLabel="@string/phone_key_letters_7"
             android:keyEdgeFlags="left" />
         <Key
             android:codes="56"
             android:keyLabel="8"
-            android:subLabel="TUV" />
+            android:subLabel="@string/phone_key_letters_8" />
         <Key
             android:codes="57"
             android:keyLabel="9"
-            android:subLabel="WXYZ" />
+            android:subLabel="@string/phone_key_letters_9" />
         <Key
             android:codes="@integer/key_delete"
             android:keyIcon="@drawable/sym_keyboard_delete"

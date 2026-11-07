@@ -940,18 +940,30 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     
     /** "2 ABC": the label and a smaller sub label after it, centred together on x. */
     private void drawLabelWithSubLabel(Canvas canvas, String label, String subLabel, int x,
-            float baseline, Paint paint) {
-        final float labelSize = paint.getTextSize();
-        final float labelWidth = paint.measureText(label);
-        paint.setTextSize(labelSize * 0.55f);
-        final float subWidth = paint.measureText(subLabel);
-        final float gap = labelSize * 0.25f;
+            float baseline, int maxWidth, Paint paint) {
+        final float keySize = paint.getTextSize();
+        float labelSize = keySize;
+        paint.setTextSize(labelSize);
+        float labelWidth = paint.measureText(label);
+        paint.setTextSize(labelSize * 0.5f);
+        float subWidth = paint.measureText(subLabel);
+        float gap = labelSize * 0.2f;
+        // Never wider than the key
+        final float fit = maxWidth * 0.9f / (labelWidth + gap + subWidth);
+        if (fit < 1) {
+            labelSize *= fit;
+            labelWidth *= fit;
+            subWidth *= fit;
+            gap *= fit;
+            paint.setTextSize(labelSize * 0.5f);
+        }
         final float left = x - (labelWidth + gap + subWidth) / 2;
         final Align align = paint.getTextAlign();
         paint.setTextAlign(Align.LEFT);
         canvas.drawText(subLabel, left + labelWidth + gap, baseline, paint);
         paint.setTextSize(labelSize);
         canvas.drawText(label, left, baseline, paint);
+        paint.setTextSize(keySize);
         paint.setTextAlign(align);
     }
 
@@ -1219,7 +1231,10 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         int medianKeyWidth = keyWidths.get(keyCount / 2);
         int medianKeyHeight = keyHeights.get(keyCount / 2);
         // Use 60% of the smaller of width or height. This is kind of arbitrary.
-        mKeyTextSize = Math.min(medianKeyHeight * 6 / 10, medianKeyWidth * 6 / 10);
+        // Big keys (the phone keypad, tablets) stop at about the size of a phone's letter keys
+        final int maxKeyTextSize = (int) (26 * getResources().getDisplayMetrics().density);
+        mKeyTextSize = Math.min(maxKeyTextSize,
+                Math.min(medianKeyHeight * 6 / 10, medianKeyWidth * 6 / 10));
         mLabelTextSize = mKeyTextSize * 3 / 4;
 
         updateScreenCorners();
@@ -1345,7 +1360,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 final float baseline = centerY
                         + labelHeight * KEY_LABEL_VERTICAL_ADJUSTMENT_FACTOR;
                 if (key.subLabel != null) {
-                    drawLabelWithSubLabel(canvas, label, key.subLabel.toString(), centerX, baseline, paint);
+                    drawLabelWithSubLabel(canvas, label, key.subLabel.toString(), centerX, baseline,
+                            key.width - padding.left - padding.right, paint);
                 } else if (key.isDeadKey()) {
                     drawDeadKeyLabel(canvas, label, centerX, baseline, paint);
                 } else {
