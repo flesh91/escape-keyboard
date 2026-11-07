@@ -298,6 +298,8 @@ public class Keyboard {
         public CharSequence popupCharacters;
         public boolean popupReversed;
         public boolean isCursor;
+        /** Smaller text after the label ("ABC" on the phone keypad) */
+        public CharSequence subLabel;
         public String hint; // Set by LatinKeyboardBaseView
         public String altHint; // Set by LatinKeyboardBaseView
 
@@ -440,6 +442,7 @@ public class Keyboard {
                     R.styleable.Keyboard_Key_isSticky, false);
             isCursor = a.getBoolean(
                     R.styleable.Keyboard_Key_isCursor, false);
+            subLabel = a.getText(R.styleable.Keyboard_Key_subLabel);
 
             icon = a.getDrawable(
                     R.styleable.Keyboard_Key_keyIcon);

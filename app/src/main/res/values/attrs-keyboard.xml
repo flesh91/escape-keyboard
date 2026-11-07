@@ -68,6 +68,8 @@
         <attr name="isSticky" format="boolean" />
         <!-- Whether this is a cursor key (modifies styling). -->
         <attr name="isCursor" format="boolean" />
+        <!-- Smaller text drawn after the label, like the letters on a phone dial key -->
+        <attr name="subLabel" format="string" />
         <!-- Whether long-pressing on this key will make it repeat. -->
         <attr name="isRepeatable" format="boolean" />
         <!-- The icon to show in the popup preview. -->

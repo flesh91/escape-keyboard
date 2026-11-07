@@ -938,6 +938,23 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         if (mBuffer != null) canvas.drawBitmap(mBuffer, 0, 0, null);
     }
     
+    /** "2 ABC": the label and a smaller sub label after it, centred together on x. */
+    private void drawLabelWithSubLabel(Canvas canvas, String label, String subLabel, int x,
+            float baseline, Paint paint) {
+        final float labelSize = paint.getTextSize();
+        final float labelWidth = paint.measureText(label);
+        paint.setTextSize(labelSize * 0.55f);
+        final float subWidth = paint.measureText(subLabel);
+        final float gap = labelSize * 0.25f;
+        final float left = x - (labelWidth + gap + subWidth) / 2;
+        final Align align = paint.getTextAlign();
+        paint.setTextAlign(Align.LEFT);
+        canvas.drawText(subLabel, left + labelWidth + gap, baseline, paint);
+        paint.setTextSize(labelSize);
+        canvas.drawText(label, left, baseline, paint);
+        paint.setTextAlign(align);
+    }
+
     private void drawDeadKeyLabel(Canvas canvas, String hint, int x, float baseline, Paint paint) {
         char c = hint.charAt(0);
         String accent = DeadAccentSequence.getSpacing(c);
@@ -1281,44 +1298,57 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 // Draw a drop shadow for the text
                 paint.setShadowLayer(mShadowRadius, 0, 0, mShadowColor);
 
-                // Draw hint label (if present) behind the main key
+                // Hint labels sit in the right-hand corners: the shifted character at the top,
+                // the first popup character at the bottom, clear of the main label in between
                 String hint = key.getHintLabel(showHints7Bit(), showHintsAll());
-                if (!hint.equals("") && !(key.isShifted() && key.shiftLabel != null && hint.charAt(0) == key.shiftLabel.charAt(0))) {
-                    int hintTextSize = (int)(mKeyTextSize * 0.6 * mLabelScale);
+                if (key.isShifted() && key.shiftLabel != null && !hint.equals("")
+                        && hint.charAt(0) == key.shiftLabel.charAt(0)) {
+                    hint = "";
+                }
+                String altHint = key.getAltHintLabel(showHints7Bit(), showHintsAll());
+                final int hintTextSize = (int)(mKeyTextSize * 0.6 * mLabelScale);
+                final int hintX = key.width - padding.right - mKeyHintInset;
+                float hintWidth = 0;
+                if (!hint.equals("") || !altHint.equals("")) {
                     paintHint.setTextSize(hintTextSize);
-
+                    hintWidth = Math.max(paintHint.measureText(hint), paintHint.measureText(altHint));
+                }
+                if (!hint.equals("")) {
                     final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int x = key.width - padding.right - mKeyHintInset;
                     int baseline = padding.top + hintLabelHeight * 12/10;
                     if (Character.getType(hint.charAt(0)) == Character.NON_SPACING_MARK) {
-                        drawDeadKeyLabel(canvas, hint, x, baseline, paintHint);
+                        drawDeadKeyLabel(canvas, hint, hintX, baseline, paintHint);
                     } else {
-                        canvas.drawText(hint, x, baseline, paintHint);
+                        canvas.drawText(hint, hintX, baseline, paintHint);
                     }
                 }
-
-                // Draw alternate hint label (if present) behind the main key
-                String altHint = key.getAltHintLabel(showHints7Bit(), showHintsAll());
                 if (!altHint.equals("")) {
-                    int hintTextSize = (int)(mKeyTextSize * 0.6 * mLabelScale);
-                    paintHint.setTextSize(hintTextSize);
-
                     final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int x = key.width - padding.right - mKeyHintInset;
-                    int baseline = padding.top + hintLabelHeight * (hint.equals("") ? 12 : 26)/10;
+                    int baseline = hint.equals("")
+                            ? padding.top + hintLabelHeight * 12/10
+                            : key.height - padding.bottom - hintLabelHeight * 3/10;
                     if (Character.getType(altHint.charAt(0)) == Character.NON_SPACING_MARK) {
-                        drawDeadKeyLabel(canvas, altHint, x, baseline, paintHint);
+                        drawDeadKeyLabel(canvas, altHint, hintX, baseline, paintHint);
                     } else {
-                        canvas.drawText(altHint, x, baseline, paintHint);
+                        canvas.drawText(altHint, hintX, baseline, paintHint);
                     }
                 }
 
-                // Draw main key label
-                final int centerX = (key.width + padding.left - padding.right) / 2;
+                // Draw main key label, moved left on a narrow key so it doesn't touch the hints
+                int centerX = (key.width + padding.left - padding.right) / 2;
+                if (hintWidth > 0) {
+                    final float halfLabel = paint.measureText(label) / 2;
+                    final float rightLimit = hintX - hintWidth - hintTextSize * 0.15f;
+                    if (centerX + halfLabel > rightLimit) {
+                        centerX = (int) Math.max(padding.left + halfLabel, rightLimit - halfLabel);
+                    }
+                }
                 final int centerY = (key.height + padding.top - padding.bottom) / 2;
                 final float baseline = centerY
                         + labelHeight * KEY_LABEL_VERTICAL_ADJUSTMENT_FACTOR;
-                if (key.isDeadKey()) {
+                if (key.subLabel != null) {
+                    drawLabelWithSubLabel(canvas, label, key.subLabel.toString(), centerX, baseline, paint);
+                } else if (key.isDeadKey()) {
                     drawDeadKeyLabel(canvas, label, centerX, baseline, paint);
                 } else {
                     canvas.drawText(label, centerX, baseline, paint);
