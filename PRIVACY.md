@@ -54,4 +54,4 @@ with a new date.
 
 ## Contact
 
-Yaroslav Bezzubets — [contact e-mail]
+Yaroslav Bezzubets — 19flesh91@gmail.com
