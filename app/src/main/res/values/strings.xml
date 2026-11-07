@@ -728,21 +728,6 @@
         <item quantity="one">%d more tap to show debugging options</item>
         <item quantity="other">%d more taps to show debugging options</item>
     </plurals>
-    <string-array name="space_left_key_values" translatable="false">
-        <item>tab</item>
-        <item>emoji</item>
-        <item>voice</item>
-        <item>clipboard</item>
-        <item>language</item>
-    </string-array>
-    <string name="title_space_left_key">Key left of the space bar</string>
-    <string-array name="space_left_key_entries">
-        <item>Tab</item>
-        <item>Emoji</item>
-        <item>Voice input</item>
-        <item>Clipboard</item>
-        <item>Next language</item>
-    </string-array>
     <string name="emoji_back_to_keyboard">ABC</string>
     <string name="voice_input_not_found">No voice input found. Turn on a voice typing service (for example Google voice typing) in the system keyboard settings.</string>
     <string name="screen_layout">Layout</string>
@@ -768,16 +753,20 @@
     <string name="cat_on_press">On key press</string>
     <string name="cat_modifiers">Modifier keys</string>
     <string name="cat_apps">Apps</string>
-    <string name="title_settings_key">Settings key</string>
+    <string name="title_settings_key">Extra key</string>
     <string-array name="settings_key_values" translatable="false">
         <item>settings</item>
         <item>emoji</item>
         <item>clipboard</item>
+        <item>language</item>
+        <item>voice</item>
     </string-array>
     <string-array name="settings_key_entries">
-        <item>Gear (Settings)</item>
+        <item>Standard: Tab in Compact, the gear (Settings) in the others</item>
         <item>Emoji (Settings on a long press)</item>
         <item>Clipboard (Settings on a long press)</item>
+        <item>Next language (Settings on a long press)</item>
+        <item>Voice input (Settings on a long press)</item>
     </string-array>
     <string name="layout_graphite" translatable="false">Graphite</string>
     <string name="layout_keycap" translatable="false">Keycap</string>
@@ -833,7 +822,7 @@
     </string-array>
     <string-array name="space_swipe_entries">
         <item>Switches the language</item>
-        <item>Moves the cursor (long-press space to switch the language)</item>
+        <item>Moves the cursor (switch the language with the extra key set to the globe)</item>
     </string-array>
 
     <!-- One-handed mode -->

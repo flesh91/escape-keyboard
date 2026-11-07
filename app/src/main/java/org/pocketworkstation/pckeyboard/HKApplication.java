@@ -41,5 +41,16 @@ public class HKApplication extends Application {
                     .remove("show_settings_key")
                     .apply();
         }
+        // "pref_space_left_key" (the Tab key left of the space bar, Compact layout) is part of
+        // the same choice now: a non-default value of either one wins, the gear's first
+        if (prefs.contains("pref_space_left_key")) {
+            String spaceLeft = prefs.getString("pref_space_left_key", "tab");
+            String gear = prefs.getString(LatinIMESettings.PREF_SETTINGS_KEY, "settings");
+            SharedPreferences.Editor editor = prefs.edit().remove("pref_space_left_key");
+            if ("settings".equals(gear) && !"tab".equals(spaceLeft)) {
+                editor.putString(LatinIMESettings.PREF_SETTINGS_KEY, spaceLeft);
+            }
+            editor.apply();
+        }
     }
 }

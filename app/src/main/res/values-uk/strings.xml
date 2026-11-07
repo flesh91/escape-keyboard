@@ -379,14 +379,6 @@
         <item quantity="many">Ще %d натискань, щоб показати налагодження</item>
         <item quantity="other">Ще %d натискання, щоб показати налагодження</item>
     </plurals>
-    <string name="title_space_left_key">Клавіша ліворуч від пробілу</string>
-    <string-array name="space_left_key_entries">
-        <item>Tab</item>
-        <item>Емодзі</item>
-        <item>Голосове введення</item>
-        <item>Буфер обміну</item>
-        <item>Наступна мова</item>
-    </string-array>
     <string name="emoji_back_to_keyboard">АБВ</string>
     <string name="voice_input_not_found">Голосове введення не знайдено. Увімкніть службу голосового введення (наприклад, «Голосове введення Google») у системних налаштуваннях клавіатур.</string>
     <string name="screen_layout">Розкладка</string>
@@ -412,11 +404,13 @@
     <string name="cat_on_press">Під час натискання</string>
     <string name="cat_modifiers">Клавіші-модифікатори</string>
     <string name="cat_apps">Застосунки</string>
-    <string name="title_settings_key">Клавіша налаштувань</string>
+    <string name="title_settings_key">Додаткова клавіша</string>
     <string-array name="settings_key_entries">
-        <item>Шестерня (налаштування)</item>
+        <item>Стандартна: Tab у компактній, шестерня (налаштування) в інших</item>
         <item>Емодзі (налаштування — довгим натисканням)</item>
         <item>Буфер обміну (налаштування — довгим натисканням)</item>
+        <item>Наступна мова (налаштування — довгим натисканням)</item>
+        <item>Голосове введення (налаштування — довгим натисканням)</item>
     </string-array>
     <string name="screen_clipboard">Буфер обміну</string>
     <string name="screen_clipboard_summary">Історія скопійованого, закріплені записи</string>
@@ -453,7 +447,7 @@
     <string name="title_space_swipe">Свайп по пробілу</string>
     <string-array name="space_swipe_entries">
         <item>Перемикає мову</item>
-        <item>Рухає курсор (мова — довгим натисканням пробілу)</item>
+        <item>Рухає курсор (мову — додатковою клавішею з глобусом, див. «Розкладка»)</item>
     </string-array>
     <string name="cat_one_hand">Режим для однієї руки</string>
     <string name="title_one_hand_mode">Режим для однієї руки</string>

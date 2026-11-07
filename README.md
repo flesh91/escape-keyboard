@@ -22,7 +22,8 @@ by Klaus Weidner, including later changes by Maxim Pulya, rebuilt for Android 17
 - Compact 5-row, full 5-row and 4-row layouts.
 - Ukrainian and Russian ЙЦУКЕН in the compact layout, about 30 languages in
   compact form and 40+ overall.
-- The key left of the space bar can be Tab, emoji, voice input or clipboard.
+- One extra key can be emoji, the clipboard, a globe (next language) or voice input: Tab left
+  of the space bar in Compact, the gear in the other layouts (Settings stay on a long press).
 
 **Terminal**
 - A custom key row above the keyboard with macros (off by default).
@@ -39,8 +40,8 @@ by Klaus Weidner, including later changes by Maxim Pulya, rebuilt for Android 17
 - Inline autofill suggestions from your password manager (Android 11+).
 
 **Gestures**
-- Swipe along the space bar to switch the language or to move the cursor (then long-press
-  space, or use the globe key, to switch the language).
+- Swipe along the space bar to switch the language or to move the cursor (then switch the
+  language with the extra key set to the globe).
 - One-handed mode: keys move to the left or right edge, 60–95% wide. It can
   also be bound to a swipe left or right.
 

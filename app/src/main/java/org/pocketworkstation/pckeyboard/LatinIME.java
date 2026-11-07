@@ -2993,10 +2993,6 @@ public class LatinIME extends InputMethodService implements
         case LatinKeyboardView.KEYCODE_NEXT_LANGUAGE:
             toggleLanguage(false, true,false);
             break;
-        case LatinKeyboardView.KEYCODE_SPACE_LONGPRESS:
-            buttonFeedback(0);
-            toggleLanguage(false, true,false);
-            break;
         case LatinKeyboardView.KEYCODE_PREV_LANGUAGE:
             toggleLanguage(false, false,false);
             break;

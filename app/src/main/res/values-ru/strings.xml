@@ -559,14 +559,6 @@
         <item quantity="many">Ещё %d нажатий, чтобы показать отладку</item>
         <item quantity="other">Ещё %d нажатия, чтобы показать отладку</item>
     </plurals>
-    <string name="title_space_left_key">Клавиша слева от пробела</string>
-    <string-array name="space_left_key_entries">
-        <item>Tab</item>
-        <item>Эмодзи</item>
-        <item>Голосовой ввод</item>
-        <item>Буфер обмена</item>
-        <item>Следующий язык</item>
-    </string-array>
     <string name="emoji_back_to_keyboard">АБВ</string>
     <string name="voice_input_not_found">Голосовой ввод не найден. Включите службу голосового ввода (например, «Голосовой ввод Google») в системных настройках клавиатур.</string>
     <string name="screen_layout">Раскладка</string>
@@ -592,11 +584,13 @@
     <string name="cat_on_press">При нажатии</string>
     <string name="cat_modifiers">Клавиши-модификаторы</string>
     <string name="cat_apps">Приложения</string>
-    <string name="title_settings_key">Клавиша настроек</string>
+    <string name="title_settings_key">Дополнительная клавиша</string>
     <string-array name="settings_key_entries">
-        <item>Шестерёнка (настройки)</item>
+        <item>Стандартная: Tab в компактной, шестерёнка (настройки) в остальных</item>
         <item>Эмодзи (настройки — долгим нажатием)</item>
         <item>Буфер обмена (настройки — долгим нажатием)</item>
+        <item>Следующий язык (настройки — долгим нажатием)</item>
+        <item>Голосовой ввод (настройки — долгим нажатием)</item>
     </string-array>
     <string name="screen_clipboard">Буфер обмена</string>
     <string name="screen_clipboard_summary">История скопированного, закреплённые записи</string>
@@ -633,7 +627,7 @@
     <string name="title_space_swipe">Свайп по пробелу</string>
     <string-array name="space_swipe_entries">
         <item>Переключает язык</item>
-        <item>Двигает курсор (язык — долгим нажатием пробела)</item>
+        <item>Двигает курсор (язык — дополнительной клавишей с глобусом, см. «Раскладка»)</item>
     </string-array>
     <string name="cat_one_hand">Режим для одной руки</string>
     <string name="title_one_hand_mode">Режим для одной руки</string>

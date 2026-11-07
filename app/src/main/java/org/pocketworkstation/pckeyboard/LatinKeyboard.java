@@ -155,7 +155,7 @@ public class LatinKeyboard extends Keyboard {
         // TODO remove this initialization after cleanup
         mVerticalGap = super.getVerticalGap();
         applySpaceLeftKey(res);
-        if (!LatinIME.sKeyboardSettings.showSettingsKey || LatinIME.sKeyboardSettings.settingsKeyClipboard) {
+        if (!"settings".equals(LatinIME.sKeyboardSettings.settingsKeyMode)) {
             for (Key k : getKeys()) {
                 if (k.codes != null && k.codes.length > 0
                         && k.codes[0] == LatinKeyboardView.KEYCODE_OPTIONS) setGearReplacementKey(k);
@@ -166,7 +166,7 @@ public class LatinKeyboard extends Keyboard {
     /**
      * The Tab key left of the space bar can be swapped for emoji, voice input, the clipboard or
      * the next language
-     * (setting "pref_space_left_key"); its long-press popup keeps Tab and Settings.
+     * (setting "pref_settings_key", shared with the gear); its long-press popup keeps Tab and Settings.
      */
     private void applySpaceLeftKey(Resources res) {
         String mode = LatinIME.sKeyboardSettings.spaceLeftKey;
@@ -348,8 +348,7 @@ public class LatinKeyboard extends Keyboard {
         } else if (mIsAlphaFullKeyboard) {
         	if (mVoiceEnabled && mHasVoiceButton) {
         		setMicF1Key(mF1Key);
-        	} else if (LatinIME.sKeyboardSettings.showSettingsKey
-        	        && !LatinIME.sKeyboardSettings.settingsKeyClipboard) {
+        	} else if ("settings".equals(LatinIME.sKeyboardSettings.settingsKeyMode)) {
         		setSettingsF1Key(mF1Key);
         	} else {
         		setGearReplacementKey(mF1Key);
@@ -402,16 +401,29 @@ public class LatinKeyboard extends Keyboard {
     }
     
     /**
-     * Emoji (settings key hidden) or the clipboard (setting) in place of the gear; Settings
-     * stays in its long-press popup.
+     * Emoji (settings key hidden), the clipboard, the next language or voice input in place of
+     * the gear (setting); Settings stays in its long-press popup.
      */
     private void setGearReplacementKey(Key key) {
         if (key.shiftLabel != null && key.label != null) {
             key.codes = new int[] { key.label.charAt(0) };
             return; // leave key otherwise unmodified
         }
-        final boolean clipboard = LatinIME.sKeyboardSettings.settingsKeyClipboard;
-        final int iconRes = clipboard ? R.drawable.sym_keyboard_clipboard : R.drawable.sym_keyboard_emoji;
+        final String mode = LatinIME.sKeyboardSettings.settingsKeyMode;
+        final int code, iconRes;
+        if ("clipboard".equals(mode)) {
+            code = LatinKeyboardView.KEYCODE_CLIPBOARD;
+            iconRes = R.drawable.sym_keyboard_clipboard;
+        } else if ("language".equals(mode)) {
+            code = LatinKeyboardView.KEYCODE_NEXT_LANGUAGE;
+            iconRes = R.drawable.sym_keyboard_language;
+        } else if ("voice".equals(mode)) {
+            code = LatinKeyboardView.KEYCODE_VOICE;
+            iconRes = R.drawable.sym_keyboard_mic;
+        } else {
+            code = LatinKeyboardView.KEYCODE_EMOJI;
+            iconRes = R.drawable.sym_keyboard_emoji;
+        }
         key.label = null;
         final Drawable icon = mRes.getDrawable(iconRes);
         if (key == mF1Key) {
@@ -426,7 +438,7 @@ public class LatinKeyboard extends Keyboard {
             key.icon = icon;
             key.iconPreview = null;
         }
-        key.codes = new int[] { clipboard ? LatinKeyboardView.KEYCODE_CLIPBOARD : LatinKeyboardView.KEYCODE_EMOJI };
+        key.codes = new int[] { code };
         key.popupResId = R.xml.popup_mic;
     }
 
@@ -440,10 +452,6 @@ public class LatinKeyboard extends Keyboard {
         key.popupResId = popupResId;
         key.icon = mHintIcon;
         key.iconPreview = null;
-    }
-
-    int getLocaleCount() {
-        return mLanguageSwitcher == null ? 0 : mLanguageSwitcher.getLocaleCount();
     }
 
     public boolean isF1Key(Key key) {
@@ -521,18 +529,28 @@ public class LatinKeyboard extends Keyboard {
         final float density = mRes.getDisplayMetrics().density;
         final float labelScale = LatinIME.sKeyboardSettings.labelScalePref;
         final float keyTextSize = Math.min(26 * density, medianKeyTextSize());
-        final String label = m123Label != null ? m123Label.toString() : "123";
+        final String label = "123"; // like the old image: no "?" of the plain label beside the mic
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setColor(0xFFFFFFFF);
         paint.setTextSize(keyTextSize * 3 / 4 * labelScale);
         paint.setTypeface(android.os.Build.VERSION.SDK_INT >= 28
                 ? Typeface.create(Typeface.DEFAULT, 600, false) : Typeface.DEFAULT_BOLD);
         final Drawable mic = mRes.getDrawable(R.drawable.sym_keyboard_mic).mutate();
-        final float micScale = LatinKeyboardBaseView.iconScale(keyTextSize, labelScale, density) * 0.8f;
+        float micScale = LatinKeyboardBaseView.iconScale(keyTextSize, labelScale, density) * 0.8f;
+        float textWidth = paint.measureText(label);
+        float gap = paint.getTextSize() * 0.1f;
+        // On a narrow key (the 4-row layout with the gear or clipboard beside it) both shrink to
+        // fit, clear of the rounded corner
+        final float total = textWidth + gap + mic.getIntrinsicWidth() * micScale;
+        final float fit = width * 0.78f / total;
+        if (fit < 1) {
+            paint.setTextSize(paint.getTextSize() * fit);
+            micScale *= fit;
+            textWidth = paint.measureText(label);
+            gap *= fit;
+        }
         final int micWidth = Math.round(mic.getIntrinsicWidth() * micScale);
         final int micHeight = Math.round(mic.getIntrinsicHeight() * micScale);
-        final float textWidth = paint.measureText(label);
-        final float gap = paint.getTextSize() * 0.1f;
         final float left = (width - (textWidth + gap + micWidth)) / 2;
         Rect bounds = new Rect();
         paint.getTextBounds(label, 0, label.length(), bounds);

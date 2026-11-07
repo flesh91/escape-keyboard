@@ -43,8 +43,9 @@ public final class GlobalKeyboardSettings {
     public String spaceLeftKey = "tab";
     // Gear key on the keyboard; when off, the emoji key takes its place
     public boolean showSettingsKey = true;
-    // The gear key opens the clipboard history instead (Settings stay in its long-press popup)
-    public boolean settingsKeyClipboard = false;
+    // What the gear key does: "settings", or another key in its place ("emoji" also drops the
+    // gear from the 4-row layout); Settings then stay in its long-press popup
+    public String settingsKeyMode = "settings";
     //
     // Read by LatinIME
     public String suggestedPunctuation = "!?,.";
@@ -155,16 +156,12 @@ public final class GlobalKeyboardSettings {
             public int getFlags() { return FLAG_PREF_NONE; }
         });
 
-        addStringPref("pref_space_left_key", new StringPref() {
-            public void set(String val) { spaceLeftKey = val; }
-            public String getDefault() { return "tab"; }
-            public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; }
-        });
-
         addStringPref(LatinIMESettings.PREF_SETTINGS_KEY, new StringPref() {
             public void set(String val) {
-                settingsKeyClipboard = "clipboard".equals(val);
-                showSettingsKey = !"emoji".equals(val); // the clipboard takes the gear's place
+                // One choice for both spare keys: the Tab key left of the space bar (Compact) and
+                // the gear (the other layouts)
+                settingsKeyMode = val;
+                spaceLeftKey = "settings".equals(val) ? "tab" : val;
             }
             public String getDefault() { return "settings"; }
             public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; }

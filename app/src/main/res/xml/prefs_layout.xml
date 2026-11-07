@@ -81,14 +81,6 @@
     <PreferenceCategory
         android:title="@string/cat_keys">
         <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
-        android:key="pref_space_left_key"
-        android:title="@string/title_space_left_key"
-        android:persistent="true"
-        android:entryValues="@array/space_left_key_values"
-        android:entries="@array/space_left_key_entries"
-        android:defaultValue="tab"
-        />
-        <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
         android:key="pref_settings_key"
         android:title="@string/title_settings_key"
         android:persistent="true"
