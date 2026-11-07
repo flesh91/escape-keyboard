@@ -57,6 +57,8 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
     static final int KEYCODE_ONE_HAND_EXIT = -149;
     /** Long press on Enter: opens the clipboard history window */
     static final int KEYCODE_CLIPBOARD_LONGPRESS = -150;
+    /** Long press on space while its swipe moves the cursor: the next language */
+    static final int KEYCODE_SPACE_LONGPRESS = -151;
     static final int KEYCODE_F1 = -103;
     static final int KEYCODE_NEXT_LANGUAGE = -104;
     static final int KEYCODE_PREV_LANGUAGE = -105;
@@ -256,6 +258,11 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
             return invokeOnKey(KEYCODE_END);
         } else if (primaryCode == LatinIME.ASCII_ENTER) {
             return invokeOnKey(KEYCODE_CLIPBOARD_LONGPRESS);
+        } else if (primaryCode == LatinIME.ASCII_SPACE && LatinIME.sKeyboardSettings.spaceSwipeCursor
+                && getKeyboard() instanceof LatinKeyboard
+                && ((LatinKeyboard) getKeyboard()).getLocaleCount() > 1) {
+            // A swipe along the space bar moves the cursor, so a long press switches the language
+            return invokeOnKey(KEYCODE_SPACE_LONGPRESS);
         } else if (primaryCode == '0' && getKeyboard() == mPhoneKeyboard) {
             // Long pressing on 0 in phone number keypad gives you a '+'.
             return invokeOnKey('+');

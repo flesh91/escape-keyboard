@@ -11,10 +11,14 @@ import makedict
 
 LANGS = {
     # language: (letters, how many of the most frequent words, one-letter words that exist)
-    "uk": ("абвгґдеєжзиіїйклмнопрстуфхцчшщьюя", 160000, "авзійоу"),
-    "ru": ("абвгдеёжзийклмнопрстуфхцчшщъыьэюя", 160000, "авиксуоя"),
-    "en": ("abcdefghijklmnopqrstuvwxyz", 110000, "ai"),
+    "uk": ("абвгґдеєжзиіїйклмнопрстуфхцчшщьюя", 300000, "авзійоу"),
+    "ru": ("абвгдеёжзийклмнопрстуфхцчшщъыьэюя", 300000, "авиксуоя"),
+    "en": ("abcdefghijklmnopqrstuvwxyz", 250000, "ai"),
 }
+# Below this many top words the data gets rare enough to hold common typos (сьогдні, сегодя):
+# a word past it that is one letter away from a far more frequent word is left out
+TYPO_FREE_TOP = {"uk": 160000, "ru": 160000, "en": 110000}
+TYPO_MARGIN = 2.0  # zipf: the near word must be at least 100 times more frequent
 # Letters only one of the two Cyrillic languages has: a word with them is surely not a
 # loanword from the other one
 OWN = {"uk": set("ґєії'"), "ru": set("ёъыэ")}
@@ -96,10 +100,51 @@ def blocked(lang, w):
     return any(s in w for s in BLOCK_SUBSTR[lang]) or bool(BLOCK_RE[lang].search(w))
 
 
+def deletions(w):
+    return {w[:i] + w[i + 1:] for i in range(len(w))}
+
+
+def one_edit_apart(a, b):
+    """True if b is a, give or take one letter (added, dropped, changed, or two swapped)."""
+    if a == b or abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) == len(b):
+        diff = [i for i in range(len(a)) if a[i] != b[i]]
+        return len(diff) == 1 or (len(diff) == 2 and diff[1] == diff[0] + 1
+                                  and a[diff[0]] == b[diff[1]] and a[diff[1]] == b[diff[0]])
+    if len(a) > len(b):
+        a, b = b, a
+    return a in deletions(b)
+
+
+def typo_filter(lang, top):
+    """The rare words of `top` (past TYPO_FREE_TOP) that look like typos of frequent ones:
+    one letter away, or the same letters in another order (пожайлуста)."""
+    core = TYPO_FREE_TOP[lang]
+    zipf = {w: wf.zipf_frequency(w, lang, wordlist="large") for w in top}
+    index, anagrams = {}, {}
+    for w in top[:core]:
+        for key in deletions(w) | {w}:
+            index.setdefault(key, []).append(w)
+        anagrams.setdefault("".join(sorted(w)), []).append(w)
+    typos = set()
+    for t in top[core:]:
+        bar = zipf[t] + TYPO_MARGIN
+        if any(zipf[w] >= bar for w in anagrams.get("".join(sorted(t)), ())):
+            typos.add(t)
+            continue
+        for key in deletions(t) | {t}:
+            if any(zipf[w] >= bar and one_edit_apart(t, w) for w in index.get(key, ())):
+                typos.add(t)
+                break
+    return typos
+
+
 def words_for(lang):
     letters, count, singles = LANGS[lang]
     allowed = set(letters) | ({"'"} if lang in ("uk", "en") else set())
     top = wf.top_n_list(lang, count, wordlist="large")
+    typos = typo_filter(lang, top)
     zmin = wf.zipf_frequency(top[-1], lang, wordlist="large")
     bare = {w.replace("'", "") for w in top if "'" in w} - KEEP_BARE.get(lang, set())
     out, mixed, swear = [], 0, 0
@@ -108,7 +153,7 @@ def words_for(lang):
             continue
         if len(w) == 1 and w not in singles:
             continue
-        if w in bare or w in DROP.get(lang, ()):
+        if w in bare or w in DROP.get(lang, ()) or w in typos:
             continue
         if re.search(r"(.)\1\1", w):  # stretched spellings: бляяяя, sooo
             continue
@@ -131,8 +176,8 @@ def words_for(lang):
         z = wf.zipf_frequency(w, lang, wordlist="large")
         if z >= zmin:
             out.append((w, max(1, min(255, round(1 + 254 * (z - zmin) / (ZIPF_TOP - zmin))))))
-    print(f"{lang}: {len(out)} words (zipf >= {zmin:.2f}), {mixed} from the other language "
-          f"and {swear} swear words kept unsuggested")
+    print(f"{lang}: {len(out)} words (zipf >= {zmin:.2f}), {len(typos)} rare typos left out, "
+          f"{mixed} from the other language and {swear} swear words kept unsuggested")
     return out
 
 

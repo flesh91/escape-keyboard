@@ -385,6 +385,7 @@
         <item>Емодзі</item>
         <item>Голосове введення</item>
         <item>Буфер обміну</item>
+        <item>Наступна мова</item>
     </string-array>
     <string name="emoji_back_to_keyboard">АБВ</string>
     <string name="voice_input_not_found">Голосове введення не знайдено. Увімкніть службу голосового введення (наприклад, «Голосове введення Google») у системних налаштуваннях клавіатур.</string>
@@ -412,8 +413,11 @@
     <string name="cat_modifiers">Клавіші-модифікатори</string>
     <string name="cat_apps">Застосунки</string>
     <string name="title_settings_key">Клавіша налаштувань</string>
-    <string name="summary_settings_key_true">Шестерня на клавіатурі</string>
-    <string name="summary_settings_key_false">Замість неї емодзі. Налаштування — довгим натисканням коми, Tab або емодзі</string>
+    <string-array name="settings_key_entries">
+        <item>Шестерня (налаштування)</item>
+        <item>Емодзі (налаштування — довгим натисканням)</item>
+        <item>Буфер обміну (налаштування — довгим натисканням)</item>
+    </string-array>
     <string name="screen_clipboard">Буфер обміну</string>
     <string name="screen_clipboard_summary">Історія скопійованого, закріплені записи</string>
     <string name="title_clipboard_history">Зберігати історію буфера обміну</string>
@@ -449,7 +453,7 @@
     <string name="title_space_swipe">Свайп по пробілу</string>
     <string-array name="space_swipe_entries">
         <item>Перемикає мову</item>
-        <item>Рухає курсор</item>
+        <item>Рухає курсор (мова — довгим натисканням пробілу)</item>
     </string-array>
     <string name="cat_one_hand">Режим для однієї руки</string>
     <string name="title_one_hand_mode">Режим для однієї руки</string>

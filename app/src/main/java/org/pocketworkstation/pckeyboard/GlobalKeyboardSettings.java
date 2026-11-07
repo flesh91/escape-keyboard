@@ -43,13 +43,15 @@ public final class GlobalKeyboardSettings {
     public String spaceLeftKey = "tab";
     // Gear key on the keyboard; when off, the emoji key takes its place
     public boolean showSettingsKey = true;
+    // The gear key opens the clipboard history instead (Settings stay in its long-press popup)
+    public boolean settingsKeyClipboard = false;
     //
     // Read by LatinIME
     public String suggestedPunctuation = "!?,.";
     public int keyboardModePortrait = 0;
     public int keyboardModeLandscape = 2;
     public boolean compactModeEnabled = true;  // always on
-    public int ctrlAOverride = 0;
+    public int ctrlAOverride = 2;
     public int chordingCtrlKey = 0;
     public int chordingAltKey = 0;
     public int chordingMetaKey = 0;
@@ -159,9 +161,12 @@ public final class GlobalKeyboardSettings {
             public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; }
         });
 
-        addBooleanPref("show_settings_key", new BooleanPref() {
-            public void set(boolean val) { showSettingsKey = val; }
-            public boolean getDefault() { return true; }
+        addStringPref(LatinIMESettings.PREF_SETTINGS_KEY, new StringPref() {
+            public void set(String val) {
+                settingsKeyClipboard = "clipboard".equals(val);
+                showSettingsKey = !"emoji".equals(val); // the clipboard takes the gear's place
+            }
+            public String getDefault() { return "settings"; }
             public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; }
         });
 
@@ -198,7 +203,7 @@ public final class GlobalKeyboardSettings {
         addStringPref("pref_space_swipe", new StringPref() {
             public void set(String val) { spaceSwipeCursor = "cursor".equals(val); }
             public String getDefault() { return "language"; }
-            public int getFlags() { return FLAG_PREF_NONE; }
+            public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; } // the space bar's arrows
         });
 
         addStringPref("pref_one_hand_mode", new StringPref() {

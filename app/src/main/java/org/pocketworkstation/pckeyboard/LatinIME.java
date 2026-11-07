@@ -55,6 +55,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -225,6 +226,11 @@ public class LatinIME extends InputMethodService implements
     private boolean mAutoCorrectOn;
     // TODO move this state variable outside LatinIME
     private boolean mModCtrl;
+    // Shift + arrows select text: a tapped Shift stays on through further navigation keys
+    // (and space bar cursor swipes) until another key is pressed. mSelectingCtrl: Ctrl too.
+    private boolean mSelecting;
+    private boolean mSelectingCtrl;
+    private boolean mShiftTapEndsSelection;
     private boolean mModAlt;
     private boolean mModMeta;
     private boolean mModFn;
@@ -941,7 +947,12 @@ public class LatinIME extends InputMethodService implements
         InputConnection ic = getCurrentInputConnection();
         if (ic == null) return;
         if (mPredicting) commitTyped(ic, true);
-        sendDownUpKeyEvents(left ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+        int key = left ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT;
+        if (mSelecting || isShiftMod()) {
+            sendNavigationKey(key);
+        } else {
+            sendDownUpKeyEvents(key);
+        }
     }
 
     // ---- Row of the user's own keys and text macros (pref, off by default) ----
@@ -1600,6 +1611,7 @@ public class LatinIME extends InputMethodService implements
     }
     @Override
     public void onStartInputView(EditorInfo attribute, boolean restarting) {
+        mSelecting = mSelectingCtrl = false;
         if (mNormalKeyboardShown)return;
         hideEmojiPanel();
         if (mInputViewStale) {
@@ -1811,6 +1823,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onFinishInput() {
         super.onFinishInput();
+        mSelecting = mSelectingCtrl = false;
 
         onAutoCompletionStateChanged(false);
 
@@ -2173,6 +2186,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     public void updateShiftKeyState(EditorInfo attr) {
+        if (mSelecting) return; // the cursor moved because of the selection itself
         InputConnection ic = getCurrentInputConnection();
         if (ic != null && attr != null && mKeyboardSwitcher.isAlphabetMode()) {
             int oldState = getShiftState();
@@ -2226,8 +2240,32 @@ public class LatinIME extends InputMethodService implements
         EditorInfo ei = getCurrentInputEditorInfo();
         if (mAutoCapActive && ei != null && ei.inputType != EditorInfo.TYPE_NULL) {
             caps = ic.getCursorCapsMode(attr.inputType);
+            if (caps == 0 && wantsSentenceCapsAnyway(attr.inputType)) {
+                // Plain text fields that ask for no capitalization at all (many apps, our own
+                // test field) still get a capital after ". " — but not at the start of the field,
+                // which may be a name or a login
+                CharSequence before = ic.getTextBeforeCursor(1, 0);
+                if (before != null && before.length() > 0) {
+                    caps = ic.getCursorCapsMode(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+                }
+            }
         }
         return caps;
+    }
+
+    private static boolean wantsSentenceCapsAnyway(int inputType) {
+        if ((inputType & InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT) return false;
+        if ((inputType & (InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS | InputType.TYPE_TEXT_FLAG_CAP_WORDS
+                | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)) != 0) return false;
+        switch (inputType & InputType.TYPE_MASK_VARIATION) {
+            case InputType.TYPE_TEXT_VARIATION_NORMAL:
+            case InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE:
+            case InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE:
+            case InputType.TYPE_TEXT_VARIATION_EMAIL_SUBJECT:
+                return true;
+            default:
+                return false;
+        }
     }
 
     private void swapPunctuationAndSpace() {
@@ -2523,6 +2561,65 @@ public class LatinIME extends InputMethodService implements
 
     private void sendModifierKeysUp(boolean shifted) {
         handleModifierKeysUp(shifted, true);
+    }
+
+    private static boolean isNavigationKey(int primaryCode) {
+        switch (primaryCode) {
+            case LatinKeyboardView.KEYCODE_DPAD_UP:
+            case LatinKeyboardView.KEYCODE_DPAD_DOWN:
+            case LatinKeyboardView.KEYCODE_DPAD_LEFT:
+            case LatinKeyboardView.KEYCODE_DPAD_RIGHT:
+            case LatinKeyboardView.KEYCODE_HOME:
+            case LatinKeyboardView.KEYCODE_END:
+            case LatinKeyboardView.KEYCODE_PAGE_UP:
+            case LatinKeyboardView.KEYCODE_PAGE_DOWN:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /** Keys that leave a selection going: the other modifiers and layout switches. */
+    private static boolean keepsSelecting(int primaryCode) {
+        return primaryCode == LatinKeyboardView.KEYCODE_CTRL_LEFT
+                || primaryCode == LatinKeyboardView.KEYCODE_ALT_LEFT
+                || primaryCode == LatinKeyboardView.KEYCODE_META_LEFT
+                || primaryCode == LatinKeyboardView.KEYCODE_FN
+                || primaryCode == Keyboard.KEYCODE_MODE_CHANGE;
+    }
+
+    /**
+     * An arrow, Home/End or PgUp/PgDn (Android key code). With a tapped Shift it extends the
+     * selection and Shift (and Ctrl, for whole words) stays on for the next one; a held Shift
+     * works as before, as does a key without Shift.
+     */
+    private void sendNavigationKey(int code) {
+        boolean shiftTapped = mSelecting
+                || (isShiftMod() && !mShiftKeyState.isChording());
+        if (!shiftTapped) {
+            commitTyped(getCurrentInputConnection(), true);
+            sendModifiedKeyDownUp(code);
+            return;
+        }
+        InputConnection ic = getCurrentInputConnection();
+        commitTyped(ic, true);
+        mSelecting = true;
+        if (mModCtrl) mSelectingCtrl = true;
+        final boolean ctrl = mModCtrl;
+        int meta = getMetaState(true);
+        sendModifierKeysDown(true);
+        sendKeyDown(ic, code, meta);
+        sendKeyUp(ic, code, meta);
+        handleModifierKeysUp(false, true); // Ctrl/Alt/Meta up, but not Shift
+        sendShiftKey(ic, false);
+        if (ctrl && !mModCtrl) setModCtrl(true);
+    }
+
+    private void endSelecting() {
+        mSelecting = false;
+        if (mSelectingCtrl && mModCtrl && !mCtrlKeyState.isChording()) setModCtrl(false);
+        mSelectingCtrl = false;
+        if (!mShiftKeyState.isChording()) resetShift();
     }
 
     private void sendSpecialKey(int code) {
@@ -2831,6 +2928,10 @@ public class LatinIME extends InputMethodService implements
             mDeleteCount = 0;
         }
         mLastKeyTime = when;
+        if (mSelecting && !isNavigationKey(primaryCode) && !keepsSelecting(primaryCode)) {
+            endSelecting();
+            if (primaryCode == Keyboard.KEYCODE_SHIFT) return; // that tap only ends the selection
+        }
         final boolean distinctMultiTouch = mKeyboardSwitcher
                 .hasDistinctMultitouch();
         switch (primaryCode) {
@@ -2890,6 +2991,10 @@ public class LatinIME extends InputMethodService implements
             mComposeBuffer.clear();
             break;
         case LatinKeyboardView.KEYCODE_NEXT_LANGUAGE:
+            toggleLanguage(false, true,false);
+            break;
+        case LatinKeyboardView.KEYCODE_SPACE_LONGPRESS:
+            buttonFeedback(0);
             toggleLanguage(false, true,false);
             break;
         case LatinKeyboardView.KEYCODE_PREV_LANGUAGE:
@@ -2960,6 +3065,10 @@ public class LatinIME extends InputMethodService implements
         case LatinKeyboardView.KEYCODE_NUM_LOCK:
         case LatinKeyboardView.KEYCODE_SCROLL_LOCK:
             if (processMultiKey(primaryCode)) {
+                break;
+            }
+            if (isNavigationKey(primaryCode) && !isConnectbot()) {
+                sendNavigationKey(-primaryCode);
                 break;
             }
             // send as plain keys, or as escape sequence if needed
@@ -4191,7 +4300,12 @@ public class LatinIME extends InputMethodService implements
         }
         final boolean distinctMultiTouch = mKeyboardSwitcher
                 .hasDistinctMultitouch();
-        if (distinctMultiTouch && primaryCode == Keyboard.KEYCODE_SHIFT) {
+        if (distinctMultiTouch && primaryCode == Keyboard.KEYCODE_SHIFT && mSelecting) {
+            // Shift is on for a selection: this tap only turns it off (see onRelease)
+            endSelecting();
+            mShiftTapEndsSelection = true;
+            mShiftKeyState.onPress();
+        } else if (distinctMultiTouch && primaryCode == Keyboard.KEYCODE_SHIFT) {
             mShiftKeyState.onPress();
             startMultitouchShift();
         } else if (distinctMultiTouch
@@ -4236,7 +4350,11 @@ public class LatinIME extends InputMethodService implements
         final boolean distinctMultiTouch = mKeyboardSwitcher
                 .hasDistinctMultitouch();
         InputConnection ic = getCurrentInputConnection();
-        if (distinctMultiTouch && primaryCode == Keyboard.KEYCODE_SHIFT) {
+        if (distinctMultiTouch && primaryCode == Keyboard.KEYCODE_SHIFT && mShiftTapEndsSelection) {
+            mShiftTapEndsSelection = false;
+            mShiftKeyState.onRelease();
+            resetShift();
+        } else if (distinctMultiTouch && primaryCode == Keyboard.KEYCODE_SHIFT) {
             if (mShiftKeyState.isChording()) {
                 resetMultitouchShift();
             } else {

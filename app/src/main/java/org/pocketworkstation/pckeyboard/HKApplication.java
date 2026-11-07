@@ -28,12 +28,17 @@ public class HKApplication extends Application {
     public void onCreate() {
         super.onCreate();
         DynamicColors.applyToActivitiesIfAvailable(this);
-        // "settings_key" was a list (0 auto, 1 show, 2 hide); it is the switch "show_settings_key" now
+        // The settings key was the list "settings_key" (0 auto, 1 show, 2 hide), then the switch
+        // "show_settings_key"; now it is a list: the gear, emoji or the clipboard in its place
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if (prefs.contains("settings_key")) {
+        if (prefs.contains("settings_key") || prefs.contains("show_settings_key")) {
+            boolean shown = prefs.contains("show_settings_key")
+                    ? prefs.getBoolean("show_settings_key", true)
+                    : !"2".equals(prefs.getString("settings_key", "0"));
             prefs.edit()
-                    .putBoolean(LatinIMESettings.PREF_SETTINGS_KEY, !"2".equals(prefs.getString("settings_key", "0")))
+                    .putString(LatinIMESettings.PREF_SETTINGS_KEY, shown ? "settings" : "emoji")
                     .remove("settings_key")
+                    .remove("show_settings_key")
                     .apply();
         }
     }

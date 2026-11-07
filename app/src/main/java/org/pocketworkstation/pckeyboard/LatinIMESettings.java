@@ -42,7 +42,7 @@ public class LatinIMESettings extends SettingsActivity
     private static final String QUICK_FIXES_KEY = "quick_fixes";
     private static final String PREDICTION_SETTINGS_KEY = "prediction_settings";
     private static final String VOICE_SETTINGS_KEY = "voice_mode";
-    /* package */ static final String PREF_SETTINGS_KEY = "show_settings_key";
+    /* package */ static final String PREF_SETTINGS_KEY = "pref_settings_key";
     static final String INPUT_CONNECTION_INFO = "input_connection_info";    
     private static final String DEBUGGING_KEY = "debugging";
     private static final String PREF_DEBUG_UNLOCKED = "debug_settings_unlocked";

@@ -27,16 +27,20 @@ by Klaus Weidner, including later changes by Maxim Pulya, rebuilt for Android 17
 **Terminal**
 - A custom key row above the keyboard with macros (off by default).
 - Ctrl and Alt work as real modifiers and light up while active.
+- Text selection like on a PC: tap Shift, then arrows, Home/End or PgUp/PgDn (or swipe
+  along the space bar in cursor mode); add Ctrl for whole words. Ctrl+A selects all.
 
 **Typing**
 - Built-in dictionaries for Ukrainian, Russian and English: suggestions and
   autocorrection.
-- Clipboard history in a floating window: pin, edit, swipe to delete with undo.
+- Clipboard history in a floating window: pin, edit, swipe to delete with undo. Long-press
+  Enter to open it; it closes after a paste.
 - Emoji panel and voice input through the installed voice keyboard.
 - Inline autofill suggestions from your password manager (Android 11+).
 
 **Gestures**
-- Swipe along the space bar to switch the language or to move the cursor.
+- Swipe along the space bar to switch the language or to move the cursor (then long-press
+  space, or use the globe key, to switch the language).
 - One-handed mode: keys move to the left or right edge, 60–95% wide. It can
   also be bound to a swipe left or right.
 

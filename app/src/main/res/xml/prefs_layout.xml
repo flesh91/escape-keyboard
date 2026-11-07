@@ -88,13 +88,13 @@
         android:entries="@array/space_left_key_entries"
         android:defaultValue="tab"
         />
-        <SwitchPreferenceCompat
-        android:key="show_settings_key"
+        <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
+        android:key="pref_settings_key"
         android:title="@string/title_settings_key"
         android:persistent="true"
-        android:defaultValue="true"
-        android:summaryOn="@string/summary_settings_key_true"
-        android:summaryOff="@string/summary_settings_key_false"
+        android:entryValues="@array/settings_key_values"
+        android:entries="@array/settings_key_entries"
+        android:defaultValue="settings"
         />
     </PreferenceCategory>
 

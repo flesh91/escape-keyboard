@@ -8,7 +8,7 @@ android {
         applicationId 'app.escapekeyboard'
         minSdk 21
         targetSdk 37
-        versionCode 164
+        versionCode 168
         versionName "1.0"
         externalNativeBuild {
             cmake {
