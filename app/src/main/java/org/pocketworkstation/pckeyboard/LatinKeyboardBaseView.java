@@ -1298,8 +1298,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 // Draw a drop shadow for the text
                 paint.setShadowLayer(mShadowRadius, 0, 0, mShadowColor);
 
-                // Hint labels sit in the right-hand corners: the shifted character at the top,
-                // the first popup character at the bottom, clear of the main label in between
+                // Hint labels stack in the top right corner: the shifted character, then the
+                // first popup character under it
                 String hint = key.getHintLabel(showHints7Bit(), showHintsAll());
                 if (key.isShifted() && key.shiftLabel != null && !hint.equals("")
                         && hint.charAt(0) == key.shiftLabel.charAt(0)) {
@@ -1315,7 +1315,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 }
                 if (!hint.equals("")) {
                     final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int baseline = padding.top + hintLabelHeight * 12/10;
+                    int baseline = padding.top + hintLabelHeight * 16/10;
                     if (Character.getType(hint.charAt(0)) == Character.NON_SPACING_MARK) {
                         drawDeadKeyLabel(canvas, hint, hintX, baseline, paintHint);
                     } else {
@@ -1324,9 +1324,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 }
                 if (!altHint.equals("")) {
                     final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int baseline = hint.equals("")
-                            ? padding.top + hintLabelHeight * 12/10
-                            : key.height - padding.bottom - hintLabelHeight * 3/10;
+                    int baseline = padding.top + hintLabelHeight * (hint.equals("") ? 16 : 30)/10;
                     if (Character.getType(altHint.charAt(0)) == Character.NON_SPACING_MARK) {
                         drawDeadKeyLabel(canvas, altHint, hintX, baseline, paintHint);
                     } else {
