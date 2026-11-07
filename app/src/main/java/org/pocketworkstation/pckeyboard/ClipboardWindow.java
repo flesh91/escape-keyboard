@@ -349,6 +349,7 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
                     refresh();
                 }
                 mIme.pasteFromClipboardHistory(value);
+                dismiss();
             });
             row.setOnLongClickListener(v -> {
                 mIme.buttonFeedback(0);

@@ -2904,6 +2904,10 @@ public class LatinIME extends InputMethodService implements
         case LatinKeyboardView.KEYCODE_CLIPBOARD:
             toggleClipboardWindow();
             break;
+        case LatinKeyboardView.KEYCODE_CLIPBOARD_LONGPRESS:
+            buttonFeedback(0);
+            toggleClipboardWindow();
+            break;
         case LatinKeyboardView.KEYCODE_CURSOR_LEFT:
         case LatinKeyboardView.KEYCODE_CURSOR_RIGHT:
             moveCursor(primaryCode == LatinKeyboardView.KEYCODE_CURSOR_LEFT);
