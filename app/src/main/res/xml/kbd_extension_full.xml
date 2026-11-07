@@ -45,11 +45,11 @@ Unavailable accents:
 	<Key
             android:codes="@integer/key_home"
             android:isModifier="true"            
-            android:keyLabel="Home" />
+            android:keyLabel="&#x21F1;" />
 	<Key
             android:codes="@integer/key_end"
             android:isModifier="true"            
-            android:keyLabel="End"
+            android:keyLabel="&#x21F2;"
             android:keyEdgeFlags="right" />
         />
     </Row>

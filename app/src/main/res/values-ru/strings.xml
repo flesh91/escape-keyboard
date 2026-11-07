@@ -19,9 +19,9 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Title for Latin keyboard  -->
-    <string name="english_ime_name">Hacker\'s Keyboard</string>
+    <string name="english_ime_name">Escape Keyboard</string>
     <!-- Title for Latin keyboard settings activity / dialog -->
-    <string name="english_ime_settings">Настройки Hacker\'s Keyboard</string>
+    <string name="english_ime_settings">Настройки Escape Keyboard</string>
     <!-- Title for Latin keyboard input options dialog -->
     <string name="english_ime_input_options">Параметры ввода</string>
 
@@ -99,12 +99,12 @@
     <!-- Option to enable showing suggestions -->
     <string name="show_suggestions">Предлагать варианты</string>
     <!-- Description for show suggestions -->
-    <string name="show_suggestions_summary">Предлагать варианты слов во время ввода</string>
+    <string name="show_suggestions_summary">Строка с предлагаемыми словами над клавиатурой. Автоисправление работает и без неё</string>
 
     <!-- Option to enable auto completion -->
-    <string name="auto_complete">Автозавершение</string>
+    <string name="auto_complete">Автоисправление</string>
     <!-- Description for auto completion -->
-    <string name="auto_complete_summary">При нажатии пробела вставлять предложенное слово</string>
+    <string name="auto_complete_summary">Пробел и знаки препинания заменяют слово с ошибкой на лучшую подсказку</string>
 
     <!-- Option to show/hide the settings key -->
     <string name="prefs_settings_key">Кнопка настроек</string>
@@ -298,8 +298,8 @@
     <!-- The summary for the preferences item for enabling to correct suggestions by touching words you have typed -->
     <string name="prefs_enable_recorrection_summary">Нажмите на введеные слова для исправления</string>
 
-    <string name="pref_screen_feedback_title">Обратная связь</string>
-    <string name="pref_screen_feedback_title_summary">Настройка звука клавиш, виброотклика, увеличение нажатых и т.п.</string>
+    <string name="pref_screen_feedback_title">Звук и вибрация</string>
+    <string name="pref_screen_feedback_title_summary">Звук нажатия, вибрация, всплывающая подсказка</string>
 
     <string name="pref_screen_view_title">Тема и шрифт</string>
     <string name="pref_screen_view_title_summary">Настройка темы оформления, подсказок на клавишах, шрифтов</string>
@@ -312,9 +312,6 @@
     <string name="layout_stone_normal"  translatable="false">Кость (нормальный)</string>
     <string name="layout_gingerbread"  translatable="false">Имбирный пряник</string>
     <string name="layout_ics"  translatable="false">Сэндвич с мороженым (светлые подсказки)</string>
-    <string name="layout_ics_darker"  translatable="false">Сэндвич с мороженым (тёмн. подсказки)</string>
-    <string name="layout_trans"  translatable="false">Прозрачная</string>
-    <string name="layout_trans_neon"  translatable="false">Прозрачная (эксперимент)</string>
     <string name="layout_material_dark" translatable="false">Материал (тёмная)</string>
     <string name="layout_material_light" translatable="false">Материал (светлая)</string>
 
@@ -418,7 +415,8 @@
     <string name="title_top_row_scale">Высота 5-го ряда</string>
 
     <string name="title_label_scale">Размер шрифта клавиш</string>
-    <string name="title_candidate_scale">Размер шрифта вариантов</string>
+    <string name="title_top_corner_radius">Скругление верхних углов</string>
+    <string name="title_candidate_scale">Размер текста вариантов</string>
 
     <string name="title_vibrate_len">Длительность вибрации</string>
 
@@ -443,8 +441,8 @@
         <item>Аппаратное ускорение (экспериментально)</item>
     </string-array>
 
-    <string name="pref_screen_actions_title">Жесты и кнопки</string>
-    <string name="pref_screen_actions_title_summary">Настройка жестов и аппаратных кнопок</string>
+    <string name="pref_screen_actions_title">Жесты</string>
+    <string name="pref_screen_actions_title_summary">Свайпы по клавиатуре, клавиши громкости</string>
     <string name="title_swipe_up">Провести вверх</string>
     <string name="title_swipe_down">Провести вниз</string>
     <string name="title_swipe_left">Провести влево</string>
@@ -463,6 +461,8 @@
         <item>Уменьшить высоту</item>
         <item>Предыдущий язык</item>
 -       <item>Следующий язык</item>
+        <item>Одна рука: клавиши слева</item>
+        <item>Одна рука: клавиши справа</item>
     </string-array>
 
     <string name="title_popup_content">Всплывающая мини клавиатура</string>
@@ -486,14 +486,14 @@
     <string name="main_setup_settings">Настройки</string>
     <string name="main_body"><Data>
       <![CDATA["
-        <h2>Включение Hacker\'s Keyboard</h2>
+        <h2>Включение Escape Keyboard</h2>
 
-        <p><i>Hacker\'s Keyboard</i> предоставляет новый метод ввода Android. По умолчанию <b>отключен</b> по соображениям безопасности Android и не позволяет программам изменять настройки метода ввода. Для его активации выполните следующие действия.<p>
+        <p><i>Escape Keyboard</i> предоставляет новый метод ввода Android. По умолчанию <b>отключен</b> по соображениям безопасности Android и не позволяет программам изменять настройки метода ввода. Для его активации выполните следующие действия.<p>
 
         <h3>Добавьте клавиатуру в список методов ввода системы:</h3>
         <blockquote>
           <p>&#8226; Откройте в настройках системы Язык и ввод, и выберите <b>Включить клавиатуру</b></p>
-          <p>&#8226; Найдите <i>Hacker\'s Keyboard</i> в списке методов ввода и нажмите галочку, чтобы включить.</p>
+          <p>&#8226; Найдите <i>Escape Keyboard</i> в списке методов ввода и нажмите галочку, чтобы включить.</p>
           <p>&#8226; Подтвердите предупреждение, отображаемое системой. Система всегда показывает это сообщение при использовании сторонней клавиатуры.</p>
           <p>&#8226; Нажмите кнопку <i>Назад</i>, чтобы вернуться на эту страницу..</p>
         </blockquote>
@@ -501,7 +501,7 @@
         <h3>Выберите клавиатуру:</h3>
         <blockquote>
           <p>&#8226; Выберете <b>Клавиатуру и метод ввода</b></p>
-          <p>&#8226; Выберете <i>Hacker\'s Keyboard</i> в списке.</p>
+          <p>&#8226; Выберете <i>Escape Keyboard</i> в списке.</p>
         </blockquote>
 
         <h3>Дополнительно: выберите языки ввода:</h3>
@@ -510,15 +510,140 @@
           <p>&#8226; Нажмите кнопку <i>Назад</i>, чтобы вернуться на эту страницу.</p>
           <p>&#8226; При наборе текста проведите вправо или влево по пробелу для переключаться между выбранными языками.
         </blockquote>
-
-        <h3>Необязательно: установите словари:</h3>
-        <blockquote>
-          <p>&#8226; Вверху, нажмите кнопку <b>Дополнительно</b>, чтобы сделать поиск в Play Store по имени разработчика клавиатуры. Это покажет бесплатные пакеты словарей.</p>
-        </blockquote>
-
-        <h2>Дополнительная информация</h2>
-        <p>Пожалуйста, посетите <a href='https://github.com/klausw/hackerskeyboard'>страницу проекта</a> для получения дополнительной информации, включая руководство пользователя, отслеживание проблем и дискуссионную группу.</p>
       "]]>
     </Data></string>
     <string name="text_test">Тест</string>
+    <string name="main_setup_test">Тест</string>
+    <string name="notification_channel_description">Уведомление для быстрого открытия клавиатуры</string>
+    <string name="notification_action_settings">Настройки</string>
+    <string name="notification_action_gamepad">Геймпад</string>
+    <string name="notification_ticker">Уведомление клавиатуры включено.</string>
+    <string name="notification_title">Показать Escape Keyboard</string>
+    <string name="notification_body">Нажмите, чтобы открыть клавиатуру. Отключается в настройках.</string>
+    <string name="title_nav_bar_category">Системная панель навигации</string>
+    <string name="title_nav_bar_space">Отступ для системных кнопок</string>
+    <string name="summary_nav_bar_space_true">Клавиатура расположена над системными кнопками навигации</string>
+    <string name="summary_nav_bar_space_false">Кнопки клавиатуры под ней скрыты (Android 16+). Место остаётся только под системную панель навигации, когда она показана</string>
+    <string name="title_extension_row_portrait">Верхний дополнительный ряд, вертикально</string>
+    <string name="summary_extension_row_portrait_true">Показан: Esc, Home, End, Del в компактной раскладке, F1–F12 в полной</string>
+    <string name="summary_extension_row_portrait_false">Скрыт (жест свайпа вверх может показать его до закрытия клавиатуры)</string>
+    <string name="layout_google_system">Google (по теме системы)</string>
+    <string name="layout_google_light">Google светлая</string>
+    <string name="layout_google_dark">Google тёмная</string>
+    <string name="main_tagline">Полноценная клавиатура как на ПК: Esc, Ctrl, Alt, Tab, стрелки и F-клавиши.</string>
+    <string name="main_section_setup">Начало работы</string>
+    <string name="main_step_enable_title">Включите клавиатуру</string>
+    <string name="main_step_enable_summary">Включите Escape Keyboard в системных настройках ввода</string>
+    <string name="main_step_enable_done">Включена</string>
+    <string name="main_step_select_title">Выберите её методом ввода</string>
+    <string name="main_step_select_summary">Сделайте Escape Keyboard активной клавиатурой</string>
+    <string name="main_step_select_done">Активная клавиатура</string>
+    <string name="main_step_languages_summary">Выберите раскладки для переключения свайпом по пробелу</string>
+    <string name="main_section_try">Попробуйте</string>
+    <string name="main_try_hint">Напечатайте что-нибудь здесь</string>
+    <string name="main_section_help">Справка</string>
+    <string name="main_version">Версия %s</string>
+    <string name="title_licenses">Лицензии открытого кода</string>
+    <string name="summary_licenses">Авторство и лицензии кода, на котором построено приложение</string>
+    <string name="title_about">О приложении</string>
+    <string name="layout_google_you">Google (цвета обоев)</string>
+    <string name="layout_ios_system">Cupertino (по теме системы)</string>
+    <string name="title_debug_hide">Скрыть отладку</string>
+    <string name="summary_debug_hide">Показать снова: 5 раз нажмите «Версия»</string>
+    <string name="debug_shown">Пункты отладки показаны</string>
+    <string name="debug_already_shown">Пункты отладки уже показаны</string>
+    <string name="debug_hidden">Отладка скрыта</string>
+    <plurals name="debug_taps_left">
+        <item quantity="one">Ещё %d нажатие, чтобы показать отладку</item>
+        <item quantity="few">Ещё %d нажатия, чтобы показать отладку</item>
+        <item quantity="many">Ещё %d нажатий, чтобы показать отладку</item>
+        <item quantity="other">Ещё %d нажатия, чтобы показать отладку</item>
+    </plurals>
+    <string name="title_space_left_key">Клавиша слева от пробела</string>
+    <string-array name="space_left_key_entries">
+        <item>Tab</item>
+        <item>Эмодзи</item>
+        <item>Голосовой ввод</item>
+        <item>Буфер обмена</item>
+    </string-array>
+    <string name="emoji_back_to_keyboard">АБВ</string>
+    <string name="voice_input_not_found">Голосовой ввод не найден. Включите службу голосового ввода (например, «Голосовой ввод Google») в системных настройках клавиатур.</string>
+    <string name="screen_layout">Раскладка</string>
+    <string name="screen_layout_summary">Режим, высота, доп. ряд, клавиши</string>
+    <string name="screen_appearance">Тема и вид</string>
+    <string name="screen_appearance_summary">Тема, размер подписей, подсказки на клавишах</string>
+    <string name="screen_typing">Набор текста</string>
+    <string name="screen_typing_summary">Заглавные буквы, Shift, долгое нажатие</string>
+    <string name="screen_correction">Исправление текста</string>
+    <string name="screen_correction_summary">Подсказки слов, автодополнение, исправления</string>
+    <string name="screen_terminal">Терминал и клавиши ПК</string>
+    <string name="screen_terminal_summary">Коды Ctrl, Alt, Meta, Ctrl-A, ConnectBot</string>
+    <string name="screen_advanced">Дополнительно</string>
+    <string name="screen_advanced_summary">Полноэкранный редактор, способ отрисовки, клавиша голоса</string>
+    <string name="cat_mode">Режим</string>
+    <string name="cat_size">Размер</string>
+    <string name="cat_keys">Клавиши</string>
+    <string name="cat_capitals">Заглавные буквы</string>
+    <string name="cat_long_press">Долгое нажатие</string>
+    <string name="cat_sliding">Скольжение</string>
+    <string name="cat_vibration">Вибрация</string>
+    <string name="cat_sound">Звук</string>
+    <string name="cat_on_press">При нажатии</string>
+    <string name="cat_modifiers">Клавиши-модификаторы</string>
+    <string name="cat_apps">Приложения</string>
+    <string name="title_settings_key">Клавиша настроек</string>
+    <string name="summary_settings_key_true">Шестерёнка на клавиатуре</string>
+    <string name="summary_settings_key_false">Вместо неё эмодзи. Настройки — долгим нажатием запятой, Tab или эмодзи</string>
+    <string name="screen_clipboard">Буфер обмена</string>
+    <string name="screen_clipboard_summary">История скопированного, закреплённые записи</string>
+    <string name="title_clipboard_history">Сохранять историю буфера обмена</string>
+    <string name="summary_clipboard_history_true">Скопированный текст хранится только на этом устройстве, пароли — нет. Закреплённые записи остаются, пока вы их не удалите</string>
+    <string name="summary_clipboard_history_false">Скопированный текст не сохраняется</string>
+    <string name="title_clipboard_history_size">Размер истории (без закреплённых)</string>
+    <string name="clipboard_title">Буфер обмена</string>
+    <string name="clipboard_clear">Очистить</string>
+    <string name="clipboard_close">Закрыть</string>
+    <string name="clipboard_empty">Здесь будет появляться скопированный текст. Нажмите на запись, чтобы вставить её, смахните в сторону, чтобы удалить, удерживайте, чтобы закрепить или изменить</string>
+    <string name="clipboard_off">История буфера обмена выключена. Включите её в Настройках, раздел «Буфер обмена»</string>
+    <string name="clipboard_pin">Закрепить</string>
+    <string name="clipboard_unpin">Открепить</string>
+    <string name="clipboard_edit">Изменить</string>
+    <string name="clipboard_delete">Удалить</string>
+    <string name="clipboard_edit_title">Изменить запись</string>
+    <string name="clipboard_save">Сохранить</string>
+    <string name="clipboard_cancel">Отмена</string>
+    <string-array name="clipboard_history_size_entries">
+        <item>10 записей</item>
+        <item>15 записей</item>
+        <item>20 записей</item>
+        <item>25 записей</item>
+        <item>30 записей</item>
+        <item>40 записей</item>
+        <item>50 записей</item>
+        <item>100 записей</item>
+        <item>200 записей</item>
+    </string-array>
+    <string name="clipboard_deleted">Запись удалена</string>
+    <string name="clipboard_undo">Вернуть</string>
+
+    <string name="title_space_swipe">Свайп по пробелу</string>
+    <string-array name="space_swipe_entries">
+        <item>Переключает язык</item>
+        <item>Двигает курсор</item>
+    </string-array>
+    <string name="cat_one_hand">Режим для одной руки</string>
+    <string name="title_one_hand_mode">Режим для одной руки</string>
+    <string name="summary_one_hand_mode">В вертикальной ориентации. Кнопки на свободной стороне переносят клавиши или возвращают полную ширину</string>
+    <string-array name="one_hand_mode_entries">
+        <item>Выключен</item>
+        <item>Клавиши слева</item>
+        <item>Клавиши справа</item>
+    </string-array>
+    <string name="title_one_hand_width">Ширина клавиатуры</string>
+    <string name="cat_macro_row">Свой ряд клавиш</string>
+    <string name="title_macro_row">Показывать свой ряд клавиш</string>
+    <string name="summary_macro_row_true">Над клавишами</string>
+    <string name="summary_macro_row_false">Выключено</string>
+    <string name="title_macro_keys">Клавиши ряда</string>
+    <string name="message_macro_keys">Клавиши через пробел.\n\nНазвания: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбинации: Ctrl+C, Alt+F.\nЛюбой отдельный символ: | ~ /\nТекст в кавычках вводится как есть: \"sudo \", \"| grep \", \"\\n\" — новая строка.</string>
 </resources>

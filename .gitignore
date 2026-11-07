@@ -11,3 +11,13 @@
 /captures
 gradle
 .externalNativeBuild
+# Play upload key and its passwords
+keystore.properties
+*.jks
+*.keystore
+# local build outputs
+*.apk
+*.aab
+/app/.cxx
+__pycache__/
+*.pyc

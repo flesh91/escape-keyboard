@@ -31,7 +31,7 @@
     
     <string name="key_ae01_main">1</string>
     <string name="key_ae01_shift">!</string>
-    <string name="key_ae01_alt">1!Â¡Â¹Â½â…“Â¼â…›</string>
+    <string name="key_ae01_alt">1!ÂÂ¹Â½â…“Â¼â…›</string>
 
     <string name="key_ae02_main">2</string>
     <string name="key_ae02_shift">\@</string>
@@ -59,7 +59,7 @@
     
     <string name="key_ae08_main">8</string>
     <string name="key_ae08_shift">*</string>
-    <string name="key_ae08_alt">8*â€¢â˜…âˆžâ€ â€¡</string>
+    <string name="key_ae08_alt">8*â€¢â˜…âˆžâ€ â€</string>
     
     <string name="key_ae09_main">9</string>
     <string name="key_ae09_shift">(</string>
@@ -67,7 +67,7 @@
     
     <string name="key_ae10_main">0</string>
     <string name="key_ae10_shift">)</string>
-    <string name="key_ae10_alt">0)â¿Â°</string>
+    <string name="key_ae10_alt">0)âÂ°</string>
     
     <string name="key_ae11_main">-</string>
     <string name="key_ae11_shift">_</string>
@@ -218,5 +218,5 @@
 
     <string name="key_ab10_main">/</string>
     <string name="key_ab10_shift">\?</string>
-    <string name="key_ab10_alt">/\?Â¿</string>
+    <string name="key_ab10_alt">/\?Â</string>
 </resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme: keyboard background, brightest just under the top edge -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle"><gradient android:angle="270" android:startColor="@color/graphite_bg_peak" android:centerColor="@color/graphite_bg_center" android:endColor="@color/graphite_bg_end" /></shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle"><gradient android:angle="270" android:centerY="0.12" android:startColor="@color/graphite_bg_start" android:centerColor="#003B4048" android:endColor="#003B4048" /></shape>
+    </item>
+    <!-- a line along the top edge only: the other sides of the stroke fall outside the view -->
+    <item android:left="-4dp" android:top="0.5dp" android:right="-4dp" android:bottom="-4dp">
+        <shape android:shape="rectangle"><solid android:color="@android:color/transparent" /><stroke android:width="0.75dp" android:color="@color/graphite_bg_highlight" /></shape>
+    </item>
+    <!-- a line along the top edge only: the other sides of the stroke fall outside the view -->
+    <item android:left="-4dp" android:top="0dp" android:right="-4dp" android:bottom="-4dp">
+        <shape android:shape="rectangle"><solid android:color="@android:color/transparent" /><stroke android:width="0.5dp" android:color="@color/graphite_bg_line" /></shape>
+    </item>
+</layer-list>

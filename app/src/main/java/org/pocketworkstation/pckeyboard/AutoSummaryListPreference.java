@@ -1,10 +1,15 @@
+/*
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
+ * Licensed under the Apache License, Version 2.0
+ */
+
 /**
  *
  */
 package org.pocketworkstation.pckeyboard;
 
 import android.content.Context;
-import android.preference.ListPreference;
+import androidx.preference.ListPreference;
 import android.util.AttributeSet;
 import android.util.Log;
 

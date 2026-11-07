@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2008 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+  
+          http://www.apache.org/licenses/LICENSE-2.0
+  
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:hk="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:key="prediction_settings">
+        <SwitchPreferenceCompat
+        android:key="auto_complete"
+        android:title="@string/auto_complete"
+        android:summary="@string/auto_complete_summary"
+        android:persistent="true"
+        android:defaultValue="@bool/enable_autocorrect"
+        />
+        <SwitchPreferenceCompat
+        android:key="quick_fixes"
+        android:title="@string/quick_fixes"
+        android:summary="@string/quick_fixes_summary"
+        android:persistent="true"
+        android:defaultValue="@bool/default_quick_fixes"
+        />
+        <SwitchPreferenceCompat
+        android:key="show_suggestions"
+        android:title="@string/show_suggestions"
+        android:summary="@string/show_suggestions_summary"
+        android:persistent="true"
+        android:defaultValue="@bool/default_suggestions"
+        />
+        <org.pocketworkstation.pckeyboard.SeekBarPreferenceString
+        android:defaultValue="1.0"
+        hk:minValue="0.5"
+        hk:maxValue="8.0"
+        hk:logScale="true"
+        hk:asPercent="true"
+        android:key="pref_candidate_scale"
+        android:dependency="show_suggestions"
+        android:persistent="true"
+        android:title="@string/title_candidate_scale" />
+        <SwitchPreferenceCompat
+        android:key="recorrection_enabled"
+        android:dependency="show_suggestions"
+        android:title="@string/prefs_enable_recorrection"
+        android:summary="@string/prefs_enable_recorrection_summary"
+        android:persistent="true"
+        android:defaultValue="@bool/default_recorrection_enabled"
+        />
+        <SwitchPreferenceCompat
+        android:key="suggestions_in_landscape"
+        android:dependency="show_suggestions"
+        android:title="@string/title_suggestions_in_landscape"
+        android:persistent="true"
+        android:defaultValue="@bool/default_suggestions_in_landscape"
+        android:summaryOn="@string/summary_suggestions_in_landscape_true"
+        android:summaryOff="@string/summary_suggestions_in_landscape_false"
+        />
+        <org.pocketworkstation.pckeyboard.AutoSummaryEditTextPreference
+        android:key="pref_suggested_punctuation"
+        android:dependency="show_suggestions"
+        android:title="@string/title_suggested_punctuation"
+        android:defaultValue="@string/suggested_punctuations"
+        />
+    </PreferenceCategory>
+
+</PreferenceScreen>

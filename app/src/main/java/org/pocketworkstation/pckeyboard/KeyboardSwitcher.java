@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -65,12 +66,26 @@ public class KeyboardSwitcher implements
         R.layout.input_ics,
         R.layout.input_gingerbread,
         R.layout.input_stone_bold,
-        R.layout.input_trans_neon,
+        R.layout.input_ics, // 3: "Transparent" theme was removed, fall back to ICS
         R.layout.input_material_dark,
         R.layout.input_material_light,
-        R.layout.input_ics_darker,
+        R.layout.input_ics, // 6: "ICS dark hints" theme was removed, fall back to ICS
         R.layout.input_material_black,
+        R.layout.input_google_light, // THEME_GOOGLE_SYSTEM, resolved by night mode
+        R.layout.input_google_light,
+        R.layout.input_google_dark,
+        R.layout.input_google_you_light, // THEME_GOOGLE_YOU, resolved by night mode
+        R.layout.input_graphite,
+        R.layout.input_ios_light, // THEME_IOS_SYSTEM, resolved by night mode
+        R.layout.input_keycap,
     };
+
+    // Google keyboard style, light or dark following the system theme
+    private static final int THEME_GOOGLE_SYSTEM = 8;
+    // Same, with the Material You wallpaper colours on Android 12+
+    private static final int THEME_GOOGLE_YOU = 11;
+    // iPhone keyboard look, light or dark following the system theme
+    private static final int THEME_IOS_SYSTEM = 13;
 
     // Tables which contains resource ids for each character theme color
     private static final int KBD_PHONE = R.xml.kbd_phone;
@@ -123,16 +138,6 @@ public class KeyboardSwitcher implements
     private static final int AUTO_MODE_SWITCH_STATE_CHORDING = 4;
     private int mAutoModeSwitchState = AUTO_MODE_SWITCH_STATE_ALPHA;
 
-    // Indicates whether or not we have the settings key
-    private boolean mHasSettingsKey;
-    private static final int SETTINGS_KEY_MODE_AUTO = R.string.settings_key_mode_auto;
-    private static final int SETTINGS_KEY_MODE_ALWAYS_SHOW = R.string.settings_key_mode_always_show;
-    // NOTE: No need to have SETTINGS_KEY_MODE_ALWAYS_HIDE here because it's not
-    // being referred to
-    // in the source code now.
-    // Default is SETTINGS_KEY_MODE_AUTO.
-    private static final int DEFAULT_SETTINGS_KEY_MODE = SETTINGS_KEY_MODE_AUTO;
-
     private int mLastDisplayWidth;
     private LanguageSwitcher mLanguageSwitcher;
 
@@ -156,7 +161,6 @@ public class KeyboardSwitcher implements
         sInstance.mLayoutId = Integer.valueOf(prefs.getString(
                 PREF_KEYBOARD_LAYOUT, DEFAULT_LAYOUT_ID));
 
-        sInstance.updateSettingsKeyState(prefs);
         prefs.registerOnSharedPreferenceChangeListener(sInstance);
 
         sInstance.mSymbolsId = sInstance.makeSymbolsId(false);
@@ -183,7 +187,7 @@ public class KeyboardSwitcher implements
             return new KeyboardId(KBD_FULL_FN, KEYBOARDMODE_SYMBOLS, true, hasVoice);
         }
         return new KeyboardId(KBD_SYMBOLS,
-                mHasSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
+                LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
                         : KEYBOARDMODE_SYMBOLS, false, hasVoice);
     }
 
@@ -191,7 +195,7 @@ public class KeyboardSwitcher implements
         if (mFullMode > 0)
             return null;
         return new KeyboardId(KBD_SYMBOLS_SHIFT,
-                mHasSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
+                LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
                         : KEYBOARDMODE_SYMBOLS, false, hasVoice);
     }
 
@@ -207,7 +211,7 @@ public class KeyboardSwitcher implements
         // If keyboards have already been made, check if we have a screen width
         // change and
         // create the keyboard layouts again at the correct orientation
-        int displayWidth = mInputMethodService.getMaxWidth();
+        int displayWidth = mInputMethodService.getKeyboardWidth();
         if (displayWidth == mLastDisplayWidth)
             return;
         mLastDisplayWidth = displayWidth;
@@ -382,7 +386,7 @@ public class KeyboardSwitcher implements
             } else {
                 return new KeyboardId(
                         KBD_SYMBOLS,
-                        mHasSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
+                        LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
                                 : KEYBOARDMODE_SYMBOLS, false, hasVoice);
             }
         }
@@ -391,29 +395,29 @@ public class KeyboardSwitcher implements
             /* fall through */
         case MODE_TEXT:
             return new KeyboardId(keyboardRowsResId,
-                    mHasSettingsKey ? KEYBOARDMODE_NORMAL_WITH_SETTINGS_KEY
+                    LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_NORMAL_WITH_SETTINGS_KEY
                             : KEYBOARDMODE_NORMAL, true, hasVoice);
         case MODE_SYMBOLS:
             return new KeyboardId(KBD_SYMBOLS,
-                    mHasSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
+                    LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_SYMBOLS_WITH_SETTINGS_KEY
                             : KEYBOARDMODE_SYMBOLS, false, hasVoice);
         case MODE_PHONE:
             return new KeyboardId(KBD_PHONE, 0, false, hasVoice);
         case MODE_URL:
             return new KeyboardId(keyboardRowsResId,
-                    mHasSettingsKey ? KEYBOARDMODE_URL_WITH_SETTINGS_KEY
+                    LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_URL_WITH_SETTINGS_KEY
                             : KEYBOARDMODE_URL, true, hasVoice);
         case MODE_EMAIL:
             return new KeyboardId(keyboardRowsResId,
-                    mHasSettingsKey ? KEYBOARDMODE_EMAIL_WITH_SETTINGS_KEY
+                    LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_EMAIL_WITH_SETTINGS_KEY
                             : KEYBOARDMODE_EMAIL, true, hasVoice);
         case MODE_IM:
             return new KeyboardId(keyboardRowsResId,
-                    mHasSettingsKey ? KEYBOARDMODE_IM_WITH_SETTINGS_KEY
+                    LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_IM_WITH_SETTINGS_KEY
                             : KEYBOARDMODE_IM, true, hasVoice);
         case MODE_WEB:
             return new KeyboardId(keyboardRowsResId,
-                    mHasSettingsKey ? KEYBOARDMODE_WEB_WITH_SETTINGS_KEY
+                    LatinIME.sKeyboardSettings.showSettingsKey ? KEYBOARDMODE_WEB_WITH_SETTINGS_KEY
                             : KEYBOARDMODE_WEB, true, hasVoice);
         }
         return null;
@@ -611,6 +615,28 @@ public class KeyboardSwitcher implements
         return mInputView;
     }
 
+    private int resolveTheme(int layoutId) {
+        if (layoutId == THEME_GOOGLE_SYSTEM || layoutId == THEME_GOOGLE_YOU
+                || layoutId == THEME_IOS_SYSTEM) {
+            int night = mInputMethodService.getResources().getConfiguration().uiMode
+                    & Configuration.UI_MODE_NIGHT_MASK;
+            boolean dark = night == Configuration.UI_MODE_NIGHT_YES;
+            if (layoutId == THEME_IOS_SYSTEM) {
+                return dark ? R.layout.input_ios_dark : R.layout.input_ios_light;
+            }
+            if (layoutId == THEME_GOOGLE_YOU) {
+                return dark ? R.layout.input_google_you_dark : R.layout.input_google_you_light;
+            }
+            return dark ? R.layout.input_google_dark : R.layout.input_google_light;
+        }
+        return THEMES[layoutId];
+    }
+
+    /** Layout resource of the theme in use, with "follow system" resolved. */
+    int getThemeLayout() {
+        return resolveTheme(THEMES.length <= mLayoutId ? Integer.valueOf(DEFAULT_LAYOUT_ID) : mLayoutId);
+    }
+
     public void recreateInputView() {
         changeLatinKeyboardView(mLayoutId, true);
     }
@@ -629,7 +655,7 @@ public class KeyboardSwitcher implements
             for (int i = 0; i < LatinIMEUtil.GCUtils.GC_TRY_LOOP_MAX && tryGC; ++i) {
                 try {
                     mInputView = (LatinKeyboardView) mInputMethodService
-                            .getLayoutInflater().inflate(THEMES[newLayout],
+                            .getLayoutInflater().inflate(resolveTheme(newLayout),
                                     null);
                     tryGC = false;
                 } catch (OutOfMemoryError e) {
@@ -640,7 +666,7 @@ public class KeyboardSwitcher implements
                             mLayoutId + "," + newLayout, e);
                 }
             }
-            mInputView.setExtensionLayoutResId(THEMES[newLayout]);
+            mInputView.setExtensionLayoutResId(resolveTheme(newLayout));
             mInputView.setOnKeyboardActionListener(mInputMethodService);
             mInputView.setPadding(0, 0, 0, 0);
             mLayoutId = newLayout;
@@ -650,6 +676,7 @@ public class KeyboardSwitcher implements
                 if (mInputView != null) {
                     //*//Edited by Pulya Max to fix candidates
                     //mInputMethodService.setInputView(mInputMethodService.mCandidateViewAndKeyboardView);
+                    mInputMethodService.onKeyboardViewRecreated(mInputView);
                 }
                 mInputMethodService.updateInputViewShown();
             }
@@ -661,9 +688,6 @@ public class KeyboardSwitcher implements
         if (PREF_KEYBOARD_LAYOUT.equals(key)) {
             changeLatinKeyboardView(Integer.valueOf(sharedPreferences
                     .getString(key, DEFAULT_LAYOUT_ID)), true);
-        } else if (LatinIMESettings.PREF_SETTINGS_KEY.equals(key)) {
-            updateSettingsKeyState(sharedPreferences);
-            recreateInputView();
         }
     }
 
@@ -677,21 +701,4 @@ public class KeyboardSwitcher implements
         }
     }
 
-    private void updateSettingsKeyState(SharedPreferences prefs) {
-        Resources resources = mInputMethodService.getResources();
-        final String settingsKeyMode = prefs.getString(
-                LatinIMESettings.PREF_SETTINGS_KEY, resources
-                        .getString(DEFAULT_SETTINGS_KEY_MODE));
-        // We show the settings key when 1) SETTINGS_KEY_MODE_ALWAYS_SHOW or
-        // 2) SETTINGS_KEY_MODE_AUTO and there are two or more enabled IMEs on
-        // the system
-        if (settingsKeyMode.equals(resources
-                .getString(SETTINGS_KEY_MODE_ALWAYS_SHOW))
-                || (settingsKeyMode.equals(resources
-                        .getString(SETTINGS_KEY_MODE_AUTO)))) {
-            mHasSettingsKey = true;
-        } else {
-            mHasSettingsKey = false;
-        }
-    }
 }

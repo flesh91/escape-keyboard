@@ -829,7 +829,7 @@ public class Keyboard {
         DisplayMetrics dm = context.getResources().getDisplayMetrics();
         if (context instanceof LatinIME){
             LatinIME l=(LatinIME)context;
-            mDisplayWidth = l.getMaxWidth();//DisplayMetrics on Android 15 gives width that includes display cutout, because google forced edge to edge. getMaxWidth gives correct width
+            mDisplayWidth = l.getKeyboardWidth();//DisplayMetrics on Android 15 gives width that includes display cutout, because google forced edge to edge. getMaxWidth gives correct width
         }
         else mDisplayWidth = dm.widthPixels;
 

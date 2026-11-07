@@ -31,4 +31,6 @@
 
         latin:keyBackground="@drawable/btn_keyboard_key_gingerbread"
         latin:keyTextStyle="bold"
+        latin:keyActiveColor="@android:color/transparent"
+        latin:keyCursorColor="@android:color/white"
         />

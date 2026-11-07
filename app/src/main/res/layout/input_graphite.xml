@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme: stone-grey letter keys, slate function keys, white labels with a shadow -->
+<org.pocketworkstation.pckeyboard.LatinKeyboardView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:latin="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/LatinkeyboardBaseView"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/keyboard_bottom_padding"
+        android:background="@drawable/keyboard_graphite_background"
+        latin:keyTextColor="@color/graphite_text"
+        latin:keyPreviewBackground="@drawable/key_preview_graphite"
+        latin:keyPreviewTextColor="@color/graphite_text"
+        latin:recolorSymbols="true"
+        latin:keyHintColor="@color/graphite_hint"
+        latin:keyHintInset="0.75dp"
+        latin:keyCursorColor="@color/graphite_text"
+        latin:shadowColor="@color/graphite_text_shadow"
+        latin:shadowRadius="1"
+
+        latin:keyActiveColor="@android:color/transparent"
+        latin:keyBackground="@drawable/btn_keyboard_key_graphite"
+        latin:popupLayout="@layout/input_popup_graphite"
+        />

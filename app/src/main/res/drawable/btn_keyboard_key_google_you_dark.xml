@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Google keyboard (Gboard) style theme, colours sampled from Gboard on Android 17 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Caps/Shift lock. -->
+    <item android:state_active="true" android:drawable="@drawable/key_google_you_dark_lock" />
+
+    <!-- Sticky modifiers (Shift, Ctrl, Alt): checkable/checked state. -->
+    <item android:state_checkable="true" android:state_checked="true"
+          android:drawable="@drawable/key_google_you_dark_on" />
+    <item android:state_checkable="true" android:state_pressed="true"
+          android:drawable="@drawable/key_google_you_dark_func_pressed" />
+    <item android:state_checkable="true"
+          android:drawable="@drawable/key_google_you_dark_func" />
+
+    <!-- Space is a modifier key too, but looks like a letter key in Gboard. -->
+    <item android:state_middle="true" android:state_pressed="true"
+          android:drawable="@drawable/key_google_you_dark_letter_pressed" />
+    <item android:state_middle="true"
+          android:drawable="@drawable/key_google_you_dark_letter" />
+
+    <!-- Other function keys (Enter, Backspace, Esc, arrows...). -->
+    <item android:state_single="true" android:state_pressed="true"
+          android:drawable="@drawable/key_google_you_dark_func_pressed" />
+    <item android:state_single="true"
+          android:drawable="@drawable/key_google_you_dark_func" />
+
+    <!-- Empty background keys. -->
+    <item android:state_empty="true" android:state_pressed="true"
+          android:drawable="@drawable/key_google_you_dark_letter_pressed" />
+    <item android:state_empty="true"
+          android:drawable="@android:color/transparent" />
+
+    <!-- Normal keys. -->
+    <item android:state_pressed="true"
+          android:drawable="@drawable/key_google_you_dark_letter_pressed" />
+    <item android:drawable="@drawable/key_google_you_dark_letter" />
+</selector>

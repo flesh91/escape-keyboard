@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -28,6 +29,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -49,9 +51,10 @@ import android.os.Vibrator;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -59,11 +62,13 @@ import android.util.PrintWriterPrinter;
 import android.util.Printer;
 import android.util.TypedValue;
 import android.view.Display;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.Window;
@@ -72,12 +77,27 @@ import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
+import android.view.inputmethod.InlineSuggestion;
+import android.view.inputmethod.InlineSuggestionsRequest;
+import android.view.inputmethod.InlineSuggestionsResponse;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.InputMethodSubtype;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.emoji2.emojipicker.EmojiPickerView;
+import androidx.autofill.inline.UiVersions;
+import androidx.autofill.inline.common.ImageViewStyle;
+import androidx.autofill.inline.common.TextViewStyle;
+import androidx.autofill.inline.common.ViewStyle;
+import androidx.autofill.inline.v1.InlineSuggestionUi;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -99,8 +119,6 @@ public class LatinIME extends InputMethodService implements
         LatinKeyboardBaseView.OnKeyboardActionListener,
         SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = "PCKeyboardIME";
-    private static final String NOTIFICATION_CHANNEL_ID = "PCKeyboard";
-    private static final int NOTIFICATION_ONGOING_ID = 1001;
     static Map<Integer, String> ESC_SEQUENCES;
     static Map<Integer, Integer> CTRL_SEQUENCES;
 
@@ -128,7 +146,8 @@ public class LatinIME extends InputMethodService implements
     private static final String PREF_RECORRECTION_ENABLED = "recorrection_enabled";
     static final String PREF_FULLSCREEN_OVERRIDE = "fullscreen_override";
     static final String PREF_FORCE_KEYBOARD_ON = "force_keyboard_on";
-    static final String PREF_KEYBOARD_NOTIFICATION = "keyboard_notification";
+    static final String PREF_NAV_BAR_SPACE = "nav_bar_space";
+    static final String PREF_EXTENSION_ROW_PORTRAIT = "extension_row_portrait";
     static final String PREF_CONNECTBOT_TAB_HACK = "connectbot_tab_hack";
     static final String PREF_FULL_KEYBOARD_IN_PORTRAIT = "full_keyboard_in_portrait";
     static final String PREF_SUGGESTIONS_IN_LANDSCAPE = "suggestions_in_landscape";
@@ -229,7 +248,8 @@ public class LatinIME extends InputMethodService implements
     private boolean mTabHack;
     private boolean mFullscreenOverride;
     private boolean mForceKeyboardOn;
-    private boolean mKeyboardNotification;
+    private boolean mNavBarSpace;
+    private boolean mExtensionRowPortrait;
     private boolean mSuggestionsInLandscape;
     private boolean mSuggestionForceOn;
     private boolean mSuggestionForceOff;
@@ -250,7 +270,6 @@ public class LatinIME extends InputMethodService implements
     private int mKeyboardModeOverrideLandscape;
     private int mCorrectionMode;
 
-    private int mCountTabPresses;
 
     private boolean mEnableVoice = true;
     private boolean mVoiceOnPrimary;
@@ -304,22 +323,10 @@ public class LatinIME extends InputMethodService implements
     private ArrayList<WordAlternatives> mWordHistory = new ArrayList<WordAlternatives>();
     
     private PluginManager mPluginManager;
-    private NotificationReceiver mNotificationReceiver;
-    public boolean mKeyboardClosingLock =false;
-
-    private WindowManager mWindowManager;
-    private WindowManager.LayoutParams mParams;
-    private View mFloatingKeyboard;
-    private boolean mFloatingKeyboardShown=false;
     private boolean mNormalKeyboardShown=false;
+    // Keyboard view was recreated (theme, label scale...) while hidden: rebuild on next show
+    private boolean mInputViewStale=false;
 
-    private enum KeyboardType{
-        keyboard,
-        gamepad_zxc_under_v1_0,
-        gamepad_abcxyz_sega,
-
-    }
-    private KeyboardType mKeyboardType=KeyboardType.keyboard;
     private VoiceRecognitionTrigger mVoiceRecognitionTrigger;
 
     public abstract static class WordAlternatives {
@@ -398,6 +405,12 @@ public class LatinIME extends InputMethodService implements
         mResources = getResources();
         final Configuration conf = mResources.getConfiguration();
         mOrientation = conf.orientation;
+        // Clipboard history: Android lets the active keyboard read what gets copied
+        final ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            mClipListener = () -> ClipboardHistory.get(this).rememberPrimaryClip(clipboard);
+            clipboard.addPrimaryClipChangedListener(mClipListener);
+        }
         final SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(this);
         mLanguageSwitcher = new LanguageSwitcher(this);
@@ -419,8 +432,10 @@ public class LatinIME extends InputMethodService implements
                 res.getBoolean(R.bool.default_fullscreen_override));
         mForceKeyboardOn = prefs.getBoolean(PREF_FORCE_KEYBOARD_ON,
                 res.getBoolean(R.bool.default_force_keyboard_on));
-        mKeyboardNotification = prefs.getBoolean(PREF_KEYBOARD_NOTIFICATION,
-                res.getBoolean(R.bool.default_keyboard_notification));
+        mNavBarSpace = prefs.getBoolean(PREF_NAV_BAR_SPACE,
+                res.getBoolean(R.bool.default_nav_bar_space));
+        mExtensionRowPortrait = prefs.getBoolean(PREF_EXTENSION_ROW_PORTRAIT,
+                res.getBoolean(R.bool.default_extension_row_portrait));
         mSuggestionsInLandscape = prefs.getBoolean(PREF_SUGGESTIONS_IN_LANDSCAPE,
                 res.getBoolean(R.bool.default_suggestions_in_landscape));
         mHeightPortrait = getHeight(prefs, PREF_HEIGHT_PORTRAIT, res.getString(R.string.default_height_portrait));
@@ -447,7 +462,7 @@ public class LatinIME extends InputMethodService implements
         pFilter.addAction("android.intent.action.PACKAGE_ADDED");
         pFilter.addAction("android.intent.action.PACKAGE_REPLACED");
         pFilter.addAction("android.intent.action.PACKAGE_REMOVED");
-        registerReceiver(mPluginManager, pFilter);
+        ContextCompat.registerReceiver(this, mPluginManager, pFilter, ContextCompat.RECEIVER_EXPORTED);
 
         LatinIMEUtil.GCUtils.getInstance().reset();
         boolean tryGC = true;
@@ -466,9 +481,8 @@ public class LatinIME extends InputMethodService implements
         // register to receive ringer mode changes for silent mode
         IntentFilter filter = new IntentFilter(
                 AudioManager.RINGER_MODE_CHANGED_ACTION);
-        registerReceiver(mReceiver, filter);
+        ContextCompat.registerReceiver(this, mReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
         prefs.registerOnSharedPreferenceChangeListener(this);
-        setNotification(mKeyboardNotification);
     }
 
     private int getKeyboardModeNum(int origMode, int override) {
@@ -494,103 +508,6 @@ public class LatinIME extends InputMethodService implements
         LatinIME.sKeyboardSettings.keyboardHeightPercent = (float) screenHeightPercent;
     }
 
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(R.string.notification_channel_name);
-            String description = getString(R.string.notification_channel_description);
-            int importance = NotificationManager.IMPORTANCE_LOW;
-            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-    private boolean requestOverlays(){
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return true;
-        }
-        if (Settings.canDrawOverlays(this)) return true;
-        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
-        return false;
-    }
-    private void setNotification(boolean visible) {
-        String ns = Context.NOTIFICATION_SERVICE;
-        NotificationManager mNotificationManager = (NotificationManager) getSystemService(ns);
-
-        if (visible && mNotificationReceiver == null && requestOverlays()) {
-            createNotificationChannel();
-            int icon = R.drawable.icon;
-            CharSequence text = "Keyboard notification enabled.";
-            long when = System.currentTimeMillis();
-
-            // TODO: clean this up?
-            mNotificationReceiver = new NotificationReceiver(this);
-            final IntentFilter pFilter = new IntentFilter(NotificationReceiver.ACTION_SHOW);
-            pFilter.addAction(NotificationReceiver.ACTION_SETTINGS);
-            pFilter.addAction(NotificationReceiver.ACTION_GAMEPAD);
-            registerReceiver(mNotificationReceiver, pFilter);
-            
-            Intent notificationIntent = new Intent(NotificationReceiver.ACTION_SHOW);
-            PendingIntent contentIntent = PendingIntent.getBroadcast(getApplicationContext(), 1, notificationIntent, 0);
-            //PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-
-            Intent configIntent = new Intent(NotificationReceiver.ACTION_SETTINGS);
-            Intent gamepadIntent = new Intent(NotificationReceiver.ACTION_GAMEPAD);
-            PendingIntent configPendingIntent =
-                    PendingIntent.getBroadcast(getApplicationContext(), 2, configIntent, 0);
-            PendingIntent gamepadPendingIntent =
-                    PendingIntent.getBroadcast(getApplicationContext(), 3, gamepadIntent, 0);
-
-            String title = "Show Hacker's Keyboard";
-            String body = "Select this to open the keyboard. Disable in settings.";
-
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.icon_hk_notification)
-                    .setColor(0xff220044)
-                    .setAutoCancel(false) //Make this notification automatically dismissed when the user touches it -> false.
-                    .setTicker(text)
-                    .setContentTitle(title)
-                    .setContentText(body)
-                    .setContentIntent(contentIntent)
-                    .setOngoing(true)
-                    .addAction(R.drawable.icon_hk_notification, getString(R.string.notification_action_settings),
-                            configPendingIntent)
-                    .addAction(R.drawable.icon_hk_notification, "gamepad",
-                            gamepadPendingIntent)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-            /*
-            Notification notification = new Notification.Builder(getApplicationContext())
-                    .setAutoCancel(false) //Make this notification automatically dismissed when the user touches it -> false.
-                    .setTicker(text)
-                    .setContentTitle(title)
-                    .setContentText(body)
-                    .setWhen(when)
-                    .setSmallIcon(icon)
-                    .setContentIntent(contentIntent)
-                    .getNotification();
-            notification.flags |= Notification.FLAG_ONGOING_EVENT | Notification.FLAG_NO_CLEAR;
-            mNotificationManager.notify(ID, notification);
-            */
-
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-
-            // notificationId is a unique int for each notification that you must define
-            notificationManager.notify(NOTIFICATION_ONGOING_ID, mBuilder.build());
-
-        } else if (mNotificationReceiver != null) {
-            mNotificationManager.cancel(NOTIFICATION_ONGOING_ID);
-            unregisterReceiver(mNotificationReceiver);
-            mNotificationReceiver = null;
-        }
-    }
-    
     public boolean isPortrait() {
         return (mOrientation == Configuration.ORIENTATION_PORTRAIT);
     }
@@ -607,7 +524,8 @@ public class LatinIME extends InputMethodService implements
      * @return returns array of dictionary resource ids
      */
     /* package */static int[] getDictionary(Resources res) {
-        String packageName = LatinIME.class.getPackage().getName();
+        // The resources belong to the application id (app.escapekeyboard), not the Java package
+        String packageName = res.getResourcePackageName(R.xml.dictionary);
         XmlResourceParser xrp = res.getXml(R.xml.dictionary);
         ArrayList<Integer> dictionaries = new ArrayList<Integer>();
 
@@ -649,7 +567,10 @@ public class LatinIME extends InputMethodService implements
         Resources orig = getResources();
         Configuration conf = orig.getConfiguration();
         Locale saveLocale = conf.locale;
-        conf.locale = new Locale(locale);
+        // "en_US" is language "en", country "US" (as LanguageSwitcher reads it), so that the
+        // language's dictionary (raw-en/main.dict) is found
+        conf.locale = locale.length() > 4
+                ? new Locale(locale.substring(0, 2), locale.substring(3, 5)) : new Locale(locale);
         orig.updateConfiguration(conf, orig.getDisplayMetrics());
         if (mSuggest != null) {
             mSuggest.close();
@@ -695,6 +616,11 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onDestroy() {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard != null && mClipListener != null) {
+            clipboard.removePrimaryClipChangedListener(mClipListener);
+        }
+        dismissClipboardWindow();
         if (mUserDictionary != null) {
             mUserDictionary.close();
         }
@@ -703,10 +629,6 @@ public class LatinIME extends InputMethodService implements
         //}
         unregisterReceiver(mReceiver);
         unregisterReceiver(mPluginManager);
-        if (mNotificationReceiver != null) {
-        	unregisterReceiver(mNotificationReceiver);
-            mNotificationReceiver = null;
-        }
         super.onDestroy();
     }
 
@@ -737,8 +659,7 @@ public class LatinIME extends InputMethodService implements
                 ic.finishComposingText(); // For voice input
             mOrientation = conf.orientation;
 
-            if (isPortrait())sKeyboardSettings.useExtension = true;
-            else sKeyboardSettings.useExtension = false;
+            sKeyboardSettings.useExtension = isPortrait() && mExtensionRowPortrait;
 
             reloadKeyboards();
             removeCandidateViewContainer();
@@ -750,6 +671,9 @@ public class LatinIME extends InputMethodService implements
     //*//patched by pulya max for fix candidates
     @Override
     public View onCreateInputView() {
+        allowWindowUnderCutout();
+        mEmojiPanel = null; // belongs to the old container
+        dismissClipboardWindow(); // anchored to the old keyboard view
         setCandidatesViewShown(false);  // Workaround for "already has a parent" when reconfiguring
         mKeyboardSwitcher.recreateInputView();
         mKeyboardSwitcher.makeKeyboards(true);
@@ -758,6 +682,7 @@ public class LatinIME extends InputMethodService implements
 
         View keyboard = mKeyboardSwitcher.getInputView();
         View candidates = createCandidatesView();
+        applyCandidateTheme();
 
         mCandidateViewAndKeyboardView=new LinearLayout(this);
         mCandidateViewAndKeyboardView.setOrientation(LinearLayout.VERTICAL);
@@ -770,283 +695,854 @@ public class LatinIME extends InputMethodService implements
 
         mCandidateViewAndKeyboardView.addView(candidates);
         mCandidateViewAndKeyboardView.addView(keyboard);
-
+        applyKeysSidePadding(keyboard);
+        setupNavBarInsets(keyboard);
+        applyTopCorners(keyboard);
+        reattachAutofillBar();
+        mMacroRow = sKeyboardSettings.macroRow ? buildMacroRow() : null;
+        if (mMacroRow != null) {
+            mCandidateViewAndKeyboardView.addView(mMacroRow,
+                    mCandidateViewAndKeyboardView.indexOfChild(keyboard));
+            padMacroRow();
+        }
+        // After a rotation the view is rebuilt for the editor that is still open, and
+        // onStartInputView() skips it: drop the strip here if this editor has none
+        setCandidatesViewShownInternal(isCandidateStripVisible(), false);
 
         return mCandidateViewAndKeyboardView;
     }
 
     /**
-     * For createWindowManager, hideFloatingKeyboard, createFloatingKeyboard methods. This methods are mix of ai and stackoverflow
-     * AI_GENERATED
-     * RESPONSE_ID: 0
-     * MODEL: gemini-2.5-pro
-     * PROMPT_LANGUAGE: RU
-     * PROMPT:Caused by: java.lang.IllegalArgumentException: Window type mismatch. Window Context's window type is 2011, while LayoutParams' type is set to 2038. Please create another Window Context via createWindowContext(getDisplay(), 2038, null) to add window with type:2038 как исправить
+     * Rounds the top corners of the whole panel (suggestion strip, keys, emoji picker), the
+     * app showing through the corners; the corner keys follow the same curve. Portrait only:
+     * in landscape most apps pan their window up out of the keyboard's way, leaving nothing
+     * but black behind it, and in fullscreen mode the IME's own extract area is there.
      */
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private void createWindowManager() {
-        if (mWindowManager!=null)return;
-        // Получаем DisplayManager и основной дисплей
-        DisplayManager displayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
-        Display primaryDisplay = displayManager.getDisplay(Display.DEFAULT_DISPLAY);
-
-        // Создаем контекст для отображения на указанном дисплее
-        Context displayContext = createDisplayContext(primaryDisplay);
-
-        // Создаем WindowContext с нужным типом окна (TYPE_APPLICATION_OVERLAY)
-        Context windowContext = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            windowContext = displayContext.createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null);
-            mWindowManager = (WindowManager) windowContext.getSystemService(Context.WINDOW_SERVICE);
+    private void applyTopCorners(View keyboard) {
+        if (mCandidateViewAndKeyboardView == null) return;
+        final float r = isPortrait() && !isFullscreenMode()
+                ? sKeyboardSettings.topCornerRadius * getResources().getDisplayMetrics().density
+                : 0;
+        if (keyboard instanceof LatinKeyboardBaseView) {
+            ((LatinKeyboardBaseView) keyboard).setTopCornerRadius(r);
         }
-        else{
-            mWindowManager = (WindowManager)getSystemService(WINDOW_SERVICE);
+        if (r <= 0) {
+            mCandidateViewAndKeyboardView.setClipToOutline(false);
+            return;
+        }
+        mCandidateViewAndKeyboardView.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(View v, android.graphics.Outline outline) {
+                // Taller than the view so only the top corners are round
+                outline.setRoundRect(0, 0, v.getWidth(), v.getHeight() + Math.round(r), r);
+            }
+        });
+        mCandidateViewAndKeyboardView.setClipToOutline(true);
+    }
+
+    // Autofill (Android 11+): logins, passwords and SMS codes offered by the password
+    // manager, in a row of their own above the keys. It stands in for the suggestion
+    // strip while it has something to show, and shows even with the strip turned off.
+    private LinearLayout mAutofillBar;
+    private LinearLayout mAutofillChips;   // scrolls
+    private LinearLayout mAutofillPinned;  // stays at the end, e.g. the service's own icon
+    private int mAutofillGeneration;       // drops chips still inflating for an old field
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    @Override
+    public InlineSuggestionsRequest onCreateInlineSuggestionsRequest(android.os.Bundle uiExtras) {
+        Resources res = getResources();
+        float d = res.getDisplayMetrics().density;
+        int height = res.getDimensionPixelSize(R.dimen.candidate_strip_height) - Math.round(10 * d);
+        boolean light = isLightTheme();
+        android.graphics.drawable.Icon chip = android.graphics.drawable.Icon.createWithResource(this,
+                light ? R.drawable.autofill_chip_light : R.drawable.autofill_chip_dark);
+        int pad = Math.round(12 * d);
+        InlineSuggestionUi.Style style = InlineSuggestionUi.newStyleBuilder()
+                .setSingleIconChipStyle(new ViewStyle.Builder().setBackground(chip)
+                        .setPadding(pad / 2, 0, pad / 2, 0).build())
+                .setChipStyle(new ViewStyle.Builder().setBackground(chip)
+                        .setPadding(pad, 0, pad, 0).build())
+                .setStartIconStyle(new ImageViewStyle.Builder()
+                        .setLayoutMargin(0, 0, pad / 2, 0).build())
+                .setTitleStyle(new TextViewStyle.Builder()
+                        .setLayoutMargin(0, 0, pad / 3, 0)
+                        .setTextColor(light ? 0xFF1F1F1F : 0xFFE3E3E3).setTextSize(14).build())
+                .setSubtitleStyle(new TextViewStyle.Builder()
+                        .setTextColor(light ? 0xFF5F6368 : 0xFFA8A8A8).setTextSize(12).build())
+                .build();
+        android.widget.inline.InlinePresentationSpec spec =
+                new android.widget.inline.InlinePresentationSpec.Builder(
+                        new android.util.Size(height, height),
+                        new android.util.Size(res.getDisplayMetrics().widthPixels, height))
+                .setStyle(UiVersions.newStylesBuilder().addStyle(style).build())
+                .build();
+        return new InlineSuggestionsRequest.Builder(Collections.singletonList(spec))
+                .setMaxSuggestionCount(6)
+                .build();
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    @Override
+    public boolean onInlineSuggestionsResponse(InlineSuggestionsResponse response) {
+        final List<InlineSuggestion> list = response.getInlineSuggestions();
+        final int generation = ++mAutofillGeneration;
+        if (list.isEmpty()) {
+            hideAutofill();
+            return true;
+        }
+        final android.widget.inline.InlineContentView[] views =
+                new android.widget.inline.InlineContentView[list.size()];
+        final int[] pending = { list.size() };
+        android.util.Size size = new android.util.Size(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        for (int i = 0; i < list.size(); i++) {
+            final int index = i;
+            // The view is null when the service could not render this suggestion
+            list.get(i).inflate(this, size, getMainExecutor(), view -> {
+                views[index] = view;
+                if (--pending[0] == 0 && generation == mAutofillGeneration) {
+                    showAutofill(list, views);
+                }
+            });
+        }
+        return true;
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private void showAutofill(List<InlineSuggestion> list, android.widget.inline.InlineContentView[] views) {
+        LinearLayout container = mCandidateViewAndKeyboardView;
+        if (container == null) return;
+        if (mAutofillBar == null) buildAutofillBar();
+        mAutofillChips.removeAllViews();
+        mAutofillPinned.removeAllViews();
+        int gap = Math.round(3 * getResources().getDisplayMetrics().density);
+        for (int i = 0; i < views.length; i++) {
+            if (views[i] == null) continue;
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.gravity = Gravity.CENTER_VERTICAL;
+            lp.setMargins(gap, 0, gap, 0);
+            (list.get(i).getInfo().isPinned() ? mAutofillPinned : mAutofillChips).addView(views[i], lp);
+        }
+        if (mAutofillChips.getChildCount() + mAutofillPinned.getChildCount() == 0) {
+            hideAutofill();
+            return;
+        }
+        reattachAutofillBar();
+        mAutofillBar.setVisibility(View.VISIBLE);
+        if (mCandidateViewContainer != null) mCandidateViewContainer.setVisibility(View.GONE);
+    }
+
+    private void hideAutofill() {
+        if (mAutofillBar == null) return;
+        mAutofillChips.removeAllViews();
+        mAutofillPinned.removeAllViews();
+        mAutofillBar.setVisibility(View.GONE);
+        if (mCandidateViewContainer != null) mCandidateViewContainer.setVisibility(View.VISIBLE);
+    }
+
+    private boolean isAutofillShown() {
+        return mAutofillBar != null && mAutofillBar.getVisibility() == View.VISIBLE;
+    }
+
+    private void buildAutofillBar() {
+        mAutofillBar = new LinearLayout(this);
+        mAutofillBar.setOrientation(LinearLayout.HORIZONTAL);
+        mAutofillBar.setGravity(Gravity.CENTER_VERTICAL);
+        mAutofillBar.setVisibility(View.GONE);
+        HorizontalScrollView scroll = new HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        scroll.setFillViewport(true);
+        mAutofillChips = new LinearLayout(this);
+        mAutofillChips.setOrientation(LinearLayout.HORIZONTAL);
+        mAutofillChips.setGravity(Gravity.CENTER_VERTICAL);
+        scroll.addView(mAutofillChips, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        mAutofillBar.addView(scroll, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+        mAutofillPinned = new LinearLayout(this);
+        mAutofillPinned.setOrientation(LinearLayout.HORIZONTAL);
+        mAutofillPinned.setGravity(Gravity.CENTER_VERTICAL);
+        mAutofillBar.addView(mAutofillPinned, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+    }
+
+    /** Puts the autofill row on top of the current panel (it survives a rotation or a theme change). */
+    private void reattachAutofillBar() {
+        LinearLayout container = mCandidateViewAndKeyboardView;
+        if (mAutofillBar == null || container == null) return;
+        if (mAutofillBar.getParent() != container) {
+            if (mAutofillBar.getParent() instanceof ViewGroup) {
+                ((ViewGroup) mAutofillBar.getParent()).removeView(mAutofillBar);
+            }
+            container.addView(mAutofillBar, 0);
+        }
+        mAutofillBar.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                getResources().getDimensionPixelSize(R.dimen.candidate_strip_height)));
+        applyStripBackground(mAutofillBar);
+        LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+        padAutofillBar(keyboard != null ? keyboard.getPaddingLeft() : 0,
+                keyboard != null ? keyboard.getPaddingRight() : 0);
+        if (isAutofillShown() && mCandidateViewContainer != null) {
+            mCandidateViewContainer.setVisibility(View.GONE);
         }
     }
 
-        @RequiresApi(api = Build.VERSION_CODES.O)
-    public void hideFloatingKeyboard() {
-            if(!mFloatingKeyboardShown)return;
-            if(mNormalKeyboardShown)return;
-
-            createWindowManager();
-            mWindowManager.removeView(mFloatingKeyboard);
-            if(mCandidateViewAndKeyboardView==null)onCreateInputView();
-            setInputView(mCandidateViewAndKeyboardView);
-            mFloatingKeyboardShown=false;
+    /**
+     * Keeps the chips out of the camera cutout and inside the rounded top corners: the
+     * chips are surfaces the corner clipping does not reach.
+     */
+    private void padAutofillBar(int left, int right) {
+        if (mAutofillBar == null) return;
+        float d = getResources().getDisplayMetrics().density;
+        float r = isPortrait() && !isFullscreenMode() ? sKeyboardSettings.topCornerRadius * d : 0;
+        float top = 5 * d; // where a chip begins: (strip height - chip height) / 2
+        int corner = r > top ? (int) Math.ceil(r - Math.sqrt(r * r - (r - top) * (r - top))) : 0;
+        int edge = Math.round(4 * d);
+        mAutofillBar.setPadding(Math.max(left, corner) + edge, 0, Math.max(right, corner) + edge, 0);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)//THIS CODE IS BAD, MIX OF AI AND STACKOVERFLOW
-    private void createFloatingKeyboardView() {
-        if(mFloatingKeyboardShown)return;
-        if (mNormalKeyboardShown)return;
-        createWindowManager();
-        // fetch window manager object
+    // ---- One-handed mode (portrait): the keys narrower, against one side ----
 
-        // set layout parameter of window manager
-        mParams = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT, // width
-                WindowManager.LayoutParams.WRAP_CONTENT, // height
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, //
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, // this window won't ever get key input focus
-                PixelFormat.TRANSLUCENT
-        );
+    private int mSideInsetLeft, mSideInsetRight; // camera cutout or side navigation bar
 
-
-        mParams.gravity = Gravity.BOTTOM;
-        if (mKeyboardType==KeyboardType.keyboard)mFloatingKeyboard=mCandidateViewAndKeyboardView;
-        else if (mKeyboardType==KeyboardType.gamepad_zxc_under_v1_0)mFloatingKeyboard=createGamepad();
-        else mFloatingKeyboard=mCandidateViewAndKeyboardView;
-        mWindowManager.addView(mFloatingKeyboard, mParams);
-        mFloatingKeyboardShown=true;
-
+    private boolean isOneHanded() {
+        return !"off".equals(sKeyboardSettings.oneHandMode)
+                && getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
     }
-    private View createZxcButtonsGamepad(){
-        InputConnection ic= getCurrentInputConnection();
-        View.OnTouchListener buttonlistener = new View.OnTouchListener() {
+
+    /** The width the keys are laid out in: the window's, or a part of it in one-handed mode. */
+    int getKeyboardWidth() {
+        int width = getMaxWidth();
+        return isOneHanded() ? Math.round(width * sKeyboardSettings.oneHandWidth / 100f) : width;
+    }
+
+    /** Keeps the keys out of the cutout and, in one-handed mode, leaves the other side empty. */
+    private void applyKeysSidePadding(View keyboard) {
+        int gap = isOneHanded() ? Math.max(0, getMaxWidth() - getKeyboardWidth()) : 0;
+        boolean keysRight = "right".equals(sKeyboardSettings.oneHandMode);
+        keyboard.setPadding(mSideInsetLeft + (keysRight ? gap : 0), keyboard.getPaddingTop(),
+                mSideInsetRight + (keysRight ? 0 : gap), keyboard.getPaddingBottom());
+        if (keyboard instanceof LatinKeyboardView) {
+            ((LatinKeyboardView) keyboard).setOneHandGap(gap, keysRight);
+        }
+    }
+
+    /** Saved like any setting; the settings listener rebuilds the keyboard (after this touch). */
+    private void setOneHandMode(final String mode) {
+        mHandler.post(() -> PreferenceManager.getDefaultSharedPreferences(this).edit()
+                .putString("pref_one_hand_mode", mode).apply());
+    }
+
+    // ---- Space bar swipe moving the cursor ----
+
+    private void moveCursor(boolean left) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return;
+        if (mPredicting) commitTyped(ic, true);
+        sendDownUpKeyEvents(left ? KeyEvent.KEYCODE_DPAD_LEFT : KeyEvent.KEYCODE_DPAD_RIGHT);
+    }
+
+    // ---- Row of the user's own keys and text macros (pref, off by default) ----
+
+    private LinearLayout mMacroRow;
+    private final List<TextView> mMacroCtrlViews = new ArrayList<>();
+    private final List<TextView> mMacroAltViews = new ArrayList<>();
+
+    private static final int MACRO_CTRL = 1;
+    private static final int MACRO_ALT = 2;
+
+    /** One key of the row: a key code, a modifier (alone or with a key), or text to type. */
+    static final class MacroKey {
+        String label;
+        int code;       // key code to send, 0 for none
+        int modifier;   // MACRO_CTRL or MACRO_ALT: toggled alone, or held for the code
+        String text;    // typed as is
+        boolean repeat; // repeats while held: arrows and deleting
+    }
+
+    private static final Pattern MACRO_TOKEN = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"|(\\S+)");
+
+    /**
+     * Parses the row's definition: keys by name (Esc, Tab, Ctrl, Alt, Up, F5...), Ctrl+C or
+     * Alt+F style combinations, single characters, and "quoted text" typed as is.
+     */
+    static List<MacroKey> parseMacroKeys(String spec) {
+        List<MacroKey> keys = new ArrayList<>();
+        if (spec == null) return keys;
+        Matcher m = MACRO_TOKEN.matcher(spec);
+        while (m.find()) {
+            MacroKey k = new MacroKey();
+            if (m.group(1) != null) {
+                k.text = unescapeMacro(m.group(1));
+                if (k.text.isEmpty()) continue;
+                k.label = k.text.replace("\n", "⏎").replace("\t", "⇥").trim();
+                if (k.label.isEmpty()) k.label = "␣";
+                keys.add(k);
+                continue;
+            }
+            String token = m.group(2);
+            String lower = token.toLowerCase(Locale.ROOT);
+            if (lower.length() > 2 && (lower.startsWith("ctrl+") || lower.startsWith("alt+"))) {
+                int plus = lower.indexOf('+');
+                MacroKey inner = namedMacroKey(token.substring(plus + 1));
+                if (inner == null && plus + 2 == token.length()) {
+                    inner = new MacroKey();
+                    inner.code = Character.toLowerCase(token.charAt(plus + 1));
+                    inner.label = String.valueOf(Character.toUpperCase(token.charAt(plus + 1)));
+                }
+                if (inner != null && inner.code != 0 && inner.modifier == 0) {
+                    k.modifier = lower.startsWith("ctrl") ? MACRO_CTRL : MACRO_ALT;
+                    k.code = inner.code;
+                    k.label = (k.modifier == MACRO_CTRL ? "Ctrl+" : "Alt+") + inner.label;
+                    keys.add(k);
+                    continue;
+                }
+            }
+            MacroKey named = namedMacroKey(token);
+            if (named != null) {
+                keys.add(named);
+            } else if (token.codePointCount(0, token.length()) == 1) {
+                k.code = token.codePointAt(0);
+                k.label = token;
+                keys.add(k);
+            } else {
+                k.text = token;
+                k.label = token;
+                keys.add(k);
+            }
+        }
+        return keys;
+    }
+
+    private static MacroKey namedMacroKey(String name) {
+        MacroKey k = new MacroKey();
+        String n = name.toLowerCase(Locale.ROOT);
+        switch (n) {
+        case "esc": k.code = LatinKeyboardView.KEYCODE_ESCAPE; k.label = "Esc"; break;
+        case "tab": k.code = 9; k.label = "Tab"; break;
+        case "enter": k.code = ASCII_ENTER; k.label = "⏎"; break;
+        case "space": k.code = ASCII_SPACE; k.label = "␣"; break;
+        case "bksp": case "backspace":
+            k.code = Keyboard.KEYCODE_DELETE; k.label = "⌫"; k.repeat = true; break;
+        case "del": k.code = LatinKeyboardView.KEYCODE_FORWARD_DEL; k.label = "Del"; k.repeat = true; break;
+        case "ins": k.code = LatinKeyboardView.KEYCODE_INSERT; k.label = "Ins"; break;
+        case "home": k.code = LatinKeyboardView.KEYCODE_HOME; k.label = "Home"; break;
+        case "end": k.code = LatinKeyboardView.KEYCODE_END; k.label = "End"; break;
+        case "pgup": k.code = LatinKeyboardView.KEYCODE_PAGE_UP; k.label = "PgUp"; break;
+        case "pgdn": k.code = LatinKeyboardView.KEYCODE_PAGE_DOWN; k.label = "PgDn"; break;
+        case "up": k.code = LatinKeyboardView.KEYCODE_DPAD_UP; k.label = "↑"; k.repeat = true; break;
+        case "down": k.code = LatinKeyboardView.KEYCODE_DPAD_DOWN; k.label = "↓"; k.repeat = true; break;
+        case "left": k.code = LatinKeyboardView.KEYCODE_DPAD_LEFT; k.label = "←"; k.repeat = true; break;
+        case "right": k.code = LatinKeyboardView.KEYCODE_DPAD_RIGHT; k.label = "→"; k.repeat = true; break;
+        case "ctrl": k.modifier = MACRO_CTRL; k.label = "Ctrl"; break;
+        case "alt": k.modifier = MACRO_ALT; k.label = "Alt"; break;
+        default:
+            if (n.matches("f([1-9]|1[0-2])")) {
+                int f = Integer.parseInt(n.substring(1));
+                k.code = LatinKeyboardView.KEYCODE_FKEY_F1 - (f - 1);
+                k.label = "F" + f;
+                break;
+            }
+            return null;
+        }
+        return k;
+    }
+
+    private static String unescapeMacro(String s) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\\' && i + 1 < s.length()) {
+                char e = s.charAt(++i);
+                out.append(e == 'n' ? '\n' : e == 't' ? '\t' : e);
+            } else {
+                out.append(c);
+            }
+        }
+        return out.toString();
+    }
+
+    private LinearLayout buildMacroRow() {
+        List<MacroKey> keys = parseMacroKeys(sKeyboardSettings.macroKeys);
+        mMacroCtrlViews.clear();
+        mMacroAltViews.clear();
+        if (keys.isEmpty()) return null;
+        LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+        int textColor = keyboard != null ? keyboard.getKeyTextColor() : 0xFFFFFFFF;
+        float d = getResources().getDisplayMetrics().density;
+
+        LinearLayout row = new LinearLayout(this);
+        row.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                getResources().getDimensionPixelSize(R.dimen.candidate_strip_height)));
+        applyStripBackground(row);
+        HorizontalScrollView scroll = new HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        scroll.setFillViewport(true);
+        LinearLayout items = new LinearLayout(this);
+        items.setOrientation(LinearLayout.HORIZONTAL);
+        scroll.addView(items, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        row.addView(scroll, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+
+        for (final MacroKey k : keys) {
+            TextView v = new TextView(this);
+            v.setText(k.label);
+            v.setSingleLine(true);
+            v.setGravity(Gravity.CENTER);
+            v.setTextColor(textColor);
+            v.setTextSize(TypedValue.COMPLEX_UNIT_SP, k.label.length() > 6 ? 14 : 16);
+            v.setMinWidth(Math.round(40 * d));
+            v.setPadding(Math.round(8 * d), 0, Math.round(8 * d), 0);
+            // The content colour marks Ctrl or Alt while on
+            android.graphics.drawable.ColorDrawable lit = new android.graphics.drawable.ColorDrawable(0);
+            v.setTag(lit);
+            v.setBackground(new android.graphics.drawable.RippleDrawable(
+                    android.content.res.ColorStateList.valueOf((textColor & 0x00FFFFFF) | 0x33000000),
+                    lit, new android.graphics.drawable.ColorDrawable(0xFFFFFFFF)));
+            v.setOnTouchListener(macroTouch(k));
+            if (k.modifier != 0 && k.code == 0) {
+                (k.modifier == MACRO_CTRL ? mMacroCtrlViews : mMacroAltViews).add(v);
+            }
+            items.addView(v, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+        }
+        mMacroRow = row;
+        updateMacroModifiers();
+        return row;
+    }
+
+    /**
+     * Arrows and deleting fire on touch and repeat while held; the rest fire on release,
+     * so scrolling a long row types nothing. Feedback comes on touch, like the keys.
+     */
+    private View.OnTouchListener macroTouch(final MacroKey k) {
+        return new View.OnTouchListener() {
+            private final Runnable mRepeat = new Runnable() {
+                public void run() {
+                    onMacroKey(k);
+                    mHandler.postDelayed(this, 50);
+                }
+            };
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                Button b = (Button)v;
-                int keycode=KeyEvent.KEYCODE_UNKNOWN;
-                if (b.getText().equals("z"))keycode=13;
-                if (b.getText().equals("x"))keycode=16;
-                if (b.getText().equals("c"))keycode=17;
-                if (event.getAction()==MotionEvent.ACTION_DOWN)
-                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,keycode));
-                if (event.getAction()==MotionEvent.ACTION_UP)
-                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,keycode));
-                return true;
+                switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    v.setPressed(true);
+                    if (Build.VERSION.SDK_INT >= 21) {
+                        v.getBackground().setHotspot(event.getX(), event.getY());
+                    }
+                    buttonFeedback(k.code);
+                    if (k.repeat) {
+                        onMacroKey(k);
+                        mHandler.postDelayed(mRepeat, 400);
+                    }
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (!k.repeat && v.isPressed()) onMacroKey(k);
+                    v.setPressed(false);
+                    mHandler.removeCallbacks(mRepeat);
+                    return true;
+                default: // cancel: the row scrolled
+                    v.setPressed(false);
+                    mHandler.removeCallbacks(mRepeat);
+                    return true;
+                }
             }
         };
-
-        int buttonSize = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_MM, 10, getResources().getDisplayMetrics());
-        LinearLayout buttons=new LinearLayout(this);
-        buttons.setOrientation(LinearLayout.HORIZONTAL);
-        buttons.setGravity(Gravity.CENTER);
-
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
-                (buttonSize, buttonSize);
-
-        int paddingSize = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_MM, 2, getResources().getDisplayMetrics());
-
-
-        buttonParams.setMargins(paddingSize,paddingSize,paddingSize,paddingSize);
-
-        Button z= new Button(this);
-        Button x= new Button(this);
-        Button c= new Button(this);
-
-        z.setText("z");
-        x.setText("x");
-        c.setText("c");
-
-        z.setOnTouchListener(buttonlistener);
-        x.setOnTouchListener(buttonlistener);
-        c.setOnTouchListener(buttonlistener);
-
-        buttons.addView(z,buttonParams);
-        buttons.addView(x,buttonParams);
-        buttons.addView(c,buttonParams);
-        return buttons;
     }
-    @SuppressLint({"SetTextI18n", "ClickableViewAccessibility"})
-    private View createABCXYZButtonsGamepad(){
-        InputConnection ic= getCurrentInputConnection();
-        View.OnTouchListener buttonlistener = new View.OnTouchListener() {
+
+    private void onMacroKey(MacroKey k) {
+        if (k.text != null) {
+            onText(k.text);
+            return;
+        }
+        if (k.modifier != 0 && k.code == 0) {
+            if (k.modifier == MACRO_CTRL) setModCtrl(!mModCtrl);
+            else setModAlt(!mModAlt);
+            return;
+        }
+        if (k.modifier != 0) {
+            // Held just for this key, unless it was already on
+            boolean wasOn = k.modifier == MACRO_CTRL ? mModCtrl : mModAlt;
+            if (k.modifier == MACRO_CTRL) setModCtrl(true);
+            else setModAlt(true);
+            onKey(k.code, new int[] { k.code }, 0, 0);
+            if (!wasOn) {
+                if (k.modifier == MACRO_CTRL) setModCtrl(false);
+                else setModAlt(false);
+            }
+            return;
+        }
+        onKey(k.code, new int[] { k.code }, 0, 0);
+    }
+
+    /** Ctrl and Alt in the row light up while the modifier is on, like the keys. */
+    private void updateMacroModifiers() {
+        if (mMacroRow == null) return;
+        for (TextView v : mMacroCtrlViews) markMacroModifier(v, mModCtrl);
+        for (TextView v : mMacroAltViews) markMacroModifier(v, mModAlt);
+    }
+
+    private void markMacroModifier(TextView v, boolean on) {
+        int text = v.getCurrentTextColor();
+        ((android.graphics.drawable.ColorDrawable) v.getTag())
+                .setColor(on ? (text & 0x00FFFFFF) | 0x40000000 : 0);
+        v.setTypeface(null, on ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+    }
+
+    /** Lines the row up with the keys (cutout, one-handed side). */
+    private void padMacroRow() {
+        LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+        if (mMacroRow == null || keyboard == null) return;
+        mMacroRow.setPadding(keyboard.getPaddingLeft(), 0, keyboard.getPaddingRight(), 0);
+    }
+
+    private LinearLayout mEmojiPanel;
+
+    /** Shows the emoji picker in place of the keys, same height and theme background. */
+    private void showEmojiPanel() {
+        LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+        LinearLayout container = mCandidateViewAndKeyboardView;
+        if (keyboard == null || container == null || keyboard.getParent() != container) return;
+        if (mEmojiPanel == null || mEmojiPanel.getParent() != container) {
+            if (mEmojiPanel != null && mEmojiPanel.getParent() instanceof ViewGroup) {
+                ((ViewGroup) mEmojiPanel.getParent()).removeView(mEmojiPanel);
+            }
+            mEmojiPanel = buildEmojiPanel(keyboard);
+            container.addView(mEmojiPanel);
+        }
+        mEmojiPanel.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, keyboard.getHeight()));
+        mEmojiPanel.setPadding(keyboard.getPaddingLeft(), 0, keyboard.getPaddingRight(),
+                keyboard.getPaddingBottom());
+        keyboard.setVisibility(View.GONE);
+        if (mMacroRow != null) mMacroRow.setVisibility(View.GONE);
+        mEmojiPanel.setVisibility(View.VISIBLE);
+    }
+
+    private void hideEmojiPanel() {
+        if (mEmojiPanel == null || mEmojiPanel.getVisibility() != View.VISIBLE) return;
+        mEmojiPanel.setVisibility(View.GONE);
+        LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+        if (keyboard != null) keyboard.setVisibility(View.VISIBLE);
+        if (mMacroRow != null) mMacroRow.setVisibility(View.VISIBLE);
+    }
+
+    private LinearLayout buildEmojiPanel(LatinKeyboardView keyboard) {
+        boolean light = isLightTheme();
+        Context ctx = new ContextThemeWrapper(this,
+                light ? R.style.HK_EmojiPanel_Light : R.style.HK_EmojiPanel_Dark);
+        int textColor = light ? 0xFF1F1F1F : 0xFFE3E3E3;
+        float d = getResources().getDisplayMetrics().density;
+
+        LinearLayout panel = new LinearLayout(ctx);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        android.graphics.drawable.Drawable bg = keyboard.getBackground();
+        if (bg != null && bg.getConstantState() != null) {
+            panel.setBackground(bg.getConstantState().newDrawable().mutate());
+        }
+
+        EmojiPickerView picker = new EmojiPickerView(ctx);
+        picker.setOnEmojiPickedListener(item -> {
+            // On the pick, not the touch: a touch may start scrolling the grid
+            buttonFeedback(0);
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null) ic.commitText(item.getEmoji(), 1);
+        });
+        panel.addView(picker, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        android.util.TypedValue ripple = new android.util.TypedValue();
+        ctx.getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true);
+        int pad = (int) (20 * d);
+
+        LinearLayout bar = new LinearLayout(ctx);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        TextView abc = new TextView(ctx);
+        abc.setText(R.string.emoji_back_to_keyboard);
+        abc.setTextColor(textColor);
+        abc.setTextSize(16);
+        abc.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        abc.setGravity(Gravity.CENTER);
+        abc.setPadding(pad, 0, pad, 0);
+        abc.setBackgroundResource(ripple.resourceId);
+        abc.setOnClickListener(v -> hideEmojiPanel());
+        abc.setOnTouchListener(feedbackOnTouch(0));
+        bar.addView(abc, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+        bar.addView(new View(ctx), new LinearLayout.LayoutParams(0, 1, 1f));
+        ImageView delete = new ImageView(ctx);
+        delete.setImageResource(R.drawable.sym_keyboard_delete);
+        delete.setColorFilter(textColor, android.graphics.PorterDuff.Mode.SRC_IN);
+        delete.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        delete.setPadding(pad, (int) (10 * d), pad, (int) (10 * d));
+        delete.setBackgroundResource(ripple.resourceId);
+        delete.setContentDescription("Backspace");
+        // KEYCODE_DEL lets the editor delete a whole emoji (surrogate pairs, ZWJ sequences)
+        delete.setOnClickListener(v -> sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL));
+        delete.setOnTouchListener(feedbackOnTouch(Keyboard.KEYCODE_DELETE));
+        bar.addView(delete, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+        panel.addView(bar, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, (int) (48 * d)));
+        return panel;
+    }
+
+    private ClipboardManager.OnPrimaryClipChangedListener mClipListener;
+    private ClipboardWindow mClipboardWindow;
+
+    /** The floating clipboard history window: opens it, or closes it when it is open. */
+    private void toggleClipboardWindow() {
+        if (mClipboardWindow != null && mClipboardWindow.isShowing()) {
+            mClipboardWindow.dismiss();
+            return;
+        }
+        LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+        if (keyboard == null || keyboard.getWindowToken() == null) return;
+        if (mClipboardWindow == null) mClipboardWindow = new ClipboardWindow(this);
+        View inputArea = mCandidateViewAndKeyboardView != null ? mCandidateViewAndKeyboardView : keyboard;
+        mClipboardWindow.show(keyboard, inputArea, isLightTheme());
+    }
+
+    private void dismissClipboardWindow() {
+        if (mClipboardWindow != null) mClipboardWindow.dismiss();
+    }
+
+    /** Pastes a clipboard history entry at the cursor (after the word being typed). */
+    void pasteFromClipboardHistory(String text) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return;
+        commitTyped(ic, true);
+        ic.commitText(text, 1);
+    }
+
+    void editClipboardEntry(long id) {
+        Intent intent = new Intent(this, ClipboardEditActivity.class)
+                .putExtra(ClipboardEditActivity.EXTRA_ID, id)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
+    /**
+     * Voice input: switch to an enabled voice typing keyboard (e.g. Google voice typing),
+     * which returns here when done. Escape Keyboard itself never records audio.
+     */
+    private void startVoiceInput() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        for (InputMethodInfo imi : imm.getEnabledInputMethodList()) {
+            if (imi.getPackageName().equals(getPackageName())) continue;
+            for (InputMethodSubtype subtype : imm.getEnabledInputMethodSubtypeList(imi, true)) {
+                if (!"voice".equals(subtype.getMode())) continue;
+                if (Build.VERSION.SDK_INT >= 28) {
+                    switchInputMethod(imi.getId(), subtype);
+                } else if (mToken != null) {
+                    imm.setInputMethodAndSubtype(mToken, imi.getId(), subtype);
+                }
+                return;
+            }
+        }
+        Toast.makeText(this, R.string.voice_input_not_found, Toast.LENGTH_LONG).show();
+        try {
+            startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (android.content.ActivityNotFoundException e) {
+            // nothing to open
+        }
+    }
+
+    /**
+     * The keyboard view is recreated when the theme, label scale or settings key
+     * changes. Swap the new view into the window's container, otherwise later
+     * language switches only update a view that is never shown.
+     */
+    void onKeyboardViewRecreated(View keyboard) {
+        LinearLayout container = mCandidateViewAndKeyboardView;
+        if (container == null || keyboard.getParent() == container) return;
+        mInputViewStale = true;
+        for (int i = container.getChildCount() - 1; i >= 0; i--) {
+            if (container.getChildAt(i) instanceof LatinKeyboardBaseView) container.removeViewAt(i);
+        }
+        if (keyboard.getParent() instanceof ViewGroup) {
+            ((ViewGroup) keyboard.getParent()).removeView(keyboard);
+        }
+        keyboard.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        container.addView(keyboard);
+        applyKeysSidePadding(keyboard);
+        setupNavBarInsets(keyboard);
+        applyTopCorners(keyboard);
+        reattachAutofillBar();
+        padMacroRow();
+    }
+
+    /**
+     * Android 15+ draws the IME window edge-to-edge, so the system navigation bar
+     * buttons (back, IME switcher, OEM extras) land on top of the bottom key row.
+     * With "nav_bar_space" on, the keyboard view gets bottom padding (its own theme
+     * background fills it) so the buttons sit below the keys like in Gboard; with
+     * it off, the keyboard keeps the full height and on Android 16+ the IME
+     * navigation bar is hidden so nothing overlaps the keys.
+     */
+    private void setupNavBarInsets(View inputView) {
+        if (Build.VERSION.SDK_INT < 35) return;
+        inputView.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                Button b = (Button)v;
-                int keycode=KeyEvent.KEYCODE_UNKNOWN;
-                if (b.getText().equals("a"))keycode=KeyEvent.KEYCODE_BUTTON_A;
-                else if (b.getText().equals("b"))keycode=KeyEvent.KEYCODE_BUTTON_B;
-                else if (b.getText().equals("c"))keycode=KeyEvent.KEYCODE_BUTTON_C;
-                else if (b.getText().equals("x"))keycode=KeyEvent.KEYCODE_BUTTON_X;
-                else if (b.getText().equals("y"))keycode=KeyEvent.KEYCODE_BUTTON_Y;
-                else if (b.getText().equals("z"))keycode=KeyEvent.KEYCODE_BUTTON_Z;
-                else if (b.getText().equals("select"))keycode=KeyEvent.KEYCODE_BUTTON_SELECT;
-                else if (b.getText().equals("start"))keycode=KeyEvent.KEYCODE_BUTTON_START;
-
-                if (event.getAction()==MotionEvent.ACTION_DOWN)
-                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN,keycode));
-                else if (event.getAction()==MotionEvent.ACTION_UP)
-                    ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,keycode));
-                return true;
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                // Landscape: the camera cutout (or a side navigation bar) gets the theme
+                // background, the keys stay in the safe area as before
+                android.graphics.Insets side = insets.getInsets(
+                        WindowInsets.Type.displayCutout() | WindowInsets.Type.navigationBars());
+                if (mCandidateViewContainer != null) {
+                    mCandidateViewContainer.setPadding(side.left, mCandidateViewContainer.getPaddingTop(),
+                            side.right, mCandidateViewContainer.getPaddingBottom());
+                }
+                padAutofillBar(side.left, side.right);
+                int bottom;
+                if (mNavBarSpace) {
+                    // Ignoring visibility: right after the bar is shown again (setting turned
+                    // back on) it is still reported hidden, and the space would stay 0
+                    int types = WindowInsets.Type.navigationBars() | WindowInsets.Type.captionBar();
+                    bottom = Math.max(insets.getInsets(types).bottom,
+                            insets.getInsetsIgnoringVisibility(types).bottom);
+                } else {
+                    // Our own bar (back, keyboard switch) is hidden, but a navigation bar the
+                    // system still shows, like the gesture handle, must not cover the keys.
+                    // With the system bar hidden this is 0 and the keys reach the bottom edge
+                    bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+                }
+                mSideInsetLeft = side.left;
+                mSideInsetRight = side.right;
+                v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottom);
+                applyKeysSidePadding(v);
+                padMacroRow();
+                return insets;
             }
-        };
-
-        int buttonSize = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_MM, 10, getResources().getDisplayMetrics());
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams
-                (buttonSize, buttonSize);
-        int paddingSize = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_MM, 2, getResources().getDisplayMetrics());
-        buttonParams.setMargins(paddingSize,paddingSize,paddingSize,paddingSize);
-
-
-        int select_start_height = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_MM, 6F, getResources().getDisplayMetrics());
-        int select_start_width = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_MM, 15F, getResources().getDisplayMetrics());
-        LinearLayout.LayoutParams select_start_params = new LinearLayout.LayoutParams
-                (select_start_width, select_start_height);
-        int select_start_paddingSize = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_MM, 1, getResources().getDisplayMetrics());
-        select_start_params.setMargins(select_start_paddingSize,select_start_paddingSize,select_start_paddingSize,select_start_paddingSize);
-
-
-        LinearLayout buttonsDown=new LinearLayout(this);
-        LinearLayout buttonsUp=new LinearLayout(this);
-        LinearLayout select_and_start = new LinearLayout(this);
-
-        buttonsDown.setOrientation(LinearLayout.HORIZONTAL);
-        buttonsDown.setGravity(Gravity.CENTER);
-        buttonsUp.setOrientation(LinearLayout.HORIZONTAL);
-        buttonsUp.setGravity(Gravity.CENTER);
-
-
-
-
-
-        Button a= new Button(this);
-        Button b= new Button(this);
-        Button c= new Button(this);
-        Button x= new Button(this);
-        Button y= new Button(this);
-        Button z= new Button(this);
-        Button select = new Button(this);
-        Button start = new Button(this);
-
-
-        a.setBackgroundColor(0x80808080);
-        b.setBackgroundColor(0x80808080);
-        c.setBackgroundColor(0x80808080);
-        x.setBackgroundColor(0x80808080);
-        y.setBackgroundColor(0x80808080);
-        z.setBackgroundColor(0x80808080);
-        select.setBackgroundColor(0x80808080);
-        start.setBackgroundColor(0x80808080);
-
-        a.setText("a");
-        b.setText("b");
-        c.setText("c");
-        x.setText("x");
-        y.setText("y");
-        z.setText("z");
-        select.setText("select");
-        start.setText("start");
-
-
-
-
-
-        a.setOnTouchListener(buttonlistener);
-        b.setOnTouchListener(buttonlistener);
-        c.setOnTouchListener(buttonlistener);
-        x.setOnTouchListener(buttonlistener);
-        y.setOnTouchListener(buttonlistener);
-        z.setOnTouchListener(buttonlistener);
-        select.setOnTouchListener(buttonlistener);
-        start.setOnTouchListener(buttonlistener);
-
-        buttonsDown.addView(a,buttonParams);
-        buttonsDown.addView(b,buttonParams);
-        buttonsDown.addView(c,buttonParams);
-        buttonsUp.addView(x,buttonParams);
-        buttonsUp.addView(y,buttonParams);
-        buttonsUp.addView(z,buttonParams);
-        select_and_start.addView(select,select_start_params);
-        select_and_start.addView(start,select_start_params);
-
-
-
-
-        FrameLayout frameLayout = new FrameLayout(this);
-        FrameLayout.LayoutParams layoutParams=new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,FrameLayout.LayoutParams.WRAP_CONTENT);
-        layoutParams.gravity = Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL;
-
-
-        LinearLayout abcxyz_Keys = new LinearLayout(this);
-
-        abcxyz_Keys.setOrientation(LinearLayout.VERTICAL);
-        abcxyz_Keys.setGravity(Gravity.CENTER);
-        abcxyz_Keys.addView(buttonsUp);
-        abcxyz_Keys.addView(buttonsDown);
-
-        frameLayout.addView(abcxyz_Keys);
-        frameLayout.addView(select_and_start,layoutParams);
-
-        return frameLayout;
+        });
+        inputView.requestApplyInsets();
     }
-    @SuppressLint("ClickableViewAccessibility")
-    private View createGamepad() {
-        InputConnection ic= getCurrentInputConnection();
-        DPadView dpad = new DPadView(this,DPadView.DEADZONE_CIRCLE,0.1F, getCurrentInputConnection());
 
-
-
-        View buttons = createABCXYZButtonsGamepad();
-        double heightMultiplier;
-
-        if (getResources().getDisplayMetrics().widthPixels>getResources().getDisplayMetrics().heightPixels){
-            heightMultiplier=0.75;
+    /** The suggestion strip follows the Google themes; other themes keep the original dark strip. */
+    private void applyCandidateTheme() {
+        if (mCandidateViewContainer == null || mCandidateView == null) return;
+        applyStripBackground(mCandidateViewContainer);
+        int theme = mKeyboardSwitcher.getThemeLayout();
+        Resources res = getResources();
+        boolean you = theme == R.layout.input_google_you_light || theme == R.layout.input_google_you_dark;
+        if (you || theme == R.layout.input_google_light || theme == R.layout.input_google_dark) {
+            boolean dark = theme == R.layout.input_google_dark || theme == R.layout.input_google_you_dark;
+            int text = res.getColor(you ? (dark ? R.color.google_you_dark_text : R.color.google_you_light_text)
+                    : (dark ? R.color.google_dark_text : R.color.google_light_text));
+            int accent = res.getColor(you ? (dark ? R.color.google_you_dark_accent : R.color.google_you_light_accent)
+                    : (dark ? R.color.google_dark_accent : R.color.google_light_accent));
+            mCandidateView.setThemeColors(text, accent, text, true);
+        } else if (theme == R.layout.input_ios_light || theme == R.layout.input_ios_dark) {
+            boolean dark = theme == R.layout.input_ios_dark;
+            int text = res.getColor(dark ? R.color.ios_dark_text : R.color.ios_light_text);
+            mCandidateView.setThemeColors(text, text, text, true);
+        } else if (theme == R.layout.input_keycap) {
+            int text = res.getColor(R.color.keycap_text);
+            mCandidateView.setThemeColors(text, res.getColor(R.color.keycap_recommended), text, true);
+        } else if (theme == R.layout.input_graphite) {
+            mCandidateView.setThemeColors(res.getColor(R.color.graphite_text),
+                    res.getColor(R.color.graphite_candidate_recommended),
+                    res.getColor(R.color.graphite_candidate_other), true);
+        } else if (mKeyboardSwitcher.getInputView() != null) {
+            // Other themes: the strip continues the keyboard's background and label colour
+            LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+            int text = keyboard.getKeyTextColor();
+            int accent = isLightTheme() ? text : res.getColor(R.color.candidate_recommended);
+            mCandidateView.setThemeColors(text, accent, text, true);
+        } else {
+            mCandidateView.setThemeColors(res.getColor(R.color.candidate_normal),
+                    res.getColor(R.color.candidate_recommended),
+                    res.getColor(R.color.candidate_other), false);
         }
-        else {
-            heightMultiplier=0.25;
-        }
-        LinearLayout linearLayout=new LinearLayout(this);
-        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams gamepadParams = new LinearLayout.LayoutParams
-                (getResources().getDisplayMetrics().widthPixels/2, (int) (getResources().getDisplayMetrics().heightPixels*heightMultiplier),1);
-
-        linearLayout.addView(dpad,gamepadParams);
-        linearLayout.addView(buttons,gamepadParams);
-
-
-
-        return linearLayout;
     }
+
+    /** The background of the suggestion strip, also used by the autofill row. */
+    private void applyStripBackground(View strip) {
+        int theme = mKeyboardSwitcher.getThemeLayout();
+        Resources res = getResources();
+        boolean you = theme == R.layout.input_google_you_light || theme == R.layout.input_google_you_dark;
+        if (you || theme == R.layout.input_google_light || theme == R.layout.input_google_dark) {
+            boolean dark = theme == R.layout.input_google_dark || theme == R.layout.input_google_you_dark;
+            strip.setBackgroundColor(res.getColor(
+                    you ? (dark ? R.color.google_you_dark_bg : R.color.google_you_light_bg)
+                    : (dark ? R.color.google_dark_bg : R.color.google_light_bg)));
+        } else if (theme == R.layout.input_ios_light || theme == R.layout.input_ios_dark) {
+            strip.setBackgroundColor(res.getColor(theme == R.layout.input_ios_dark
+                    ? R.color.ios_dark_bg : R.color.ios_light_bg));
+        } else if (theme == R.layout.input_keycap) {
+            strip.setBackgroundColor(res.getColor(R.color.keycap_bg_top));
+        } else if (theme == R.layout.input_graphite) {
+            strip.setBackgroundResource(R.drawable.candidate_graphite_background);
+        } else if (mKeyboardSwitcher.getInputView() != null) {
+            android.graphics.drawable.Drawable bg = mKeyboardSwitcher.getInputView().getBackground();
+            if (bg != null && bg.getConstantState() != null) {
+                strip.setBackground(bg.getConstantState().newDrawable().mutate());
+            }
+        } else {
+            strip.setBackgroundResource(R.drawable.keyboard_suggest_strip);
+        }
+    }
+
+    private boolean isLightTheme() {
+        int theme = mKeyboardSwitcher.getThemeLayout();
+        return theme == R.layout.input_google_light || theme == R.layout.input_google_you_light
+                || theme == R.layout.input_material_light || theme == R.layout.input_ios_light
+                || theme == R.layout.input_keycap;
+    }
+
+    /**
+     * Android 15+ draws windows edge-to-edge, but the keyboard window still avoided the
+     * camera cutout in landscape, leaving a black strip beside it. Let the window cover
+     * the cutout; setupNavBarInsets() pads the keys out of it.
+     */
+    private void allowWindowUnderCutout() {
+        if (Build.VERSION.SDK_INT < 35 || getWindow() == null || getWindow().getWindow() == null) return;
+        android.view.Window window = getWindow().getWindow();
+        android.view.WindowManager.LayoutParams lp = window.getAttributes();
+        if (lp.layoutInDisplayCutoutMode
+                != android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS) {
+            lp.layoutInDisplayCutoutMode =
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+            window.setAttributes(lp);
+        }
+    }
+
+    private void applyImeNavBarVisibility() {
+        if (Build.VERSION.SDK_INT < 30 || getWindow() == null || getWindow().getWindow() == null) return;
+        android.view.WindowInsetsController controller =
+                getWindow().getWindow().getInsetsController();
+        if (controller == null) return;
+        // Dark system buttons on light keyboard themes, light ones otherwise
+        controller.setSystemBarsAppearance(
+                isLightTheme() ? android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS : 0,
+                android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+        if (Build.VERSION.SDK_INT < 36) return;
+        // In the IME window the IME navigation bar is exposed as the caption bar
+        if (mNavBarSpace) {
+            controller.show(WindowInsets.Type.captionBar());
+        } else {
+            controller.hide(WindowInsets.Type.captionBar());
+        }
+    }
+
+    @Override
+    public void onWindowShown() {
+        super.onWindowShown();
+        applyImeNavBarVisibility();
+        View keyboard = mKeyboardSwitcher.getInputView();
+        if (keyboard != null) keyboard.requestApplyInsets();
+    }
+
     @Override
     public AbstractInputMethodImpl onCreateInputMethodInterface() {
     	return new MyInputMethodImpl();
@@ -1076,6 +1572,8 @@ public class LatinIME extends InputMethodService implements
             mCandidateView.setPadding(0, 0, 0, 0);
             mCandidateView.setService(this);
             //setCandidatesView(mCandidateViewContainer);
+            // The strip is created again each time it shows up
+            applyCandidateTheme();
         }
         return mCandidateViewContainer;
     }
@@ -1100,30 +1598,20 @@ public class LatinIME extends InputMethodService implements
         mDeleteCount = 0;
         mJustAddedAutoSpace = false;
     }
-    public void startFloatingKeyboard(boolean isGamepad){
-        if(mFloatingKeyboardShown)return;
-        if (mNormalKeyboardShown)return;
-        mKeyboardClosingLock=true;
-        if (isGamepad)mKeyboardType=KeyboardType.gamepad_zxc_under_v1_0;
-        else mKeyboardType=KeyboardType.keyboard;
-        onStartInputView(new EditorInfo(),false);
-
-
-    }
     @Override
     public void onStartInputView(EditorInfo attribute, boolean restarting) {
-        if(mFloatingKeyboardShown)return;
         if (mNormalKeyboardShown)return;
+        hideEmojiPanel();
+        if (mInputViewStale) {
+            // Same path as a fresh IME start, which picks up the new theme reliably
+            mInputViewStale = false;
+            setInputView(onCreateInputView());
+        }
 
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mKeyboardClosingLock) {
-            setInputView(new View(this));
-            createFloatingKeyboardView();
-            mFloatingKeyboardShown=true;
-        }
-        else {
-            mNormalKeyboardShown=true;
-        }
+        mNormalKeyboardShown=true;
+        // Fullscreen mode is decided per editor
+        applyTopCorners(mKeyboardSwitcher.getInputView());
         sKeyboardSettings.editorPackageName = attribute.packageName;
         sKeyboardSettings.editorFieldName = attribute.fieldName;
         sKeyboardSettings.editorFieldId = attribute.fieldId;
@@ -1181,8 +1669,7 @@ public class LatinIME extends InputMethodService implements
         mSuggestionForceOff = false;
         mKeyboardModeOverridePortrait = 0;
         mKeyboardModeOverrideLandscape = 0;
-        if (isPortrait())sKeyboardSettings.useExtension = true;
-        else sKeyboardSettings.useExtension = false;
+        sKeyboardSettings.useExtension = isPortrait() && mExtensionRowPortrait;
 
         switch (attribute.inputType & EditorInfo.TYPE_MASK_CLASS) {
         case EditorInfo.TYPE_CLASS_NUMBER:
@@ -1323,8 +1810,6 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInput() {
-        if(mKeyboardClosingLock)return;
-        if(mFloatingKeyboardShown)return;
         super.onFinishInput();
 
         onAutoCompletionStateChanged(false);
@@ -1335,14 +1820,18 @@ public class LatinIME extends InputMethodService implements
             mAutoDictionary.flushPendingWrites();
         if (mUserBigramDictionary != null)
             mUserBigramDictionary.flushPendingWrites();
+        mAutofillGeneration++;
+        hideAutofill();
         mNormalKeyboardShown=false;
     }
 
     @Override
     public void onFinishInputView(boolean finishingInput) {
-        if(mFloatingKeyboardShown)return;
-        if(mKeyboardClosingLock)return;
         super.onFinishInputView(finishingInput);
+        hideEmojiPanel();
+        dismissClipboardWindow();
+        mAutofillGeneration++;
+        hideAutofill();
         // Remove penging messages related to update suggestions
         mHandler.removeMessages(MSG_UPDATE_SUGGESTIONS);
         mHandler.removeMessages(MSG_UPDATE_OLD_SUGGESTIONS);
@@ -1460,6 +1949,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void hideWindow() {
         onAutoCompletionStateChanged(false);
+        dismissClipboardWindow();
 
         if (mOptionsDialog != null && mOptionsDialog.isShowing()) {
             mOptionsDialog.dismiss();
@@ -1508,13 +1998,14 @@ public class LatinIME extends InputMethodService implements
         boolean visible = shown
         && onEvaluateInputViewShown()
         && mKeyboardSwitcher.getInputView() != null
-        && isPredictionOn()
+        && isCandidateStripVisible()
         && (needsInputViewShown
                 ? mKeyboardSwitcher.getInputView().isShown()
                         : true);
         if (visible) {
             if (mCandidateViewContainer == null) {
                 mCandidateViewAndKeyboardView.addView(createCandidatesView(),0);
+                if (isAutofillShown()) mCandidateViewContainer.setVisibility(View.GONE);
                 setNextSuggestions();
             }
         } else {
@@ -1882,13 +2373,6 @@ public class LatinIME extends InputMethodService implements
             || pkg.equalsIgnoreCase("com.pslib.connectbot")
             || pkg.equalsIgnoreCase("sk.vx.connectbot")
         ) && getCurrentInputEditorInfo().inputType == 0); // FIXME
-    }
-    //*//Added by Maxim Pulya
-    //*//In settings used to autofill by tab into "Private DNS" field
-    private boolean isSettings() {
-        String pkg = getEditorPackageName();
-        return pkg.equalsIgnoreCase("com.android.settings"
-        );
     }
 
 
@@ -2288,7 +2772,6 @@ public class LatinIME extends InputMethodService implements
     private void sendTab() {
         InputConnection ic = getCurrentInputConnection();
         boolean tabHackConnectBot = isConnectbot() && mTabHack;
-        boolean tabHackSettings = isSettings() && mTabHack;
 
         // FIXME: tab and ^I don't work in connectbot, hackish workaround
         if (tabHackConnectBot) {
@@ -2304,17 +2787,6 @@ public class LatinIME extends InputMethodService implements
                     KeyEvent.KEYCODE_I));
             ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP,
                     KeyEvent.KEYCODE_I));
-        } else if (tabHackSettings) {
-            mCountTabPresses++;
-            if (mCountTabPresses==2)mCountTabPresses=0; // wrap around
-            switch (mCountTabPresses){
-                case 0:
-                    EditingUtil.SetText(ic,"dns.comss.one");
-                    break;
-                case 1:
-                    EditingUtil.SetText(ic,"dns.nullsproxy.com");
-                    break;
-            }
         } else {
             sendModifiedKeyDownUp(KeyEvent.KEYCODE_TAB);
         }
@@ -2424,10 +2896,25 @@ public class LatinIME extends InputMethodService implements
             toggleLanguage(false, false,false);
             break;
         case LatinKeyboardView.KEYCODE_VOICE:
-            if (mVoiceRecognitionTrigger.isInstalled()) {
-                mVoiceRecognitionTrigger.startVoiceRecognition();
-            }
-            //startListening(false /* was a button press, was not a swipe */);
+            startVoiceInput();
+            break;
+        case LatinKeyboardView.KEYCODE_EMOJI:
+            showEmojiPanel();
+            break;
+        case LatinKeyboardView.KEYCODE_CLIPBOARD:
+            toggleClipboardWindow();
+            break;
+        case LatinKeyboardView.KEYCODE_CURSOR_LEFT:
+        case LatinKeyboardView.KEYCODE_CURSOR_RIGHT:
+            moveCursor(primaryCode == LatinKeyboardView.KEYCODE_CURSOR_LEFT);
+            break;
+        case LatinKeyboardView.KEYCODE_ONE_HAND_SWAP:
+            buttonFeedback(0);
+            setOneHandMode("left".equals(sKeyboardSettings.oneHandMode) ? "right" : "left");
+            break;
+        case LatinKeyboardView.KEYCODE_ONE_HAND_EXIT:
+            buttonFeedback(0);
+            setOneHandMode("off");
             break;
         case 9 /* Tab */:
             if (processMultiKey(primaryCode)) {
@@ -2618,6 +3105,7 @@ public class LatinIME extends InputMethodService implements
         mKeyboardSwitcher.setCtrlIndicator(mModCtrl);
         mKeyboardSwitcher.setAltIndicator(mModAlt);
         mKeyboardSwitcher.setMetaIndicator(mModMeta);
+        updateMacroModifiers();
 
     }
     private void setModCtrl(boolean val) {
@@ -2901,12 +3389,18 @@ public class LatinIME extends InputMethodService implements
         return mPredictionOnForMode && isPredictionWanted();
     }
 
-    private boolean isPredictionWanted() {
+    /** The suggestion strip is wanted: turned on (in landscape only if that is on too). */
+    private boolean isStripWanted() {
         return (mShowSuggestions || mSuggestionForceOn) && !suggestionsDisabled();
     }
 
+    private boolean isPredictionWanted() {
+        // Autocorrect looks the words up even when the strip is hidden
+        return isStripWanted() || (mAutoCorrectEnabled && !mSuggestionForceOff);
+    }
+
     private boolean isCandidateStripVisible() {
-        return isPredictionOn();
+        return isPredictionOn() && isStripWanted();
     }
 
     private void switchToKeyboardView() {
@@ -3274,37 +3768,6 @@ public class LatinIME extends InputMethodService implements
         List<CharSequence> suggestions = null;
         List<CharSequence> suggestions_fullText = null;
         switch (getEditorPackageName()) {
-            case "com.android.settings":
-                suggestions = new ArrayList<CharSequence>();
-                suggestions_fullText = new ArrayList<CharSequence>();
-                if(EditingUtil.textViewIsEmpty(getCurrentInputConnection())) {
-                    suggestions_fullText.add("dns.nullsproxy.com");
-                    suggestions.add("Null`s Proxy");
-
-                    suggestions_fullText.add("dns.comss.one");
-                    suggestions.add("Comss DNS");
-
-                    suggestions_fullText.add("dot.sb");
-                    suggestions.add("dot.sb");
-
-                    suggestions_fullText.add("/del");
-                    suggestions.add("/del");
-
-                }
-                break;
-            case "ai.x.grok":
-            case "com.deepseek.chat": //*// AI
-            case "com.google.android.googlequicksearchbox"://*//Gemini AI is part of google app
-            case "com.openai.chatgpt":
-                suggestions = new ArrayList<CharSequence>();
-                suggestions_fullText = new ArrayList<CharSequence>();
-                if(EditingUtil.textViewIsEmpty(getCurrentInputConnection())) {
-                    suggestions.add("/перевод");
-                    suggestions_fullText.add("System_Role: \"Translator. You must translate text from field 'Text' to language from field 'Language_code'. In output should be only translated text for copying.\"\n" +
-                            "Language_code: \"\"\n" +
-                            "Text: \"\"\n");}
-
-                break;
             case "com.mojang.minecraftpe":
             case "net.kdt.pojavlaunch":
                 suggestions=new ArrayList<CharSequence>();
@@ -3510,7 +3973,7 @@ public class LatinIME extends InputMethodService implements
             mAutoCapActive = mAutoCapPref && mLanguageSwitcher.allowAutoCap();
             mDeadKeysActive = mLanguageSwitcher.allowDeadKeys();
             updateShiftKeyState(getCurrentInputEditorInfo());
-            setCandidatesViewShown(isPredictionOn());
+            setCandidatesViewShown(isCandidateStripVisible());
             p_max_set_indicators();
         }
     }
@@ -3571,11 +4034,15 @@ public class LatinIME extends InputMethodService implements
                     PREF_FORCE_KEYBOARD_ON, res
                             .getBoolean(R.bool.default_force_keyboard_on));
             needReload = true;
-        } else if (PREF_KEYBOARD_NOTIFICATION.equals(key)) {
-            mKeyboardNotification = sharedPreferences.getBoolean(
-                    PREF_KEYBOARD_NOTIFICATION, res
-                            .getBoolean(R.bool.default_keyboard_notification));
-            setNotification(mKeyboardNotification);
+        } else if (PREF_EXTENSION_ROW_PORTRAIT.equals(key)) {
+            // Applied on the next onStartInputView, which picks the keyboard by useExtension
+            mExtensionRowPortrait = sharedPreferences.getBoolean(
+                    PREF_EXTENSION_ROW_PORTRAIT, res.getBoolean(R.bool.default_extension_row_portrait));
+        } else if (PREF_NAV_BAR_SPACE.equals(key)) {
+            mNavBarSpace = sharedPreferences.getBoolean(
+                    PREF_NAV_BAR_SPACE, res.getBoolean(R.bool.default_nav_bar_space));
+            applyImeNavBarVisibility();
+            if (mKeyboardSwitcher.getInputView() != null) mKeyboardSwitcher.getInputView().requestApplyInsets();
         } else if (PREF_SUGGESTIONS_IN_LANDSCAPE.equals(key)) {
             mSuggestionsInLandscape = sharedPreferences.getBoolean(
                     PREF_SUGGESTIONS_IN_LANDSCAPE, res
@@ -3584,7 +4051,7 @@ public class LatinIME extends InputMethodService implements
             // in portrait mode, or if suggestions in landscape enabled.
             mSuggestionForceOff = false;
             mSuggestionForceOn = false;
-            setCandidatesViewShown(isPredictionOn());
+            setCandidatesViewShown(isCandidateStripVisible());
         } else if (PREF_SHOW_SUGGESTIONS.equals(key)) {
             mShowSuggestions = sharedPreferences.getBoolean(
                     PREF_SHOW_SUGGESTIONS, res.getBoolean(R.bool.default_suggestions));
@@ -3652,11 +4119,16 @@ public class LatinIME extends InputMethodService implements
             } else {
                 mSuggestionForceOn = true;
             }
-            setCandidatesViewShown(isPredictionOn());
+            setCandidatesViewShown(isCandidateStripVisible());
         } else if (action.equals("lang_prev")) {
             toggleLanguage(false, false,false);
         } else if (action.equals("lang_next")) {
             toggleLanguage(false, true,false);
+        } else if (action.equals("one_hand_left") || action.equals("one_hand_right")) {
+            // A second swipe the same way brings the full width back
+            if (!isPortrait()) return false;
+            String side = action.equals("one_hand_left") ? "left" : "right";
+            setOneHandMode(side.equals(sKeyboardSettings.oneHandMode) ? "off" : side);
         } else if (action.equals("full_mode")) {
             if (isPortrait()) {
                 mKeyboardModeOverridePortrait = (mKeyboardModeOverridePortrait + 1) % mNumKeyboardModes;
@@ -3890,6 +4362,23 @@ public class LatinIME extends InputMethodService implements
         }
     }
 
+    /**
+     * The vibration and click of a key press for buttons outside the keys (emoji panel,
+     * clipboard window), following the same settings.
+     */
+    void buttonFeedback(int primaryCode) {
+        vibrate();
+        playKeyClick(primaryCode);
+    }
+
+    /** Key-press feedback the moment a button is touched, like the keys give it. */
+    View.OnTouchListener feedbackOnTouch(final int primaryCode) {
+        return (v, event) -> {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) buttonFeedback(primaryCode);
+            return false; // the button still handles the touch (ripple, click)
+        };
+    }
+
     private void vibrate() {
         if (!mVibrateOn) {
             return;
@@ -3935,7 +4424,7 @@ public class LatinIME extends InputMethodService implements
                         : Suggest.CORRECTION_NONE);
         mCorrectionMode = (mBigramSuggestionEnabled && mAutoCorrectOn && mAutoCorrectEnabled) ? Suggest.CORRECTION_FULL_BIGRAM
                 : mCorrectionMode;
-        if (suggestionsDisabled()) {
+        if (mSuggestionForceOff) {
             mAutoCorrectOn = false;
             mCorrectionMode = Suggest.CORRECTION_NONE;
         }
@@ -3957,7 +4446,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     protected void launchSettings(
-            Class<? extends PreferenceActivity> settingsClass) {
+            Class<? extends android.app.Activity> settingsClass) {
         handleClose();
         Intent intent = new Intent();
         intent.setClass(LatinIME.this, settingsClass);
@@ -3995,9 +4484,9 @@ public class LatinIME extends InputMethodService implements
         mEnableVoice = enableVoice;
         mVoiceOnPrimary = voiceOnPrimary;
 
+        // Independent of the strip: autocorrect works with the strip hidden
         mAutoCorrectEnabled = sp.getBoolean(PREF_AUTO_COMPLETE, mResources
-                .getBoolean(R.bool.enable_autocorrect))
-                & mShowSuggestions;
+                .getBoolean(R.bool.enable_autocorrect));
         // mBigramSuggestionEnabled = sp.getBoolean(
         // PREF_BIGRAM_SUGGESTIONS, true) & mShowSuggestions;
         updateCorrectionMode();

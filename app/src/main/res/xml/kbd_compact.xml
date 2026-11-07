@@ -27,8 +27,9 @@
     android:layoutRows="5"
     android:layoutColumns="11"
  >
-    <Row android:extension="true">
-        <Key android:codes="@integer/key_escape" android:keyLabel="Esc" android:isModifier="true" />
+    <Row android:extension="true" android:keyWidth="10.5263158%p">
+        <Key android:codes="@integer/key_escape" android:keyLabel="Esc" android:isModifier="true"
+            android:keyWidth="15.7894737%p" android:keyEdgeFlags="left" />
         <Key android:keyLabel="`" android:shiftLabel="~" />
         <Key android:keyLabel="-" android:shiftLabel="_" />
         <Key android:keyLabel="\\" android:shiftLabel="|" />
@@ -36,19 +37,17 @@
         <Key android:keyLabel="=" android:shiftLabel="+" />        
         <Key android:keyLabel="[" android:shiftLabel="{" />
         <Key android:keyLabel="]" android:shiftLabel="}" />
-	<Key android:codes="@integer/key_home" android:isModifier="true" android:keyLabel="Home" />
-	<Key android:codes="@integer/key_end" android:isModifier="true" android:keyLabel="End" />
-	<Key android:codes="@integer/key_forward_del" android:isModifier="true" android:keyLabel="Del" />
+        <Key android:codes="@integer/key_forward_del" android:isModifier="true" android:keyLabel="Del"
+            android:keyEdgeFlags="right" />
     </Row>
 
-    <Row>
+    <Row android:keyWidth="8.5%p">
         <Key
             android:keyLabel="1"
             android:shiftLabel="!"
             android:keyEdgeFlags="left"
             android:popupKeyboard="@xml/kbd_popup_template"
             android:popupCharacters="`"
-            android:keyWidth="7.09090909%p"
             />
         <Key
             android:keyLabel="2"
@@ -106,7 +105,7 @@
             /> 
         <Key
             android:codes="@integer/key_delete"
-            android:keyWidth="11.09090909%p"
+            android:keyWidth="15%p"
             android:keyIcon="@drawable/sym_keyboard_delete"
             android:iconPreview="@drawable/sym_keyboard_feedback_delete"
             android:isModifier="true"
@@ -301,7 +300,6 @@
         <Key
             android:codes="@integer/key_dpad_left"
             android:isModifier="true"
-            android:isRepeatable="true"            
             android:isCursor="true"
             android:keyWidth="7.49090909%p"
             android:keyLabel="&#x25c1;" />
@@ -323,7 +321,6 @@
             android:codes="@integer/key_dpad_right"
             android:isModifier="true"            
             android:keyLabel="&#x25b7;"
-            android:isRepeatable="true"            
             android:isCursor="true"
             android:keyWidth="7.49090909%p"
             android:keyEdgeFlags="right" />

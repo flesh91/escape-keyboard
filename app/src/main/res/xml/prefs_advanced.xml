@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2008 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+  
+          http://www.apache.org/licenses/LICENSE-2.0
+  
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:hk="http://schemas.android.com/apk/res-auto">
+
+        <SwitchPreferenceCompat
+        android:key="force_keyboard_on"
+        android:title="@string/title_force_keyboard_on"
+        android:persistent="true"
+        android:defaultValue="@bool/default_force_keyboard_on"
+        android:summaryOn="@string/summary_force_keyboard_on_true"
+        android:summaryOff="@string/summary_force_keyboard_on_false"
+        />
+        <SwitchPreferenceCompat
+        android:key="fullscreen_override"
+        android:title="@string/title_fullscreen_override"
+        android:persistent="true"
+        android:defaultValue="@bool/default_fullscreen_override"
+        android:summaryOn="@string/summary_fullscreen_override_true"
+        android:summaryOff="@string/summary_fullscreen_override_false"
+        />
+        <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
+        android:defaultValue="@string/default_render_mode"
+        android:entries="@array/render_mode_entries"
+        android:entryValues="@array/render_mode_values"
+        android:key="pref_render_mode"
+        android:persistent="true"
+        android:title="@string/title_render_mode" />
+        <ListPreference
+        android:key="voice_mode"
+        android:title="@string/voice_input"
+        android:persistent="true"
+        android:entryValues="@array/voice_input_modes_values"
+        android:entries="@array/voice_input_modes"
+        android:defaultValue="@string/voice_mode_symbols"
+        />
+
+</PreferenceScreen>

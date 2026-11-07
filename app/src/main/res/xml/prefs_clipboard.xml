@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Clipboard history settings -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreferenceCompat
+        android:key="clipboard_history"
+        android:title="@string/title_clipboard_history"
+        android:persistent="true"
+        android:defaultValue="true"
+        android:summaryOn="@string/summary_clipboard_history_true"
+        android:summaryOff="@string/summary_clipboard_history_false" />
+    <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
+        android:key="clipboard_history_size"
+        android:title="@string/title_clipboard_history_size"
+        android:persistent="true"
+        android:dependency="clipboard_history"
+        android:defaultValue="20"
+        android:entries="@array/clipboard_history_size_entries"
+        android:entryValues="@array/clipboard_history_size_values" />
+
+</PreferenceScreen>

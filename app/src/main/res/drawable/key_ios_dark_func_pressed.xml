@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cupertino theme: function key, pressed, a rounded key with a thin shadow under it -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="2.5dp" android:insetRight="2.5dp"
+    android:insetTop="4dp" android:insetBottom="3.5dp">
+    <layer-list>
+        <item>
+            <shape android:shape="rectangle">
+                <corners android:radius="5.5dp" />
+                <solid android:color="@color/ios_dark_shadow" />
+            </shape>
+        </item>
+        <item android:bottom="1dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="5.5dp" />
+                <solid android:color="@color/ios_dark_func_pressed" />
+            </shape>
+        </item>
+    </layer-list>
+</inset>

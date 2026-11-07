@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material You (wallpaper) colours for the Google Material You keyboard theme, mapped like Gboard -->
+<resources>
+    <color name="google_you_light_bg">@android:color/system_neutral2_50</color>
+    <color name="google_you_light_letter">@android:color/system_neutral1_10</color>
+    <color name="google_you_light_letter_pressed">@android:color/system_neutral2_100</color>
+    <color name="google_you_light_func">@android:color/system_accent2_100</color>
+    <color name="google_you_light_func_pressed">@android:color/system_accent2_200</color>
+    <color name="google_you_light_on">@android:color/system_accent1_100</color>
+    <color name="google_you_light_lock">@android:color/system_accent1_200</color>
+    <color name="google_you_light_text">@android:color/system_neutral1_900</color>
+    <color name="google_you_light_hint">@android:color/system_neutral2_600</color>
+    <color name="google_you_light_accent">@android:color/system_accent1_600</color>
+    <color name="google_you_dark_bg">@android:color/system_neutral1_900</color>
+    <color name="google_you_dark_letter">@android:color/system_neutral1_800</color>
+    <color name="google_you_dark_letter_pressed">@android:color/system_neutral1_700</color>
+    <color name="google_you_dark_func">@android:color/system_accent2_700</color>
+    <color name="google_you_dark_func_pressed">@android:color/system_accent2_600</color>
+    <color name="google_you_dark_on">@android:color/system_accent1_700</color>
+    <color name="google_you_dark_lock">@android:color/system_accent1_500</color>
+    <color name="google_you_dark_text">@android:color/system_neutral1_50</color>
+    <color name="google_you_dark_hint">@android:color/system_neutral2_300</color>
+    <color name="google_you_dark_accent">@android:color/system_accent1_200</color>
+    <color name="google_you_light_active">@android:color/system_accent1_600</color>
+    <color name="google_you_light_on_active">@android:color/system_accent1_0</color>
+    <color name="google_you_dark_active">@android:color/system_accent1_200</color>
+    <color name="google_you_dark_on_active">@android:color/system_accent1_800</color>
+</resources>

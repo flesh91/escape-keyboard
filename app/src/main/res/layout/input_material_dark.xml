@@ -31,5 +31,7 @@
         latin:keyHintColor="@color/key_hint_letter_color_material_dark"
 
         latin:keyBackground="@drawable/btn_keyboard_key_material_dark"
+
+        latin:keyActiveColor="@android:color/transparent"
         latin:popupLayout="@layout/input_popup_material_dark"
         />

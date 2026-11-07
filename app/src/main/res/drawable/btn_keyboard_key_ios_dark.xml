@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cupertino theme: letter keys and the space bar light, function keys darker;
+     keyActiveColor paints Shift/Ctrl/Alt while they are on -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sticky modifiers (Shift, Ctrl, Alt). -->
+    <item android:state_checkable="true" android:state_pressed="true"
+          android:drawable="@drawable/key_ios_dark_func_pressed" />
+    <item android:state_checkable="true"
+          android:drawable="@drawable/key_ios_dark_func" />
+
+    <!-- The space bar looks like a letter key. -->
+    <item android:state_middle="true" android:state_pressed="true"
+          android:drawable="@drawable/key_ios_dark_letter_pressed" />
+    <item android:state_middle="true"
+          android:drawable="@drawable/key_ios_dark_letter" />
+
+    <!-- Other function keys (Enter, Backspace, Esc, arrows...). -->
+    <item android:state_single="true" android:state_pressed="true"
+          android:drawable="@drawable/key_ios_dark_func_pressed" />
+    <item android:state_single="true"
+          android:drawable="@drawable/key_ios_dark_func" />
+
+    <!-- Empty background keys. -->
+    <item android:state_empty="true" android:state_pressed="true"
+          android:drawable="@drawable/key_ios_dark_letter_pressed" />
+    <item android:state_empty="true"
+          android:drawable="@android:color/transparent" />
+
+    <!-- Letter keys. -->
+    <item android:state_pressed="true"
+          android:drawable="@drawable/key_ios_dark_letter_pressed" />
+    <item android:drawable="@drawable/key_ios_dark_letter" />
+</selector>

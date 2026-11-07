@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vector replacement for the old mdpi/hdpi PNG (sharp on any screen); same canvas, glyph at Material size, centred -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24.00dp" android:height="34.00dp"
+    android:viewportWidth="24.00" android:viewportHeight="34.00">
+    <group android:translateX="0.000" android:translateY="5.000"
+        android:scaleX="1.0000" android:scaleY="1.0000">
+        <path android:fillColor="#FFFFFFFF"
+            android:pathData="M11.59,7.41L15.17,11H1v2h14.17l-3.59,3.59L13,18l6,-6 -6,-6 -1.41,1.41zM20,6v12h2V6h-2z" />
+    </group>
+</vector>

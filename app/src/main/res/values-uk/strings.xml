@@ -18,123 +18,452 @@
 */
  -->
 
-<resources xmlns:android="http://schemas.android.com/apk/res/org.pocketworkstation.pckeyboard"
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- <string name="english_ime_name" msgid="7252517407088836577">"Клавіатура Android"</string> -->
     <!-- <string name="english_ime_settings" msgid="6661589557206947774">"Налашт-ня клавіат. Android"</string> -->
-    <string name="english_ime_input_options" msgid="3909945612939668554">"Парам. введення"</string>
-    <string name="vibrate_on_keypress" msgid="5258079494276955460">"Вібр при натиску клав."</string>
-    <string name="sound_on_keypress" msgid="6093592297198243644">"Звук при натиску клав."</string>
-    <string name="popup_on_keypress" msgid="123894815723512944">"Сплив. при нат.клав."</string>
-    <string name="hit_correction" msgid="4855351009261318389">"Виправ. помилки вводу"</string>
-    <string name="hit_correction_summary" msgid="8761701873008070796">"Увімкн. виправл. помилок вводу"</string>
-    <string name="hit_correction_land" msgid="2567691684825205448">"Помилки альбомного вводу"</string>
-    <string name="hit_correction_land_summary" msgid="4076803842198368328">"Увімкн. виправл. помилок вводу"</string>
+    <string name="english_ime_input_options" msgid="3909945612939668554">Параметри введення</string>
+    <string name="vibrate_on_keypress" msgid="5258079494276955460">Вібрація під час натискання</string>
+    <string name="sound_on_keypress" msgid="6093592297198243644">Звук під час натискання</string>
+    <string name="popup_on_keypress" msgid="123894815723512944">Спливна підказка під час натискання</string>
+    <string name="hit_correction" msgid="4855351009261318389">Виправляти помилки введення</string>
+    <string name="hit_correction_summary" msgid="8761701873008070796">Увімкнути виправлення помилок введення</string>
+    <string name="hit_correction_land" msgid="2567691684825205448">Помилки введення в горизонтальному режимі</string>
+    <string name="hit_correction_land_summary" msgid="4076803842198368328">Увімкнути виправлення помилок введення</string>
     <string name="auto_correction" msgid="7911639788808958255">"Пропозиції слів"</string>
     <string name="auto_correction_summary" msgid="6881047311475758267">"Автоматично виправляти попереднє слово"</string>
     <string name="prediction" msgid="466220283138359837">"Пропозиції слів"</string>
-    <string name="prediction_category" msgid="7027100625580696660">"Налашт-ня пропозицій слів"</string>
-    <string name="prediction_summary" msgid="459788228830873110">"Увімкн. автозаповнення при вводі"</string>
-    <string name="auto_complete_dialog_title" msgid="2172048590607201920">"Автозаповнення"</string>
-    <string name="prediction_landscape" msgid="4874601565593216183">"Збільш. розмір текст. поля"</string>
-    <string name="prediction_landscape_summary" msgid="6736551095997839472">"Сховати пропозиції слів в альбом. режимі"</string>
-    <string name="auto_cap" msgid="1719746674854628252">"Авто викор. вел. літер"</string>
-    <string name="auto_cap_summary" msgid="3260681697600786825">"Поч. писати речення з великої літери"</string>
-    <string name="auto_punctuate" msgid="7276672334264521751">"Авто пунктуація"</string>
+    <string name="prediction_category" msgid="7027100625580696660">Налаштування пропозицій слів</string>
+    <string name="prediction_summary" msgid="459788228830873110">Увімкнути автодоповнення під час набору</string>
+    <string name="auto_complete_dialog_title" msgid="2172048590607201920">Автодоповнення</string>
+    <string name="prediction_landscape" msgid="4874601565593216183">Збільшити текстове поле</string>
+    <string name="prediction_landscape_summary" msgid="6736551095997839472">Приховувати пропозиції слів у горизонтальному режимі</string>
+    <string name="auto_cap" msgid="1719746674854628252">Автоматичні великі літери</string>
+    <string name="auto_cap_summary" msgid="3260681697600786825">Починати речення з великої літери</string>
+    <string name="auto_punctuate" msgid="7276672334264521751">Автоматична пунктуація</string>
     <string name="auto_punctuate_summary" msgid="6589441565817502132"></string>
-    <string name="quick_fixes" msgid="5353213327680897927">"Шв. виправлення"</string>
-    <string name="quick_fixes_summary" msgid="3405028402510332373">"Виправляє поширені помилки"</string>
-    <string name="show_suggestions" msgid="507074425254289133">"Показати пропозиції"</string>
-    <string name="show_suggestions_summary" msgid="1989672863935759654">"Відображати при вводі пропоновані слова"</string>
-    <string name="auto_complete" msgid="1103196318775486023">"Автозаповнення"</string>
-    <string name="auto_complete_summary" msgid="6113149638718274624">"Пробіл і пунктуація автоматично вставляє виділене слово"</string>
-    <string name="prefs_settings_key" msgid="4623341240804046498">"Показ. клав. налашт."</string>
+    <string name="quick_fixes" msgid="5353213327680897927">Швидкі виправлення</string>
+    <string name="quick_fixes_summary" msgid="3405028402510332373">Виправляє типові помилки набору</string>
+    <string name="show_suggestions" msgid="507074425254289133">Показувати пропозиції</string>
+    <string name="show_suggestions_summary" msgid="1989672863935759654">Рядок із пропонованими словами над клавіатурою. Автовиправлення працює і без нього</string>
+    <string name="auto_complete" msgid="1103196318775486023">Автовиправлення</string>
+    <string name="auto_complete_summary" msgid="6113149638718274624">Пробіл і розділові знаки замінюють слово з помилкою на найкращу підказку</string>
+    <string name="prefs_settings_key" msgid="4623341240804046498">Показувати клавішу налаштувань</string>
     <string name="settings_key_mode_auto_name" msgid="2993460277873684680">"Автоматично"</string>
-    <string name="settings_key_mode_always_show_name" msgid="3047567041784760575">"Завжди показ."</string>
-    <string name="settings_key_mode_always_hide_name" msgid="7833948046716923994">"Завжди ховати"</string>
+    <string name="settings_key_mode_always_show_name" msgid="3047567041784760575">Завжди показувати</string>
+    <string name="settings_key_mode_always_hide_name" msgid="7833948046716923994">Завжди приховувати</string>
     <!-- no translation found for settings_key_modes:0 (8549888726962891527) -->
     <!-- no translation found for settings_key_modes:1 (881280041213210923) -->
     <!-- no translation found for settings_key_modes:2 (7317310620171067848) -->
-    <string name="bigram_suggestion" msgid="1323347224043514969">"Двобуквені пропозиції"</string>
-    <string name="bigram_suggestion_summary" msgid="4383845146070101531">"Викор. попер. слово для покращ. пропозиції"</string>
+    <string name="bigram_suggestion" msgid="1323347224043514969">Пропозиції за парами слів</string>
+    <string name="bigram_suggestion_summary" msgid="4383845146070101531">Враховувати попереднє слово для кращих пропозицій</string>
   <string-array name="prediction_modes">
-    <item msgid="4870266572388153286">"Немає"</item>
-    <item msgid="1669461741568287396">"Базовий"</item>
-    <item msgid="4894328801530136615">"Розшир."</item>
+    <item>Немає</item>
+    <item>Базовий</item>
+    <item>Розширений</item>
   </string-array>
     <string name="added_word" msgid="8993883354622484372">"<xliff:g id="WORD">%s</xliff:g> : збережено"</string>
-    <string name="tip_long_press" msgid="6101270866284343344">"Утр. клав. натис., щоб див. нагол. (ø, ö, тощо)"</string>
-    <string name="tip_dismiss" msgid="7585579046862204381">"Натисн. клавішу назад ↶, щоб будь-коли закрити клавіат."</string>
+    <string name="tip_long_press" msgid="6101270866284343344">Утримуйте клавішу, щоб побачити символи з діакритикою (ø, ö тощо)</string>
+    <string name="tip_dismiss" msgid="7585579046862204381">Натисніть «Назад» ↶, щоб будь-коли закрити клавіатуру</string>
     <string name="tip_access_symbols" msgid="6344098517525531652">"Доступ до цифр і символів"</string>
-    <string name="tip_add_to_dictionary" msgid="1487293888469227817">"Натисн. і утримуйте ліве крайнє слово, щоб додати його до словн."</string>
-    <string name="touch_to_continue" msgid="7869803257948414531">"Натис. цю підказку для продовж.»"</string>
-    <string name="touch_to_finish" msgid="7990196086480585789">"Натисн. тут, щоб закрити цю підказку і почати ввод."</string>
-    <string name="tip_to_open_keyboard" msgid="6821200275486950452"><b>"Клавіатура відривається при торканні текстового поля"</b></string>
-    <string name="tip_to_view_accents" msgid="5433158573693308501"><b>"Натис. і утрим. клавішу для перегл. наголосів"\n"(ø, ö, ô, ó тощо)"</b></string>
-    <string name="tip_to_open_symbols" msgid="7345139325622444880"><b>"Перемк. до цифр і символів, натиснувши цю кнопку "</b></string>
-    <string name="tip_to_close_symbols" msgid="5227724217206927185"><b>"Поверніться до літер, знову натиснувши цю клавішу"</b></string>
-    <string name="tip_to_launch_settings" msgid="8402961128983196128"><b>"Натис. і утрим. клавішу, щоб змін. налашт-ння клавіат., такі як автозапов."</b></string>
+    <string name="tip_add_to_dictionary" msgid="1487293888469227817">Натисніть і утримуйте крайнє ліве слово, щоб додати його до словника</string>
+    <string name="touch_to_continue" msgid="7869803257948414531">Торкніться цієї підказки, щоб продовжити »</string>
+    <string name="touch_to_finish" msgid="7990196086480585789">Торкніться тут, щоб закрити підказку й почати набір!</string>
+    <string name="tip_to_open_keyboard" msgid="6821200275486950452">Клавіатура відкривається, коли ви торкаєтеся текстового поля</string>
+    <string name="tip_to_view_accents" msgid="5433158573693308501"><b>Натисніть і утримуйте клавішу, щоб побачити символи з діакритикою\n(ø, ö, ô, ó тощо)</b></string>
+    <string name="tip_to_open_symbols" msgid="7345139325622444880">Перейдіть до цифр і символів, натиснувши цю клавішу</string>
+    <string name="tip_to_close_symbols" msgid="5227724217206927185">Поверніться до літер, натиснувши цю клавішу ще раз</string>
+    <string name="tip_to_launch_settings" msgid="8402961128983196128">Натисніть і утримуйте цю клавішу, щоб змінити налаштування клавіатури, як-от автодоповнення</string>
     <string name="tip_to_start_typing" msgid="7213843601369174313"><b>"Спробуйте!"</b></string>
-    <string name="label_go_key" msgid="1635148082137219148">"Іти"</string>
+    <string name="label_go_key" msgid="1635148082137219148">Перейти</string>
     <string name="label_next_key" msgid="362972844525672568">"Далі"</string>
     <string name="label_done_key" msgid="2441578748772529288">"Готово"</string>
-    <string name="label_send_key" msgid="2815056534433717444">"Надісл."</string>
+    <string name="label_send_key" msgid="2815056534433717444">Надіслати</string>
     <string name="label_symbol_key" msgid="6175820506864489453">"?123"</string>
     <string name="label_phone_key" msgid="4275497665515080551">"123"</string>
     <string name="label_alpha_key" msgid="8864943487292437456">"ABC"</string>
     <string name="label_alt_key" msgid="2846315350346694811">"ALT"</string>
-    <string name="voice_warning_title" msgid="4419354150908395008">"Голос. ввід"</string>
-    <string name="voice_warning_locale_not_supported" msgid="637923019716442333">"Голос. ввід наразі не підтрим. для вашої мови, але можна користуватися англійською."</string>
-    <string name="voice_warning_may_not_understand" msgid="4611518823070986445">"Голос. ввід є експеремент. ф-цією, яка викор. мережеве розпізнавання голосу Google."</string>
-    <string name="voice_warning_how_to_turn_off" msgid="5652369578498701761">"Щоб вимкн. голос ввід, йдіть до налашт-нь клавіатури."</string>
-    <string name="voice_hint_dialog_message" msgid="6892342981545727994">"Щоб викор. голос. ввід, натисніть кнопку мікрофона або пересуньте палець на екранній клавіатурі."</string>
-    <string name="voice_listening" msgid="467518160751321844">"Диктуйте"</string>
-    <string name="voice_working" msgid="6666937792815731889">"Працює"</string>
+    <string name="voice_warning_title" msgid="4419354150908395008">Голосове введення</string>
+    <string name="voice_warning_locale_not_supported" msgid="637923019716442333">Голосове введення поки не підтримує вашу мову, але працює англійською.</string>
+    <string name="voice_warning_may_not_understand" msgid="4611518823070986445">Голосове введення — експериментальна функція, що використовує мережеве розпізнавання мовлення Google.</string>
+    <string name="voice_warning_how_to_turn_off" msgid="5652369578498701761">Щоб вимкнути голосове введення, відкрийте налаштування клавіатури.</string>
+    <string name="voice_hint_dialog_message" msgid="6892342981545727994">Щоб скористатися голосовим введенням, натисніть кнопку мікрофона або проведіть пальцем по екранній клавіатурі.</string>
+    <string name="voice_listening" msgid="467518160751321844">Говоріть</string>
+    <string name="voice_working" msgid="6666937792815731889">Обробка</string>
     <string name="voice_initializing" msgid="661962047129906646"></string>
     <string name="voice_error" msgid="5140896300312186162">"Помилка. Спробуйте ще раз."</string>
-    <string name="voice_network_error" msgid="6649556447401862563">"Неможл. під\'єднатися"</string>
-    <string name="voice_too_much_speech" msgid="5746973620134227376">"Помилка. Забагато продикт."</string>
+    <string name="voice_network_error" msgid="6649556447401862563">Не вдалося під\'єднатися</string>
+    <string name="voice_too_much_speech" msgid="5746973620134227376">Помилка: задовге мовлення.</string>
     <string name="voice_audio_error" msgid="5072707727016414454">"Проблема з аудіо"</string>
     <string name="voice_server_error" msgid="7807129913977261644">"Помилка сервера"</string>
-    <string name="voice_speech_timeout" msgid="8461817525075498795">"Не чути диктув."</string>
+    <string name="voice_speech_timeout" msgid="8461817525075498795">Мовлення не почуто</string>
     <string name="voice_no_match" msgid="4285117547030179174">"Збігів не знайдено"</string>
-    <string name="voice_not_installed" msgid="5552450909753842415">"Голос. пошук не встановлено"</string>
-    <string name="voice_swipe_hint" msgid="6943546180310682021"><b>"Підк:"</b>" горт. на клавіат., щоб продикт."</string>
-    <string name="voice_punctuation_hint" msgid="1611389463237317754"><b>"Підказка:"</b>" наступного разу продикт. знаки пункт. такі як \"крапка\", \"кома\" чи \"знак пит\"."</string>
+    <string name="voice_not_installed" msgid="5552450909753842415">Голосовий пошук не встановлено</string>
+    <string name="voice_swipe_hint" msgid="6943546180310682021"><b>Підказка:</b> проведіть пальцем по клавіатурі, щоб говорити</string>
+    <string name="voice_punctuation_hint" msgid="1611389463237317754"><b>Підказка:</b> наступного разу спробуйте вимовляти розділові знаки, як-от \"крапка\", \"кома\" чи \"знак питання\".</string>
     <string name="cancel" msgid="6830980399865683324">"Скасувати"</string>
     <string name="ok" msgid="7898366843681727667">"OK"</string>
-    <string name="voice_input" msgid="2466640768843347841">"Голос. ввід"</string>
+    <string name="voice_input" msgid="2466640768843347841">Голосове введення</string>
   <string-array name="voice_input_modes">
-    <item msgid="1349082139076086774">"На осн. клавіатурі"</item>
-    <item msgid="8529385602829095903">"Символьна клавіатура"</item>
-    <item msgid="7283103513488381103">"Вимк."</item>
+    <item>На основній клавіатурі</item>
+    <item>На клавіатурі символів</item>
+    <item>Вимкнено</item>
   </string-array>
   <string-array name="voice_input_modes_summary">
-    <item msgid="554248625705084903">"Miкр. на осн. клавіатурі"</item>
-    <item msgid="6907837061058876770">"Miкр. на символ. клавіатурі"</item>
-    <item msgid="3664304608587798036">"Голос. ввід вимкнуто"</item>
+    <item>Мікрофон на основній клавіатурі</item>
+    <item>Мікрофон на клавіатурі символів</item>
+    <item>Голосове введення вимкнено</item>
   </string-array>
-    <string name="auto_submit" msgid="9151008027068358518">"Авто подав. після гол. пош."</string>
-    <string name="auto_submit_summary" msgid="4961875269610384226">"Автомат. натиск. enter під час пошуку або переходу до наступного поля."</string>
-    <string name="open_the_keyboard" msgid="2215920976029260466"><font size="17"><b>"Відкр. клавіатуру"\n</b></font><font size="3">\n</font>"Натисн. якесь текст. поле."</string>
-    <string name="close_the_keyboard" msgid="6251022259044940103"><font size="17"><b>"Закрити клавіатуру"\n</b></font><font size="3">\n</font>"Натисн. клавішу Назад."</string>
-    <string name="touch_and_hold" msgid="6154166367273010534"><font size="17"><b>"Натис.і утрим. клавішк для отрим. парам."\n</b></font><font size="3">\n</font>"Доступ до пункт. та наголос."</string>
-    <string name="keyboard_settings" msgid="4585753477617374032"><font size="17"><b>"Налашт-ння клавіатури"\n</b></font><font size="3">\n</font>"Натисн. і утрим. клавішу "<b>"?123"</b></string>
+    <string name="auto_submit" msgid="9151008027068358518">Автонадсилання після голосового введення</string>
+    <string name="auto_submit_summary" msgid="4961875269610384226">Автоматично натискати Enter під час пошуку або переходу до наступного поля.</string>
+    <string name="open_the_keyboard" msgid="2215920976029260466"><font size="17"><b>Відкрити клавіатуру\n</b></font><font size="3">\n</font>Торкніться будь-якого текстового поля.</string>
+    <string name="close_the_keyboard" msgid="6251022259044940103"><font size="17"><b>Закрити клавіатуру\n</b></font><font size="3">\n</font>Натисніть клавішу «Назад».</string>
+    <string name="touch_and_hold" msgid="6154166367273010534"><font size="17"><b>Утримуйте клавішу для додаткових варіантів\n</b></font><font size="3">\n</font>Розділові знаки та символи з діакритикою.</string>
+    <string name="keyboard_settings" msgid="4585753477617374032"><font size="17"><b>Налаштування клавіатури\n</b></font><font size="3">\n</font>Натисніть і утримуйте клавішу <b>\?123</b></string>
     <string name="popular_domain_0" msgid="3745279225122472969">".com"</string>
     <string name="popular_domain_1" msgid="1370572248164278467">".net"</string>
     <string name="popular_domain_2" msgid="3036812463748402878">".org"</string>
     <string name="popular_domain_3" msgid="8718639560809452028">".gov"</string>
     <string name="popular_domain_4" msgid="35359437471311470">".edu"</string>
     <string name="selectInputMethod" msgid="315076553378705821">"Вибрати метод введення"</string>
-    <string name="language_selection_title" msgid="1651299598555326750">"Мови вводу"</string>
-    <string name="language_selection_summary" msgid="187110938289512256">"Переміст. палець на пробіл, щоб змін. мову"</string>
-    <string name="hint_add_to_dictionary" msgid="9006292060636342317">"← Торкн. ще, щоб збер."</string>
+    <string name="language_selection_title" msgid="1651299598555326750">Мови введення</string>
+    <string name="language_selection_summary" msgid="187110938289512256">Проведіть пальцем по пробілу, щоб змінити мову</string>
+    <string name="hint_add_to_dictionary" msgid="9006292060636342317">← Торкніться ще раз, щоб зберегти</string>
     <string name="has_dictionary" msgid="6071847973466625007">"Словник доступний"</string>
-    <string name="prefs_enable_log" msgid="6620424505072963557">"Увімк. відгуки корист."</string>
-    <string name="prefs_description_log" msgid="5827825607258246003">"Допоможіть покращ. редактор методу введ., автомат. надсилаючи в Google статистику використ. та звіти про збої."</string>
-    <string name="prefs_enable_recorrection" msgid="4588408906649533582">"Торкн., щоб виправ. слова"</string>
-    <string name="prefs_enable_recorrection_summary" msgid="1056068922330206170">"Торкн. введених слів, щоб виправити їх"</string>
+    <string name="prefs_enable_log" msgid="6620424505072963557">Надсилати відгуки</string>
+    <string name="prefs_description_log" msgid="5827825607258246003">Допоможіть покращити цей метод введення, автоматично надсилаючи в Google статистику використання та звіти про збої.</string>
+    <string name="prefs_enable_recorrection" msgid="4588408906649533582">Виправлення слів дотиком</string>
+    <string name="prefs_enable_recorrection_summary" msgid="1056068922330206170">Торкніться введеного слова, щоб виправити його</string>
     <string name="keyboard_layout" msgid="437433231038683666">"Тема клавіатури"</string>
     <string name="subtype_mode_keyboard" msgid="2242090416595003881">"клавіатура"</string>
-    <string name="subtype_mode_voice" msgid="4394113125441627771">"голос."</string>
+    <string name="subtype_mode_voice" msgid="4394113125441627771">голос</string>
+    <!-- Escape Keyboard settings: strings that had no Ukrainian translation -->
+    <string name="english_ime_name">Escape Keyboard</string>
+    <string name="english_ime_settings">Налаштування Escape Keyboard</string>
+    <string name="title_keyboard_view_settings">Вигляд клавіатури</string>
+    <string name="title_keyboard_height_portrait">Висота клавіатури, вертикально</string>
+    <string name="title_keyboard_height_landscape">Висота клавіатури, горизонтально</string>
+    <string name="title_key_layout_options">Параметри розкладки клавіш</string>
+    <string name="title_key_behavior_settings">Поведінка клавіш</string>
+    <string name="title_long_press_alternate_keys">Альтернативні символи (довге натискання)</string>
+    <string name="title_suggested_punctuation">Пропоновані розділові знаки</string>
+    <string name="title_input_mode_settings">Режими введення</string>
+    <string name="title_debugging">Налагодження</string>
+    <string name="title_input_connection_details">Відомості про з\'єднання введення</string>
+    <string name="title_version">Версія</string>
+    <string name="title_swipe_gestures">Жести проведення (експериментально)</string>
+    <string name="title_hardware_key_actions">Дії апаратних клавіш</string>
+
+    <string name="pref_screen_feedback_title">Звук і вібрація</string>
+    <string name="pref_screen_feedback_title_summary">Звук клацання, вібрація, спливна підказка</string>
+    <string name="pref_screen_view_title">Тема та підписи</string>
+    <string name="pref_screen_view_title_summary">Тема оформлення та відображення підписів клавіш</string>
+
+    <string name="title_keyboard_mode_portrait">Режим клавіатури, вертикально</string>
+    <string name="title_keyboard_mode_landscape">Режим клавіатури, горизонтально</string>
+    <string-array name="keyboard_mode_entries">
+        <item>4 ряди (Gingerbread)</item>
+        <item>5 рядів, компактна</item>
+        <item>5 рядів, повна</item>
+    </string-array>
+
+    <string name="title_ctrl_a_override">Перевизначення Ctrl-A (виділити все)</string>
+    <string name="toast_ctrl_a_override_info">Ctrl-A вимкнено. Використовуйте Ctrl-Alt-A або увімкніть його в налаштуваннях.</string>
+    <string-array name="ctrl_a_override_entries">
+        <item>Вимкнути Ctrl-A, використовувати Ctrl-Alt-A</item>
+        <item>Повністю вимкнути Ctrl-A</item>
+        <item>Використовувати Ctrl-A (без перевизначення)</item>
+    </string-array>
+
+    <string name="title_chording_ctrl_key">Код клавіші Ctrl</string>
+    <string-array name="chording_ctrl_key_entries">
+        <item>Немає (ігнорується, якщо не змінює інші клавіші)</item>
+        <item>Лівий Ctrl</item>
+        <item>Правий Ctrl</item>
+    </string-array>
+    <string name="title_chording_alt_key">Код клавіші Alt</string>
+    <string-array name="chording_alt_key_entries">
+        <item>Немає (ігнорується, якщо не змінює інші клавіші)</item>
+        <item>Лівий Alt</item>
+        <item>Правий Alt</item>
+    </string-array>
+    <string name="title_chording_meta_key">Код клавіші Meta</string>
+    <string-array name="chording_meta_key_entries">
+        <item>Немає (ігнорується, якщо не змінює інші клавіші)</item>
+        <item>Лівий Meta</item>
+        <item>Правий Meta</item>
+    </string-array>
+
+    <string name="title_suggestions_in_landscape">Підказки в горизонтальному режимі</string>
+    <string name="summary_suggestions_in_landscape_true">Як у вертикальному режимі</string>
+    <string name="summary_suggestions_in_landscape_false">Приховувати підказки в горизонтальному режимі</string>
+    <string name="title_fullscreen_override">Повноекранний редактор у горизонтальному режимі</string>
+    <string name="summary_fullscreen_override_true">Вимкнено, звичайний вигляд</string>
+    <string name="summary_fullscreen_override_false">Увімкнено на малих пристроях</string>
+    <string name="title_force_keyboard_on">Показувати екранну клавіатуру</string>
+    <string name="summary_force_keyboard_on_true">Завжди</string>
+    <string name="summary_force_keyboard_on_false">Коли немає апаратної клавіатури</string>
+    <string name="title_keyboard_notification">Постійне сповіщення</string>
+    <string name="summary_keyboard_notification_true">Відкривати клавіатуру натисканням на сповіщення</string>
+    <string name="summary_keyboard_notification_false">Без сповіщення</string>
+    <string name="title_application_category">Налаштування для окремих застосунків</string>
+    <string name="title_connectbot_tab_hack">Режим клавіші Tab для ConnectBot</string>
+    <string name="summary_connectbot_tab_hack_true">Увімкнути обхід для сумісності</string>
+    <string name="summary_connectbot_tab_hack_false">Надсилати звичайну подію Tab</string>
+    <string name="title_caps_lock">Подвійне натискання Shift</string>
+    <string name="summary_caps_lock_true">Caps Lock (q1 => Q1)</string>
+    <string name="summary_caps_lock_false">Shift Lock (q1 => Q!)</string>
+    <string name="title_shift_lock_modifiers">Застосовувати Shift Lock до клавіш-модифікаторів?</string>
+    <string name="summary_shift_lock_modifiers_true">Так, зокрема до стрілок</string>
+    <string name="summary_shift_lock_modifiers_false">Ні, лише до звичайних клавіш</string>
+
+    <string name="title_hint_mode">Підписи альтернативних символів</string>
+    <string-array name="hint_modes">
+        <item>Приховати підписи</item>
+        <item>Показувати розділові знаки ASCII</item>
+        <item>Показувати всі підписи</item>
+    </string-array>
+
+    <string name="title_touch_pos">Налагодження позиції дотику</string>
+    <string name="summary_touch_pos_true">Показувати місце дотику на екрані</string>
+    <string name="summary_touch_pos_false">Вимкнено</string>
+
+    <string name="title_slide_keys">Клавіші під час ковзання</string>
+    <string-array name="slide_keys_entries">
+        <item>Ігнорувати клавіші під час ковзання (рекомендовано)</item>
+        <item>Надсилати першу торкнуту клавішу</item>
+        <item>Надсилати останню торкнуту клавішу</item>
+        <item>Надсилати першу та останню клавішу</item>
+        <item>Надсилати всі клавіші, торкнуті під час ковзання</item>
+    </string-array>
+
+    <string name="percent">відсотків</string>
+    <string name="title_top_row_scale">Висота 5-го ряду</string>
+    <string name="title_label_scale">Масштаб підписів клавіш</string>
+    <string name="title_top_corner_radius">Заокруглення верхніх кутів</string>
+    <string name="title_candidate_scale">Розмір тексту пропозицій</string>
+    <string name="title_vibrate_len">Тривалість вібрації</string>
+    <string name="title_click_volume">Гучність клацання клавіш</string>
+    <string name="title_click_method">Спосіб керування гучністю клацання</string>
+    <string-array name="click_method_entries">
+        <item>Системне значення (ігнорувати гучність клацання)</item>
+        <item>Фіксована гучність клацання</item>
+        <item>Як гучність медіа</item>
+        <item>Обернено до гучності медіа</item>
+    </string-array>
+    <string name="title_long_press_duration">Тривалість довгого натискання</string>
+    <string name="title_render_mode">Спосіб відмальовування</string>
+    <string name="render_mode_unavailable">(не змінюється на цьому пристрої)</string>
+    <string-array name="render_mode_entries">
+        <item>Пряме малювання (економить пам\'ять)</item>
+        <item>Програмна буферизація (за замовчуванням)</item>
+        <item>Апаратне прискорення (експериментально)</item>
+    </string-array>
+
+    <string name="pref_screen_actions_title">Жести</string>
+    <string name="pref_screen_actions_title_summary">Проведення по клавіатурі, клавіші гучності</string>
+    <string name="title_swipe_up">Проведення вгору</string>
+    <string name="title_swipe_down">Проведення вниз</string>
+    <string name="title_swipe_left">Проведення ліворуч</string>
+    <string name="title_swipe_right">Проведення праворуч</string>
+    <string name="title_vol_up">Гучність вгору</string>
+    <string name="title_vol_down">Гучність вниз</string>
+    <string-array name="swipe_action_entries">
+        <item>(без дії)</item>
+        <item>Закрити клавіатуру</item>
+        <item>Показати/сховати додатковий ряд</item>
+        <item>Відкрити налаштування</item>
+        <item>Показати/сховати підказки</item>
+        <item>Голосове введення</item>
+        <item>Змінити розкладку клавіатури</item>
+        <item>Збільшити висоту</item>
+        <item>Зменшити висоту</item>
+        <item>Попередня мова</item>
+        <item>Наступна мова</item>
+        <item>Одна рука: клавіші ліворуч</item>
+        <item>Одна рука: клавіші праворуч</item>
+    </string-array>
+
+    <string name="title_popup_content">Вміст спливної міні-клавіатури</string>
+    <string-array name="popup_content_entries">
+        <item>Без спливних клавіатур</item>
+        <item>Без спливних, з автоповтором</item>
+        <item>Лише унікальні: 3 ⇒ ³, e ⇒ é</item>
+        <item>Додати символ із Shift: 3 ⇒ #³, e ⇒ é</item>
+        <item>Додати великі: 3 ⇒ #³, e ⇒ Eé</item>
+        <item>Додати саму клавішу: 3 ⇒ 3#³, e ⇒ eEé</item>
+    </string-array>
+
+    <string name="voice_not_enabled_warning">Голосове введення недоступне в цій версії.</string>
+    <string name="recorrect_warning">До відома: повторне виправлення працює некоректно на пристроях до Gingerbread, бо ОС його не підтримує.</string>
+    <string name="no_market_warning">Не вдалося відкрити Play Маркет.</string>
+
+    <string name="main_setup_configure_imes">Увімкнути клавіатуру</string>
+    <string name="main_setup_set_ime">Вибрати метод введення</string>
+    <string name="main_setup_get_dicts">Більше</string>
+    <string name="main_setup_input_lang">Мови введення</string>
+    <string name="main_setup_settings">Налаштування</string>
+    <string name="main_setup_test">Тест</string>
+    <string name="main_body"><Data>
+      <![CDATA["
+        <h2>Як увімкнути Escape Keyboard</h2>
+
+        <p><i>Escape Keyboard</i> додає новий метод введення Android. За замовчуванням він <b>вимкнений</b>, а з міркувань безпеки Android не дозволяє програмам змінювати налаштування методів введення. Щоб активувати клавіатуру, виконайте такі кроки.<p>
+
+        <h3>Додайте клавіатуру до списку методів введення системи:</h3>
+        <blockquote>
+          <p>&#8226; Відкрийте системні налаштування введення кнопкою <b>Увімкнути клавіатуру</b> вище.</p>
+          <p>&#8226; Знайдіть <i>Escape Keyboard</i> у списку методів введення та увімкніть перемикач.</p>
+          <p>&#8226; Підтвердьте попередження системи. Система завжди показує його, коли вмикається сторонній метод введення.</p>
+          <p>&#8226; Натисніть <i>Назад</i>, щоб повернутися на цю сторінку.</p>
+        </blockquote>
+
+        <h3>Виберіть активний метод введення:</h3>
+        <blockquote>
+          <p>&#8226; Натисніть кнопку <b>Вибрати метод введення</b> вище.</p>
+          <p>&#8226; Виберіть <i>Escape Keyboard</i> у списку.</p>
+        </blockquote>
+
+        <h3>Додатково: виберіть мови введення:</h3>
+        <blockquote>
+          <p>&#8226; Натисніть кнопку <b>Мови введення</b> вище, щоб вибрати потрібні розкладки. Це <b>обов\'язково</b>, якщо ви хочете користуватися мовою чи розкладкою, відмінною від мови системи.</p>
+          <p>&#8226; Натисніть <i>Назад</i>, щоб повернутися на цю сторінку.</p>
+          <p>&#8226; Під час набору проведіть пальцем по пробілу горизонтально, щоб перемкнути розкладку.
+        </blockquote>
+      "]]>
+    </Data></string>
+    <string name="text_test">Тест</string>
+
+    <string name="notification_channel_description">Сповіщення для швидкого відкриття клавіатури</string>
+    <string name="notification_action_settings">Налаштування</string>
+    <string name="notification_action_gamepad">Геймпад</string>
+    <string name="notification_ticker">Сповіщення клавіатури увімкнено.</string>
+    <string name="notification_title">Показати Escape Keyboard</string>
+    <string name="notification_body">Натисніть, щоб відкрити клавіатуру. Вимикається в налаштуваннях.</string>
+    <string name="title_nav_bar_category">Системна панель навігації</string>
+    <string name="title_nav_bar_space">Відступ для системних кнопок</string>
+    <string name="summary_nav_bar_space_true">Клавіатура розташована над системними кнопками навігації</string>
+    <string name="summary_nav_bar_space_false">Кнопки клавіатури під нею приховано (Android 16+). Місце лишається лише під системну панель навігації, коли вона показана</string>
+    <string name="title_extension_row_portrait">Верхній додатковий ряд, вертикально</string>
+    <string name="summary_extension_row_portrait_true">Показано: Esc, Home, End, Del у компактній розкладці, F1–F12 у повній</string>
+    <string name="summary_extension_row_portrait_false">Приховано (жест проведення вгору може показати його до закриття клавіатури)</string>
+    <string name="layout_google_system">Google (за темою системи)</string>
+    <string name="layout_google_light">Google світла</string>
+    <string name="layout_google_dark">Google темна</string>
+    <string name="main_tagline">Повноцінна клавіатура як на ПК: Esc, Ctrl, Alt, Tab, стрілки та F-клавіші.</string>
+    <string name="main_section_setup">Початок роботи</string>
+    <string name="main_step_enable_title">Увімкніть клавіатуру</string>
+    <string name="main_step_enable_summary">Увімкніть Escape Keyboard у системних налаштуваннях введення</string>
+    <string name="main_step_enable_done">Увімкнено</string>
+    <string name="main_step_select_title">Виберіть її методом введення</string>
+    <string name="main_step_select_summary">Зробіть Escape Keyboard активною клавіатурою</string>
+    <string name="main_step_select_done">Активна клавіатура</string>
+    <string name="main_step_languages_summary">Виберіть розкладки, між якими перемикатися свайпом по пробілу</string>
+    <string name="main_section_try">Спробуйте</string>
+    <string name="main_try_hint">Надрукуйте щось тут</string>
+    <string name="main_section_help">Довідка</string>
+    <string name="main_version">Версія %s</string>
+    <string name="title_licenses">Ліцензії відкритого коду</string>
+    <string name="summary_licenses">Авторство й ліцензії коду, на якому побудовано застосунок</string>
+    <string name="title_about">Про застосунок</string>
+    <string name="layout_google_you">Google (кольори шпалер)</string>
+    <string name="layout_ios_system">Cupertino (за темою системи)</string>
+    <string name="title_debug_hide">Сховати налагодження</string>
+    <string name="summary_debug_hide">Показати знову: 5 разів натисніть «Версія»</string>
+    <string name="debug_shown">Пункти налагодження показано</string>
+    <string name="debug_already_shown">Пункти налагодження вже показано</string>
+    <string name="debug_hidden">Налагодження приховано</string>
+    <plurals name="debug_taps_left">
+        <item quantity="one">Ще %d натискання, щоб показати налагодження</item>
+        <item quantity="few">Ще %d натискання, щоб показати налагодження</item>
+        <item quantity="many">Ще %d натискань, щоб показати налагодження</item>
+        <item quantity="other">Ще %d натискання, щоб показати налагодження</item>
+    </plurals>
+    <string name="title_space_left_key">Клавіша ліворуч від пробілу</string>
+    <string-array name="space_left_key_entries">
+        <item>Tab</item>
+        <item>Емодзі</item>
+        <item>Голосове введення</item>
+        <item>Буфер обміну</item>
+    </string-array>
+    <string name="emoji_back_to_keyboard">АБВ</string>
+    <string name="voice_input_not_found">Голосове введення не знайдено. Увімкніть службу голосового введення (наприклад, «Голосове введення Google») у системних налаштуваннях клавіатур.</string>
+    <string name="screen_layout">Розкладка</string>
+    <string name="screen_layout_summary">Режим, висота, додатковий ряд, клавіші</string>
+    <string name="screen_appearance">Тема і вигляд</string>
+    <string name="screen_appearance_summary">Тема, розмір підписів, підказки на клавішах</string>
+    <string name="screen_typing">Набір тексту</string>
+    <string name="screen_typing_summary">Великі літери, Shift, довге натискання</string>
+    <string name="screen_correction">Виправлення тексту</string>
+    <string name="screen_correction_summary">Пропозиції слів, автодоповнення, виправлення</string>
+    <string name="screen_terminal">Термінал і клавіші ПК</string>
+    <string name="screen_terminal_summary">Коди Ctrl, Alt, Meta, Ctrl-A, ConnectBot</string>
+    <string name="screen_advanced">Додатково</string>
+    <string name="screen_advanced_summary">Повноекранний редактор, спосіб відмальовування, клавіша голосу</string>
+    <string name="cat_mode">Режим</string>
+    <string name="cat_size">Розмір</string>
+    <string name="cat_keys">Клавіші</string>
+    <string name="cat_capitals">Великі літери</string>
+    <string name="cat_long_press">Довге натискання</string>
+    <string name="cat_sliding">Ковзання</string>
+    <string name="cat_vibration">Вібрація</string>
+    <string name="cat_sound">Звук</string>
+    <string name="cat_on_press">Під час натискання</string>
+    <string name="cat_modifiers">Клавіші-модифікатори</string>
+    <string name="cat_apps">Застосунки</string>
+    <string name="title_settings_key">Клавіша налаштувань</string>
+    <string name="summary_settings_key_true">Шестерня на клавіатурі</string>
+    <string name="summary_settings_key_false">Замість неї емодзі. Налаштування — довгим натисканням коми, Tab або емодзі</string>
+    <string name="screen_clipboard">Буфер обміну</string>
+    <string name="screen_clipboard_summary">Історія скопійованого, закріплені записи</string>
+    <string name="title_clipboard_history">Зберігати історію буфера обміну</string>
+    <string name="summary_clipboard_history_true">Скопійований текст зберігається лише на цьому пристрої, паролі — ні. Закріплені записи лишаються, доки ви їх не видалите</string>
+    <string name="summary_clipboard_history_false">Скопійований текст не зберігається</string>
+    <string name="title_clipboard_history_size">Розмір історії (без закріплених)</string>
+    <string name="clipboard_title">Буфер обміну</string>
+    <string name="clipboard_clear">Очистити</string>
+    <string name="clipboard_close">Закрити</string>
+    <string name="clipboard_empty">Тут з\'являтиметься скопійований текст. Торкніться запису, щоб вставити його, проведіть убік, щоб видалити, утримуйте, щоб закріпити чи змінити</string>
+    <string name="clipboard_off">Історію буфера обміну вимкнено. Увімкніть її в Налаштуваннях, розділ «Буфер обміну»</string>
+    <string name="clipboard_pin">Закріпити</string>
+    <string name="clipboard_unpin">Відкріпити</string>
+    <string name="clipboard_edit">Редагувати</string>
+    <string name="clipboard_delete">Видалити</string>
+    <string name="clipboard_edit_title">Редагувати запис</string>
+    <string name="clipboard_save">Зберегти</string>
+    <string name="clipboard_cancel">Скасувати</string>
+    <string-array name="clipboard_history_size_entries">
+        <item>10 записів</item>
+        <item>15 записів</item>
+        <item>20 записів</item>
+        <item>25 записів</item>
+        <item>30 записів</item>
+        <item>40 записів</item>
+        <item>50 записів</item>
+        <item>100 записів</item>
+        <item>200 записів</item>
+    </string-array>
+    <string name="clipboard_deleted">Запис видалено</string>
+    <string name="clipboard_undo">Повернути</string>
+
+    <string name="title_space_swipe">Свайп по пробілу</string>
+    <string-array name="space_swipe_entries">
+        <item>Перемикає мову</item>
+        <item>Рухає курсор</item>
+    </string-array>
+    <string name="cat_one_hand">Режим для однієї руки</string>
+    <string name="title_one_hand_mode">Режим для однієї руки</string>
+    <string name="summary_one_hand_mode">У вертикальній орієнтації. Кнопки на вільному боці переносять клавіші або повертають повну ширину</string>
+    <string-array name="one_hand_mode_entries">
+        <item>Вимкнено</item>
+        <item>Клавіші ліворуч</item>
+        <item>Клавіші праворуч</item>
+    </string-array>
+    <string name="title_one_hand_width">Ширина клавіатури</string>
+    <string name="cat_macro_row">Свій ряд клавіш</string>
+    <string name="title_macro_row">Показувати свій ряд клавіш</string>
+    <string name="summary_macro_row_true">Над клавішами</string>
+    <string name="summary_macro_row_false">Вимкнено</string>
+    <string name="title_macro_keys">Клавіші ряду</string>
+    <string name="message_macro_keys">Клавіші через пробіл.\n\nНазви: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбінації: Ctrl+C, Alt+F.\nБудь-який окремий символ: | ~ /\nТекст у лапках вводиться як є: \"sudo \", \"| grep \", \"\\n\" — новий рядок.</string>
 </resources>

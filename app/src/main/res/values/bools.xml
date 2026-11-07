@@ -19,7 +19,7 @@
 -->
 <resources>
     <!-- Whether or not auto-correction should be enabled by default -->
-    <bool name="enable_autocorrect">false</bool>
+    <bool name="enable_autocorrect">true</bool>
     <bool name="default_auto_cap">true</bool>
     <bool name="default_quick_fixes">true</bool>
     <bool name="default_suggestions">true</bool>
@@ -38,6 +38,8 @@
     <bool name="default_fullscreen_override">false</bool>
     <bool name="default_force_keyboard_on">false</bool>
     <bool name="default_keyboard_notification">false</bool>
+    <bool name="default_nav_bar_space">true</bool>
+    <bool name="default_extension_row_portrait">true</bool>
     <bool name="default_add_shift_to_popup">false</bool>
     <bool name="default_caps_lock">true</bool>
     <bool name="default_shift_lock_modifiers">true</bool>

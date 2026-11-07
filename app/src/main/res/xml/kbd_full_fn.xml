@@ -71,7 +71,7 @@
             android:keyWidth="10.7142855%p"
             android:isModifier="true"
             android:isRepeatable="true"            
-            android:keyLabel="Home" />
+            android:keyLabel="&#x21F1;" />
         <Key
             android:codes="@integer/key_delete"
             android:keyIcon="@drawable/sym_keyboard_delete"
@@ -127,7 +127,7 @@
             android:codes="@integer/key_end"
             android:keyWidth="10.7142855%p"
             android:isModifier="true"            
-            android:keyLabel="End"
+            android:keyLabel="&#x21F2;"
             android:isRepeatable="true" />
 
         <Key

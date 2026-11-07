@@ -193,11 +193,11 @@
         <Key
             android:codes="@integer/key_home"
             android:keyWidth="12%p"
-            android:keyLabel="Home"
+            android:keyLabel="&#x21F1;"
             android:isModifier="true" />
          <Key
             android:codes="@integer/key_end"
-            android:keyLabel="End"
+            android:keyLabel="&#x21F2;"
             android:keyWidth="13%p"
             android:keyEdgeFlags="right"
             android:isModifier="true" />

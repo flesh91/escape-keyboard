@@ -25,9 +25,9 @@
     </string-array>
 
     <!-- Title for Latin keyboard  -->
-    <string name="english_ime_name">Hacker\'s Keyboard</string>
+    <string name="english_ime_name">Escape Keyboard</string>
     <!-- Title for Latin keyboard settings activity / dialog -->
-    <string name="english_ime_settings">Settings for Hacker\'s Keyboard</string>
+    <string name="english_ime_settings">Settings for Escape Keyboard</string>
     <!-- Title for Latin keyboard input options dialog -->
     <string name="english_ime_input_options">Input options</string>
 
@@ -105,12 +105,12 @@
     <!-- Option to enable showing suggestions -->
     <string name="show_suggestions">Show suggestions</string>
     <!-- Description for show suggestions -->
-    <string name="show_suggestions_summary">Display suggested words while typing</string>
+    <string name="show_suggestions_summary">Row of suggested words above the keyboard; auto-correction works without it too</string>
     
     <!-- Option to enable auto completion -->
-    <string name="auto_complete">Auto-complete</string>
+    <string name="auto_complete">Auto-correction</string>
     <!-- Description for auto completion -->
-    <string name="auto_complete_summary">Spacebar and punctuation automatically insert highlighted word</string>
+    <string name="auto_complete_summary">Space and punctuation replace a misspelled word with the best suggestion</string>
     
     <!-- Option to show/hide the settings key -->
     <string name="prefs_settings_key">Show settings key</string>
@@ -343,8 +343,8 @@
     <!-- The summary for the preferences item for enabling to correct suggestions by touching words you have typed -->
     <string name="prefs_enable_recorrection_summary">Touch entered words to correct them</string>
 
-    <string name="pref_screen_feedback_title">Key feedback settings</string>
-    <string name="pref_screen_feedback_title_summary">Configure key sound, vibrate, preview popup etc.</string>
+    <string name="pref_screen_feedback_title">Sound and vibration</string>
+    <string name="pref_screen_feedback_title_summary">Key click sound, vibration, key popup</string>
 
     <string name="pref_screen_view_title">Theme and label settings</string>
     <string name="pref_screen_view_title_summary">Configure theming and label display</string>
@@ -357,22 +357,24 @@
     <string name="layout_stone_normal"  translatable="false">Stone (normal)</string>
     <string name="layout_gingerbread"  translatable="false">Gingerbread</string>
     <string name="layout_ics"  translatable="false">Ice Cream Sandwich (bright hints)</string>
-    <string name="layout_ics_darker"  translatable="false">Ice Cream Sandwich (dark hints)</string>
-    <string name="layout_trans"  translatable="false">Transparent</string>
-    <string name="layout_trans_neon"  translatable="false">Transparent (experimental)</string>
 	<string name="layout_material_black" translatable="false">Material Black</string>
     <string name="layout_material_dark" translatable="false">Material Dark</string>
     <string name="layout_material_light" translatable="false">Material Light</string>
 
     <string-array name="keyboard_layout_modes" translatable="false">
+        <item>@string/layout_google_system</item>
+        <item>@string/layout_google_you</item>
+        <item>@string/layout_google_light</item>
+        <item>@string/layout_google_dark</item>
+        <item>@string/layout_ios_system</item>
+        <item>@string/layout_graphite</item>
+        <item>@string/layout_keycap</item>
         <item>@string/layout_ics</item>
-        <item>@string/layout_ics_darker</item>
 		<item>@string/layout_material_black</item>
         <item>@string/layout_material_dark</item>
         <item>@string/layout_material_light</item>
         <item>@string/layout_gingerbread</item>
         <item>@string/layout_stone_bold</item>
-        <item>@string/layout_trans_neon</item>
     </string-array>
 
     <!--
@@ -382,14 +384,19 @@
     above.
     -->
     <string-array name="keyboard_layout_modes_values" translatable="false">
+        <item>8</item>
+        <item>11</item>
+        <item>9</item>
+        <item>10</item>
+        <item>13</item>
+        <item>12</item>
+        <item>14</item>
         <item>0</item>
-        <item>6</item>
-        <item>5</item>
-        <item>4</item>
         <item>7</item>
+        <item>4</item>
+        <item>5</item>
         <item>1</item>
         <item>2</item>
-        <item>3</item>
     </string-array>
 
     <string name="subtype_mode_keyboard">keyboard</string>
@@ -399,7 +406,7 @@
     <string name="title_keyboard_mode_landscape">Keyboard mode, landscape</string>
     <string-array name="keyboard_mode_entries">
         <item>4-row Gingerbread layout</item>
-        <item>5-row compact layout (US QWERTY only!)</item>
+        <item>5-row compact layout</item>
         <item>Full 5-row layout</item>
     </string-array>
     <string-array name="keyboard_mode_values">
@@ -531,7 +538,8 @@
     <string name="title_top_row_scale">5th row height adjustment</string>
         
     <string name="title_label_scale">Key label scaling</string>
-    <string name="title_candidate_scale">Suggestion label scaling</string>
+    <string name="title_top_corner_radius">Rounded top corners</string>
+    <string name="title_candidate_scale">Suggestion text size</string>
 
     <string name="title_vibrate_len">Vibrate duration</string>
 
@@ -568,8 +576,8 @@
         <item>2</item>
     </string-array>
         
-    <string name="pref_screen_actions_title">Gesture and key actions</string>
-    <string name="pref_screen_actions_title_summary">Configure actions for swipe gestures and hardware keys</string>
+    <string name="pref_screen_actions_title">Gestures</string>
+    <string name="pref_screen_actions_title_summary">Swipes on the keyboard, volume keys</string>
     <string name="title_swipe_up">Swipe up</string>
     <string name="title_swipe_down">Swipe down</string>
     <string name="title_swipe_left">Swipe left</string>
@@ -588,6 +596,8 @@
         <item>Decrease height</item>
         <item>Previous language</item>
 -       <item>Next language</item>
+        <item>One-handed: keys on the left</item>
+        <item>One-handed: keys on the right</item>
         </string-array>
     <string-array name="swipe_action_values">
         <item>none</item>
@@ -601,6 +611,8 @@
         <item>height_down</item>
         <item>lang_prev</item>
 -       <item>lang_next</item>
+        <item>one_hand_left</item>
+        <item>one_hand_right</item>
     </string-array>    
     <string name="default_swipe_up">extension</string>
     <string name="default_swipe_down">close</string>
@@ -643,14 +655,14 @@
     <string name="main_setup_test">Test</string>
     <string name="main_body"><Data>
       <![CDATA["
-        <h2>Enabling Hacker's Keyboard</h2>
+        <h2>Enabling Escape Keyboard</h2>
         
-        <p><i>Hacker's Keyboard</i> provides a new Android input method. It is <b>disabled by default</b>, and for security reasons Android doesn't allow programs to change input method settings. Please follow the following steps to activate it.<p>
+        <p><i>Escape Keyboard</i> provides a new Android input method. It is <b>disabled by default</b>, and for security reasons Android doesn't allow programs to change input method settings. Please follow the following steps to activate it.<p>
         
         <h3>Add the keyboard to the system's input method list:</h3>
         <blockquote>
           <p>&#8226; Open the system input settings configuration by pressing the <b>Enable Keyboard</b> button above.</p>
-          <p>&#8226; Find <i>Hacker's Keyboard</i> in the input method list, tap the checkmark to switch it on.</p>
+          <p>&#8226; Find <i>Escape Keyboard</i> in the input method list, tap the checkmark to switch it on.</p>
           <p>&#8226; Acknowledge the warning shown by the system. The system always shows this message when enabling a third-party input method.</p>
           <p>&#8226; Press the <i>Back</i> button to return to this page.</p>
         </blockquote>
@@ -658,7 +670,7 @@
         <h3>Choose the currently active input method:</h3>
         <blockquote>
           <p>&#8226; Press the <b>Set input method</b> button above.</p>
-          <p>&#8226; Select <i>Hacker's Keyboard</i> from the list.</p>
+          <p>&#8226; Select <i>Escape Keyboard</i> from the list.</p>
         </blockquote>
 
         <h3>Optional: Select input languages:</h3>
@@ -667,21 +679,175 @@
           <p>&#8226; Press the <i>Back</i> button to return to this page.</p>
           <p>&#8226; When typing, slide the space bar horizontally to switch between selected layouts.
         </blockquote>
-
-        <h3>Optional: Install completion dictionary packages:</h3>
-        <blockquote>
-          <p>&#8226; Press the <b>More</b> button above to do a Play Store search for the keyboard's developer name, this will show free downloadable completion dictionary packages.</p>
-        </blockquote>
-        
-        <h2>Additional information</h2>
-        <p>Please refer to the <a href='https://github.com/klausw/hackerskeyboard'>project web page</a> for more information, including the user's guide, issue tracker, and discussion group.</p>
       "]]>
     </Data></string>
     <string name="text_test">Test</string>
     <string name="seek_pref_0">0%</string>
     <string name="seek_pref_val">x%</string>
     <string name="seek_pref_max">100%</string>
-    <string name="notification_channel_name">Hacker\'s Keyboard</string>
-    <string name="notification_channel_description">Hacker\'s Keyboard</string>
+    <string name="notification_channel_name">Escape Keyboard</string>
+    <string name="notification_channel_description">Escape Keyboard</string>
     <string name="notification_action_settings">Settings</string>
+    <string name="notification_action_gamepad">Gamepad</string>
+    <string name="notification_ticker">Keyboard notification enabled.</string>
+    <string name="notification_title">Show Escape Keyboard</string>
+    <string name="notification_body">Select this to open the keyboard. Disable in settings.</string>
+    <string name="title_nav_bar_category">System navigation bar</string>
+    <string name="title_nav_bar_space">Space for system buttons</string>
+    <string name="summary_nav_bar_space_true">The keyboard sits above the system navigation buttons</string>
+    <string name="summary_nav_bar_space_false">The keyboard\'s own buttons below it are hidden (Android 16+). Space stays only for the system navigation bar, when it is shown</string>
+    <string name="title_extension_row_portrait">Top extra row, portrait</string>
+    <string name="summary_extension_row_portrait_true">Shown: Esc, Home, End, Del in the compact layout, F1–F12 in the full one</string>
+    <string name="summary_extension_row_portrait_false">Hidden (the swipe-up gesture can still show it until the keyboard closes)</string>
+    <string name="layout_google_system">Google (follows system theme)</string>
+    <string name="layout_google_light">Google Light</string>
+    <string name="layout_google_dark">Google Dark</string>
+    <string name="main_tagline">A full PC-style keyboard: Esc, Ctrl, Alt, Tab, arrows and F-keys.</string>
+    <string name="main_section_setup">Get started</string>
+    <string name="main_step_enable_title">Enable the keyboard</string>
+    <string name="main_step_enable_summary">Turn on Escape Keyboard in the system input settings</string>
+    <string name="main_step_enable_done">Enabled</string>
+    <string name="main_step_select_title">Select it as input method</string>
+    <string name="main_step_select_summary">Make Escape Keyboard the active keyboard</string>
+    <string name="main_step_select_done">Active keyboard</string>
+    <string name="main_step_languages_summary">Choose layouts to switch between with a swipe on space</string>
+    <string name="main_section_try">Try it</string>
+    <string name="main_try_hint">Type something here</string>
+    <string name="main_section_help">Help</string>
+    <string name="main_version">Version %s</string>
+    <string name="title_licenses">Open-source licenses</string>
+    <string name="summary_licenses">Notices and licenses of the code this app is built on</string>
+    <string name="title_about">About</string>
+    <string name="layout_google_you">Google Material You (wallpaper colours)</string>
+    <string name="title_debug_hide">Hide debugging options</string>
+    <string name="summary_debug_hide">Show them again by tapping Version 5 times</string>
+    <string name="debug_shown">Debugging options are now shown</string>
+    <string name="debug_already_shown">Debugging options are already shown</string>
+    <string name="debug_hidden">Debugging options hidden</string>
+    <plurals name="debug_taps_left">
+        <item quantity="one">%d more tap to show debugging options</item>
+        <item quantity="other">%d more taps to show debugging options</item>
+    </plurals>
+    <string-array name="space_left_key_values" translatable="false">
+        <item>tab</item>
+        <item>emoji</item>
+        <item>voice</item>
+        <item>clipboard</item>
+    </string-array>
+    <string name="title_space_left_key">Key left of the space bar</string>
+    <string-array name="space_left_key_entries">
+        <item>Tab</item>
+        <item>Emoji</item>
+        <item>Voice input</item>
+        <item>Clipboard</item>
+    </string-array>
+    <string name="emoji_back_to_keyboard">ABC</string>
+    <string name="voice_input_not_found">No voice input found. Turn on a voice typing service (for example Google voice typing) in the system keyboard settings.</string>
+    <string name="screen_layout">Layout</string>
+    <string name="screen_layout_summary">Keyboard mode, height, extra row, keys</string>
+    <string name="screen_appearance">Theme and appearance</string>
+    <string name="screen_appearance_summary">Theme, label size, hints on keys</string>
+    <string name="screen_typing">Typing</string>
+    <string name="screen_typing_summary">Capital letters, Shift, long press</string>
+    <string name="screen_correction">Text correction</string>
+    <string name="screen_correction_summary">Word suggestions, auto-completion, corrections</string>
+    <string name="screen_terminal">Terminal and PC keys</string>
+    <string name="screen_terminal_summary">Ctrl, Alt and Meta codes, Ctrl-A, ConnectBot</string>
+    <string name="screen_advanced">Advanced</string>
+    <string name="screen_advanced_summary">Fullscreen editor, drawing method, voice key</string>
+    <string name="cat_mode">Mode</string>
+    <string name="cat_size">Size</string>
+    <string name="cat_keys">Keys</string>
+    <string name="cat_capitals">Capital letters</string>
+    <string name="cat_long_press">Long press</string>
+    <string name="cat_sliding">Sliding</string>
+    <string name="cat_vibration">Vibration</string>
+    <string name="cat_sound">Sound</string>
+    <string name="cat_on_press">On key press</string>
+    <string name="cat_modifiers">Modifier keys</string>
+    <string name="cat_apps">Apps</string>
+    <string name="title_settings_key">Settings key</string>
+    <string name="summary_settings_key_true">Gear key on the keyboard</string>
+    <string name="summary_settings_key_false">Emoji key instead. Settings: long-press the comma, Tab or emoji key</string>
+    <string name="layout_graphite" translatable="false">Graphite</string>
+    <string name="layout_keycap" translatable="false">Keycap</string>
+    <string name="layout_ios_system">Cupertino (follows system theme)</string>
+    <string name="screen_clipboard">Clipboard</string>
+    <string name="screen_clipboard_summary">History of copied text, pinned items</string>
+    <string name="title_clipboard_history">Keep clipboard history</string>
+    <string name="summary_clipboard_history_true">Copied text is kept on this device only, passwords are not. Pinned items stay until you delete them</string>
+    <string name="summary_clipboard_history_false">Copied text is not kept</string>
+    <string name="title_clipboard_history_size">History size (pinned items not counted)</string>
+    <string name="clipboard_title">Clipboard</string>
+    <string name="clipboard_clear">Clear</string>
+    <string name="clipboard_close">Close</string>
+    <string name="clipboard_empty">Copied text appears here. Tap an item to paste it, swipe it aside to delete it, hold it to pin or edit it</string>
+    <string name="clipboard_off">Clipboard history is off. Turn it on in Settings, Clipboard</string>
+    <string name="clipboard_pin">Pin</string>
+    <string name="clipboard_unpin">Unpin</string>
+    <string name="clipboard_edit">Edit</string>
+    <string name="clipboard_delete">Delete</string>
+    <string name="clipboard_edit_title">Edit entry</string>
+    <string name="clipboard_save">Save</string>
+    <string name="clipboard_cancel">Cancel</string>
+    <string-array name="clipboard_history_size_entries">
+        <item>10 items</item>
+        <item>15 items</item>
+        <item>20 items</item>
+        <item>25 items</item>
+        <item>30 items</item>
+        <item>40 items</item>
+        <item>50 items</item>
+        <item>100 items</item>
+        <item>200 items</item>
+    </string-array>
+    <string-array name="clipboard_history_size_values" translatable="false">
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+        <item>30</item>
+        <item>40</item>
+        <item>50</item>
+        <item>100</item>
+        <item>200</item>
+    </string-array>
+    <string name="clipboard_deleted">Entry deleted</string>
+    <string name="clipboard_undo">Undo</string>
+
+    <!-- Space bar swipe -->
+    <string name="title_space_swipe">Swipe along the space bar</string>
+    <string-array name="space_swipe_values" translatable="false">
+        <item>language</item>
+        <item>cursor</item>
+    </string-array>
+    <string-array name="space_swipe_entries">
+        <item>Switches the language</item>
+        <item>Moves the cursor</item>
+    </string-array>
+
+    <!-- One-handed mode -->
+    <string name="cat_one_hand">One-handed mode</string>
+    <string name="title_one_hand_mode">One-handed mode</string>
+    <string name="summary_one_hand_mode">In portrait. Buttons in the empty side move the keys or bring back the full width</string>
+    <string-array name="one_hand_mode_values" translatable="false">
+        <item>off</item>
+        <item>left</item>
+        <item>right</item>
+    </string-array>
+    <string-array name="one_hand_mode_entries">
+        <item>Off</item>
+        <item>Keys on the left</item>
+        <item>Keys on the right</item>
+    </string-array>
+    <string name="title_one_hand_width">Keyboard width</string>
+
+    <!-- Custom key row -->
+    <string name="cat_macro_row">Custom key row</string>
+    <string name="title_macro_row">Show custom key row</string>
+    <string name="summary_macro_row_true">Above the keys</string>
+    <string name="summary_macro_row_false">Off</string>
+    <string name="title_macro_keys">Keys in the row</string>
+    <string name="message_macro_keys">Separate keys with spaces.\n\nNames: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nCombinations: Ctrl+C, Alt+F.\nAny single character: | ~ /\nText in quotes is typed as is: \"sudo \", \"| grep \", \"\\n\" for a new line.</string>
+    <string name="default_macro_keys" translatable="false">Esc Tab Ctrl Alt | ~ / - \"sudo \" \"| grep \"</string>
 </resources>

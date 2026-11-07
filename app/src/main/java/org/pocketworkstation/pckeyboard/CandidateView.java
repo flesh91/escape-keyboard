@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -80,9 +81,9 @@ public class CandidateView extends View {
 
     private static final int X_GAP = 10;
     
-    private final int mColorNormal;
-    private final int mColorRecommended;
-    private final int mColorOther;
+    private int mColorNormal;
+    private int mColorRecommended;
+    private int mColorOther;
     private final Paint mPaint;
     private final int mDescent;
     private boolean mScrolled;
@@ -202,6 +203,20 @@ public class CandidateView extends View {
      * A connection back to the service to communicate with the text field
      * @param listener
      */
+    /** Text colours of the suggestions; the divider is tinted with the normal colour when tint is set. */
+    public void setThemeColors(int normal, int recommended, int other, boolean tintDivider) {
+        mColorNormal = normal;
+        mColorRecommended = recommended;
+        mColorOther = other;
+        mDivider = getResources().getDrawable(R.drawable.keyboard_suggest_strip_divider).mutate();
+        if (tintDivider) {
+            mDivider.setColorFilter(new android.graphics.PorterDuffColorFilter(
+                    normal, android.graphics.PorterDuff.Mode.SRC_IN));
+        }
+        mBgPadding = null; // re-apply divider bounds on next draw
+        invalidate();
+    }
+
     public void setService(LatinIME listener) {
         mService = listener;
     }

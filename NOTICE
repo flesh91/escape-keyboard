@@ -1,0 +1,44 @@
+Escape Keyboard
+Copyright (C) 2026 Yaroslav Bezzubets
+
+This product is a modified version of Hacker's Keyboard by Klaus Weidner
+and contributors, including later changes by Maxim Pulya. Hacker's Keyboard
+is based on the Android Open Source Project keyboard (LatinIME).
+
+Original copyright notices retained in the source code:
+  Copyright (C) 2008-2014 The Android Open Source Project
+  Copyright (C) 2008-2010 Google Inc.
+  Copyright (C) 2011 Darren Salt
+
+Modifications Copyright (C) 2026 Yaroslav Bezzubets: the code and resources
+were changed throughout (new layouts, themes, settings screens, Android 17
+support, built-in dictionaries). Changed source files carry a "Modifications
+Copyright" line in their header.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this product except in compliance with the License. A copy of the
+License is included with this product (LICENSE).
+
+Dictionaries
+  The Ukrainian, Russian and English dictionaries (res/raw-uk, res/raw-ru,
+  res/raw-en: main.dict) are adapted from the word frequency data of wordfreq
+  3.1.1 by Robyn Speer (https://github.com/rspeer/wordfreq) and are licensed
+  under the Creative Commons Attribution-ShareAlike 4.0 International license
+  (https://creativecommons.org/licenses/by-sa/4.0/). Changes: words filtered,
+  some spellings corrected (hyphens, apostrophes), frequencies scaled to the
+  keyboard's dictionary format.
+  The wordfreq data includes data from Wikipedia (CC BY-SA); OpenSubtitles 2018
+  via OPUS (http://opus.nlpl.eu/OpenSubtitles.php), attributed to OpenSubtitles
+  (http://www.opensubtitles.org/); the SUBTLEX word lists by Marc Brysbaert et
+  al. (http://crr.ugent.be/programs-data/subtitle-frequencies), freely available
+  data; Google Books Ngrams (http://books.google.com/ngrams); ParaCrawl
+  (https://paracrawl.eu); the Leeds Internet Corpus (University of Leeds Centre
+  for Translation Studies); and word statistics from the Twitter streaming API.
+
+Third-party components, all under the Apache License, Version 2.0:
+  AndroidX (AppCompat, Core, Preference, RecyclerView, Fragment, Annotation)
+    Copyright The Android Open Source Project
+  Material Components for Android
+    Copyright Google LLC
+  Material Design icons
+    Copyright Google LLC

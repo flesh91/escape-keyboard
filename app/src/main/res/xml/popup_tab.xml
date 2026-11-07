@@ -15,6 +15,9 @@
             android:codes="@integer/key_escape"
             android:keyEdgeFlags="left" />
         <Key
+            android:codes="@integer/key_clipboard"
+            android:keyIcon="@drawable/sym_keyboard_clipboard" />
+        <Key
             android:codes="@integer/key_settings"
             android:keyIcon="@drawable/sym_keyboard_settings"
             android:keyEdgeFlags="right" />

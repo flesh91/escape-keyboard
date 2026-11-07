@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme, rebuilt as shapes from the reference theme's key images: modifier on -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:paddingMode="stack">
+    <!-- content padding of the reference keys: labels and hints sit where they did there -->
+    <item><shape><solid android:color="@android:color/transparent" /><padding android:left="4.25dp" android:top="8.25dp" android:right="4.25dp" android:bottom="8.25dp" /></shape></item>
+    <item android:left="0.4dp" android:top="4.5dp" android:right="0.4dp" android:bottom="3.1dp">
+        <shape android:shape="rectangle"><corners android:radius="3.5dp" /><solid android:color="@color/graphite_shadow_1" /></shape>
+    </item>
+    <item android:left="0.9dp" android:top="4.8dp" android:right="0.9dp" android:bottom="3.8dp">
+        <shape android:shape="rectangle"><corners android:radius="3dp" /><solid android:color="@color/graphite_shadow_2" /></shape>
+    </item>
+    <item android:left="1.4dp" android:top="5.0dp" android:right="1.4dp" android:bottom="4.6dp">
+        <shape android:shape="rectangle"><corners android:radius="2.5dp" /><solid android:color="@color/graphite_shadow_3" /></shape>
+    </item>
+    <item android:left="1.9dp" android:top="5.2dp" android:right="1.9dp" android:bottom="5.0dp">
+        <shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_shadow_4" /></shape>
+    </item>
+    <item android:left="1.9dp" android:top="5.2dp" android:right="1.9dp" android:bottom="5.6dp">
+        <shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_on_edge" /></shape>
+    </item>
+    <item android:left="1.9dp" android:top="5.2dp" android:right="1.9dp" android:bottom="5.9dp">
+        <shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_on_rim" /></shape>
+    </item>
+    <item android:left="1.9dp" android:top="6.2dp" android:right="1.9dp" android:bottom="5.9dp">
+        <shape android:shape="rectangle"><corners android:radius="2dp" /><gradient android:angle="270" android:startColor="@color/graphite_on_top" android:endColor="@color/graphite_on_bottom" /></shape>
+    </item>
+</layer-list>

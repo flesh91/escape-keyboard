@@ -32,7 +32,7 @@ implied.
 
     <string name="key_ae01_main">1</string>
     <string name="key_ae01_shift">!</string>
-    <string name="key_ae01_alt">1!¡¹½⅓¼⅛</string>
+    <string name="key_ae01_alt">1!¹½⅓¼⅛</string>
 
     <string name="key_ae02_main">2</string>
     <string name="key_ae02_shift">\"</string>
@@ -97,7 +97,7 @@ implied.
 
     <string name="key_ad05_main">е</string>
     <string name="key_ad05_shift">Е</string>
-    <string name="key_ad05_alt">ё</string>
+    <string name="key_ad05_alt">є</string>
 
     <string name="key_ad06_main">н</string>
     <string name="key_ad06_shift">Н</string>
@@ -125,7 +125,7 @@ implied.
 
     <string name="key_ad12_main">ї</string>
     <string name="key_ad12_shift">Ї</string>
-    <string name="key_ad12_alt">ъ</string>
+    <string name="key_ad12_alt"></string>
 
     <string name="key_bksl_main">\\</string>
     <string name="key_bksl_shift">/</string>
@@ -138,7 +138,7 @@ implied.
 
     <string name="key_ac02_main">і</string>
     <string name="key_ac02_shift">І</string>
-    <string name="key_ac02_alt">ыї</string>
+    <string name="key_ac02_alt">ї</string>
 
     <string name="key_ac03_main">в</string>
     <string name="key_ac03_shift">В</string>
@@ -174,7 +174,7 @@ implied.
 
     <string name="key_ac11_main">є</string>
     <string name="key_ac11_shift">Є</string>
-    <string name="key_ac11_alt">э</string>
+    <string name="key_ac11_alt"></string>
 
 
     <string name="key_lsgt_main">&lt;</string>

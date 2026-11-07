@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme: the chosen key in the long-press panel, framed like the panel -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:paddingMode="stack">
+    <item android:top="0.5dp"><shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_panel_edge" /></shape></item>
+    <item android:top="0.5dp" android:bottom="2dp"><shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_panel_rim" /></shape></item>
+    <item android:left="0.5dp" android:top="0.75dp" android:right="0.5dp" android:bottom="14dp"><shape android:shape="rectangle"><corners android:radius="2dp" /><gradient android:angle="270" android:startColor="@color/graphite_panel_highlight" android:endColor="@color/graphite_panel_rim" /></shape></item>
+    <item android:left="3.75dp" android:top="4dp" android:right="3.75dp" android:bottom="3.5dp"><shape android:shape="rectangle"><corners android:radius="1dp" /><gradient android:angle="270" android:startColor="@color/graphite_panel_top" android:centerColor="@color/graphite_panel_center" android:endColor="@color/graphite_panel_top" /></shape></item>
+</layer-list>

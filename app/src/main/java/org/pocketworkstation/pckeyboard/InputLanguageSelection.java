@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008-2009 Google Inc.
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -28,17 +29,19 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.content.Context;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceGroup;
-import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 
-public class InputLanguageSelection extends PreferenceActivity {
+import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceGroup;
+import androidx.preference.PreferenceManager;
+import androidx.preference.PreferenceScreen;
+import androidx.preference.SwitchPreferenceCompat;
+
+public class InputLanguageSelection extends SettingsActivity {
     private static final String TAG = "PCKeyboardILS";
-    private ArrayList<Loc> mAvailableLanguages = new ArrayList<Loc>();
     private static final String[] BLACKLIST_LANGUAGES = {
         "ko", "ja", "zh"
     };
@@ -149,11 +152,24 @@ public class InputLanguageSelection extends PreferenceActivity {
     }
 
     @Override
-    protected void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
-        addPreferencesFromResource(R.xml.language_prefs);
+    protected Fragment createFragment() {
+        return new Languages();
+    }
+
+    public static class Languages extends PrefsFragment {
+    private ArrayList<Loc> mAvailableLanguages = new ArrayList<Loc>();
+
+    @Override
+    protected int getPreferencesResId() {
+        return 0;
+    }
+
+    @Override
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        Context context = requireContext();
+        PreferenceScreen screen = getPreferenceManager().createPreferenceScreen(context);
         // Get the settings preferences
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String selectedLanguagePref = sp.getString(LatinIME.PREF_SELECTED_LANGUAGES, "");
         Log.i(TAG, "selected languages: " + selectedLanguagePref);
         String[] languageList = selectedLanguagePref.split(",");
@@ -179,9 +195,11 @@ public class InputLanguageSelection extends PreferenceActivity {
             }
         }
 
-        PreferenceGroup parent = getPreferenceScreen();
+        PreferenceGroup parent = screen;
         for (int i = 0; i < mAvailableLanguages.size(); i++) {
-            CheckBoxPreference pref = new CheckBoxPreference(this);
+            SwitchPreferenceCompat pref = new SwitchPreferenceCompat(context);
+            pref.setPersistent(false); // the whole selection is saved in onPause
+            pref.setIconSpaceReserved(false);
             Locale locale = mAvailableLanguages.get(i).locale;
             pref.setTitle(mAvailableLanguages.get(i).label +
             		" [" + locale.toString() + "]");
@@ -207,10 +225,12 @@ public class InputLanguageSelection extends PreferenceActivity {
             }
             parent.addPreference(pref);
         }
+        setPreferenceScreen(screen);
     }
 
     private boolean hasDictionary(Locale locale) {
         Resources res = getResources();
+        Context context = requireContext();
         Configuration conf = res.getConfiguration();
         Locale saveLocale = conf.locale;
         boolean haveDictionary = false;
@@ -218,14 +238,14 @@ public class InputLanguageSelection extends PreferenceActivity {
         res.updateConfiguration(conf, res.getDisplayMetrics());
 
         int[] dictionaries = LatinIME.getDictionary(res);
-        BinaryDictionary bd = new BinaryDictionary(this, dictionaries, Suggest.DIC_MAIN);
+        BinaryDictionary bd = new BinaryDictionary(context, dictionaries, Suggest.DIC_MAIN);
 
         // Is the dictionary larger than a placeholder? Arbitrarily chose a lower limit of
         // 4000-5000 words, whereas the LARGE_DICTIONARY is about 20000+ words.
         if (bd.getSize() > Suggest.LARGE_DICTIONARY_THRESHOLD / 4) {
             haveDictionary = true;
         } else {
-            BinaryDictionary plug = PluginManager.getDictionary(getApplicationContext(), locale.getLanguage());
+            BinaryDictionary plug = PluginManager.getDictionary(context.getApplicationContext(), locale.getLanguage());
             if (plug != null) {
                 bd.close();
                 bd = plug;
@@ -239,36 +259,32 @@ public class InputLanguageSelection extends PreferenceActivity {
         return haveDictionary;
     }
 
-    private String get5Code(Locale locale) {
+    private static String get5Code(Locale locale) {
         String country = locale.getCountry();
         return locale.getLanguage()
                 + (TextUtils.isEmpty(country) ? "" : "_" + country);
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         // Save the selected languages
         String checkedLanguages = "";
         PreferenceGroup parent = getPreferenceScreen();
         int count = parent.getPreferenceCount();
         for (int i = 0; i < count; i++) {
-            CheckBoxPreference pref = (CheckBoxPreference) parent.getPreference(i);
+            SwitchPreferenceCompat pref = (SwitchPreferenceCompat) parent.getPreference(i);
             if (pref.isChecked()) {
                 Locale locale = mAvailableLanguages.get(i).locale;
                 checkedLanguages += get5Code(locale) + ",";
             }
         }
         if (checkedLanguages.length() < 1) checkedLanguages = null; // Save null
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(requireContext());
         Editor editor = sp.edit();
         editor.putString(LatinIME.PREF_SELECTED_LANGUAGES, checkedLanguages);
         SharedPreferencesCompat.apply(editor);
+    }
     }
 
     private static String asString(Set<String> set) {
@@ -285,7 +301,7 @@ public class InputLanguageSelection extends PreferenceActivity {
     	return out.toString();
     }
     
-    ArrayList<Loc> getUniqueLocales() {
+    static ArrayList<Loc> getUniqueLocales() {
         Set<String> localeSet = new HashSet<String>();
         Set<String> langSet = new HashSet<String>();
         // Ignore the system (asset) locale list, it's inconsistent and incomplete
@@ -378,7 +394,7 @@ public class InputLanguageSelection extends PreferenceActivity {
         return uniqueLocales;
     }
 
-    private boolean arrayContains(String[] array, String value) {
+    private static boolean arrayContains(String[] array, String value) {
         for (int i = 0; i < array.length; i++) {
             if (array[i].equalsIgnoreCase(value)) return true;
         }

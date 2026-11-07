@@ -30,7 +30,7 @@
     
     <string name="key_ae01_main">1</string>
     <string name="key_ae01_shift">!</string>
-    <string name="key_ae01_alt">1!¹¡½⅓¼⅛</string>
+    <string name="key_ae01_alt">1!¹½⅓¼⅛</string>
 
     <string name="key_ae02_main">2</string>
     <string name="key_ae02_shift">\"</string>
@@ -70,7 +70,7 @@
     
     <string name="key_ae11_main">ß</string>
     <string name="key_ae11_shift">\?</string>
-    <string name="key_ae11_alt">ß\?\\¿</string>
+    <string name="key_ae11_alt">ß\?\\</string>
     
     <string name="key_ae12_main">\'</string>
     <string name="key_ae12_shift">`</string>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press panel of the Cupertino theme: a key-coloured card -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="10dp" />
+    <solid android:color="@color/ios_dark_letter" />
+    <stroke android:width="1dp" android:color="@color/ios_dark_shadow" />
+</shape>

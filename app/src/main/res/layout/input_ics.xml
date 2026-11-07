@@ -31,5 +31,7 @@
 
         latin:keyBackground="@drawable/btn_keyboard_key_ics"
         latin:keyTextStyle="bold"
+        latin:keyActiveColor="@android:color/transparent"
+        latin:keyCursorColor="@android:color/white"
         latin:keyHintColor="#FFCCCCCC"
         />

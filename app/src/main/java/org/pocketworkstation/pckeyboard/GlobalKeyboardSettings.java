@@ -39,6 +39,10 @@ public final class GlobalKeyboardSettings {
     //
     // Read by LatinKeyboardView
     public boolean showTouchPos = false;
+    // Key left of the space bar: "tab", "emoji" or "voice"
+    public String spaceLeftKey = "tab";
+    // Gear key on the keyboard; when off, the emoji key takes its place
+    public boolean showSettingsKey = true;
     //
     // Read by LatinIME
     public String suggestedPunctuation = "!?,.";
@@ -56,6 +60,16 @@ public final class GlobalKeyboardSettings {
     //
     // Read by LatinKeyboardBaseView
     public float labelScalePref = 1.0f;
+    // Rounding of the keyboard's top corners in dp, 0 = square
+    public float topCornerRadius = 20f;
+    // Space bar swipe: "language" switches it, "cursor" moves the cursor
+    public boolean spaceSwipeCursor = false;
+    // One-handed mode (portrait): "off", "left" or "right", keys taking oneHandWidth % of the width
+    public String oneHandMode = "off";
+    public float oneHandWidth = 80f;
+    // Row of custom keys and text macros above the keys
+    public boolean macroRow = false;
+    public String macroKeys = "";
     //
     // Read by CandidateView
     public float candidateScalePref = 1.0f;
@@ -139,6 +153,18 @@ public final class GlobalKeyboardSettings {
             public int getFlags() { return FLAG_PREF_NONE; }
         });
 
+        addStringPref("pref_space_left_key", new StringPref() {
+            public void set(String val) { spaceLeftKey = val; }
+            public String getDefault() { return "tab"; }
+            public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; }
+        });
+
+        addBooleanPref("show_settings_key", new BooleanPref() {
+            public void set(boolean val) { showSettingsKey = val; }
+            public boolean getDefault() { return true; }
+            public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; }
+        });
+
         addBooleanPref("pref_touch_pos", new BooleanPref() {
             public void set(boolean val) { showTouchPos = val; }
             public boolean getDefault() { return false; }
@@ -160,6 +186,42 @@ public final class GlobalKeyboardSettings {
         addStringPref("pref_label_scale_v2", new StringPref() {
             public void set(String val) { labelScalePref = Float.valueOf(val); }
             public String getDefault() { return "1.0"; }
+            public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW; }
+        });
+
+        addStringPref("pref_top_corner_radius", new StringPref() {
+            public void set(String val) { topCornerRadius = Float.valueOf(val); }
+            public String getDefault() { return "20"; }
+            public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW; }
+        });
+
+        addStringPref("pref_space_swipe", new StringPref() {
+            public void set(String val) { spaceSwipeCursor = "cursor".equals(val); }
+            public String getDefault() { return "language"; }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addStringPref("pref_one_hand_mode", new StringPref() {
+            public void set(String val) { oneHandMode = val; }
+            public String getDefault() { return "off"; }
+            public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW | FLAG_PREF_RESET_KEYBOARDS; }
+        });
+
+        addStringPref("pref_one_hand_width", new StringPref() {
+            public void set(String val) { oneHandWidth = Float.valueOf(val); }
+            public String getDefault() { return "80"; }
+            public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW | FLAG_PREF_RESET_KEYBOARDS; }
+        });
+
+        addBooleanPref("pref_macro_row", new BooleanPref() {
+            public void set(boolean val) { macroRow = val; }
+            public boolean getDefault() { return false; }
+            public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW; }
+        });
+
+        addStringPref("pref_macro_keys", new StringPref() {
+            public void set(String val) { macroKeys = val; }
+            public String getDefault() { return res.getString(R.string.default_macro_keys); }
             public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW; }
         });
 

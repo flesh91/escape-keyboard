@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme, rebuilt as shapes from the reference theme's key images: modifier locked (sunk in) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:paddingMode="stack">
+    <!-- content padding of the reference keys: labels and hints sit where they did there -->
+    <item><shape><solid android:color="@android:color/transparent" /><padding android:left="4.25dp" android:top="8.25dp" android:right="4.25dp" android:bottom="8.25dp" /></shape></item>
+    <item android:left="1.9dp" android:top="4.5dp" android:right="1.9dp" android:bottom="5.6dp">
+        <shape android:shape="rectangle"><corners android:radius="2.5dp" /><solid android:color="@color/graphite_shadow_top" /></shape>
+    </item>
+    <item android:left="1.9dp" android:top="5.2dp" android:right="1.9dp" android:bottom="4.6dp">
+        <shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_lock_glow" /></shape>
+    </item>
+    <item android:left="1.9dp" android:top="5.2dp" android:right="1.9dp" android:bottom="5.6dp">
+        <shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_lock_inner" /></shape>
+    </item>
+    <item android:left="2.2dp" android:top="5.6dp" android:right="2.2dp" android:bottom="5.6dp">
+        <shape android:shape="rectangle"><corners android:radius="2dp" /><solid android:color="@color/graphite_lock_rim" /></shape>
+    </item>
+    <item android:left="2.6dp" android:top="6.4dp" android:right="2.6dp" android:bottom="5.6dp">
+        <shape android:shape="rectangle"><corners android:radius="1.5dp" /><gradient android:angle="270" android:startColor="@color/graphite_lock_top" android:endColor="@color/graphite_lock_bottom" /></shape>
+    </item>
+</layer-list>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Google keyboard (Gboard) Material You theme, colours sampled from Gboard on Android 17 -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="2dp" android:insetRight="2dp"
+    android:insetTop="3dp" android:insetBottom="3dp">
+    <shape android:shape="rectangle">
+        <corners android:radius="6dp" />
+        <solid android:color="@color/google_you_light_func_pressed" />
+    </shape>
+</inset>

@@ -48,6 +48,13 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
     static final int KEYCODE_OPTIONS = -100;
     static final int KEYCODE_OPTIONS_LONGPRESS = -101;
     static final int KEYCODE_VOICE = -102;
+    static final int KEYCODE_EMOJI = -144;
+    static final int KEYCODE_CLIPBOARD = -145;
+    // Sent by the view itself, not by keys
+    static final int KEYCODE_CURSOR_LEFT = -146;
+    static final int KEYCODE_CURSOR_RIGHT = -147;
+    static final int KEYCODE_ONE_HAND_SWAP = -148;
+    static final int KEYCODE_ONE_HAND_EXIT = -149;
     static final int KEYCODE_F1 = -103;
     static final int KEYCODE_NEXT_LANGUAGE = -104;
     static final int KEYCODE_PREV_LANGUAGE = -105;
@@ -143,6 +150,10 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
                 mPreviewOffset = a.getDimensionPixelOffset(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyPreviewHeight)
                 mPreviewHeight = a.getDimensionPixelSize(attr, 80);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyPreviewBackground)
+                mPreviewBackground = a.getResourceId(attr, 0);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyPreviewTextColor)
+                mPreviewTextColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_popupLayout){
                 mPopupLayout = a.getResourceId(attr, 0);
                 if (mPopupLayout == R.layout.null_layout) mPopupLayout = 0;}
@@ -162,6 +173,7 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
                 Log.i(TAG, "new mPreviewPopup " + mPreviewPopup + " from " + this);
             mPreviewText = (TextView) inflate.inflate(previewLayout, null);
             mPreviewTextSizeLarge = (int) res.getDimension(R.dimen.key_preview_text_size_large);
+            if (mPreviewTextColor != 0) mPreviewText.setTextColor(mPreviewTextColor);
             mPreviewPopup.setContentView(mPreviewText);
             mPreviewPopup.setBackgroundDrawable(null);
             mPreviewPopup.setTouchable(false);
@@ -234,6 +246,12 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
             return invokeOnKey(KEYCODE_OPTIONS_LONGPRESS);
         } else if (primaryCode == KEYCODE_DPAD_CENTER) {
             return invokeOnKey(KEYCODE_COMPOSE);
+        } else if (primaryCode == KEYCODE_DPAD_LEFT && !key.repeatable) {
+            // Compact layouts have no Home/End keys: long-press the arrows instead
+            // (only where the arrow doesn't auto-repeat, see kbd_compact.xml)
+            return invokeOnKey(KEYCODE_HOME);
+        } else if (primaryCode == KEYCODE_DPAD_RIGHT && !key.repeatable) {
+            return invokeOnKey(KEYCODE_END);
         } else if (primaryCode == '0' && getKeyboard() == mPhoneKeyboard) {
             // Long pressing on 0 in phone number keypad gives you a '+'.
             return invokeOnKey('+');
@@ -326,6 +344,138 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
         return result;
     }
 
+    // Swiping along the space bar moves the cursor (pref), one step per mCursorStep pixels
+    private boolean mSpaceCursorArmed;
+    private boolean mSpaceCursorActive;
+    private float mSpaceCursorStartX;
+    private float mSpaceCursorLastX;
+
+    private boolean handleSpaceCursor(MotionEvent me) {
+        if (!LatinIME.sKeyboardSettings.spaceSwipeCursor || mIsExtensionType) return false;
+        final float d = getResources().getDisplayMetrics().density;
+        switch (me.getActionMasked()) {
+        case MotionEvent.ACTION_DOWN: {
+            mSpaceCursorActive = false;
+            Key space = getKeyboard() instanceof LatinKeyboard
+                    ? ((LatinKeyboard) getKeyboard()).getSpaceKey() : null;
+            int x = (int) me.getX() - getPaddingLeft();
+            int y = (int) me.getY() - getPaddingTop();
+            mSpaceCursorArmed = space != null && x >= space.x && x < space.x + space.width
+                    && y >= space.y && y < space.y + space.height;
+            mSpaceCursorStartX = mSpaceCursorLastX = me.getX();
+            return false; // the space key goes down as usual until the finger moves
+        }
+        case MotionEvent.ACTION_MOVE: {
+            if (!mSpaceCursorArmed) return false;
+            if (!mSpaceCursorActive) {
+                if (me.getPointerCount() > 1
+                        || Math.abs(me.getX() - mSpaceCursorStartX) < 16 * d) return false;
+                // A swipe after all: the space key is let go without typing a space
+                mSpaceCursorActive = true;
+                MotionEvent cancel = MotionEvent.obtain(me);
+                cancel.setAction(MotionEvent.ACTION_CANCEL);
+                super.onTouchEvent(cancel);
+                cancel.recycle();
+                mSpaceCursorLastX = me.getX();
+            }
+            float step = 10 * d;
+            int steps = (int) ((me.getX() - mSpaceCursorLastX) / step);
+            for (int i = 0; i < Math.abs(steps); i++) {
+                getOnKeyboardActionListener().onKey(
+                        steps < 0 ? KEYCODE_CURSOR_LEFT : KEYCODE_CURSOR_RIGHT, null, 0, 0);
+            }
+            mSpaceCursorLastX += steps * step;
+            return true;
+        }
+        case MotionEvent.ACTION_UP:
+        case MotionEvent.ACTION_CANCEL: {
+            boolean consumed = mSpaceCursorActive;
+            mSpaceCursorArmed = mSpaceCursorActive = false;
+            return consumed;
+        }
+        default:
+            return mSpaceCursorActive;
+        }
+    }
+
+    // One-handed mode: the keys leave an empty side (padding) holding two buttons,
+    // move to the other side and back to full width
+    private int mOneHandGap;
+    private boolean mOneHandKeysRight;
+    private int mOneHandButton = -1; // being pressed: 0 move, 1 full width
+    private android.graphics.drawable.Drawable mOneHandSwapIcon, mOneHandExitIcon;
+    private final Paint mOneHandPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    void setOneHandGap(int gap, boolean keysRight) {
+        mOneHandGap = gap;
+        mOneHandKeysRight = keysRight;
+        invalidate();
+    }
+
+    private int oneHandGapLeft() {
+        return mOneHandKeysRight ? getPaddingLeft() - mOneHandGap : getWidth() - getPaddingRight();
+    }
+
+    private int oneHandButtonAt(MotionEvent me) {
+        int left = oneHandGapLeft();
+        if (me.getX() < left || me.getX() >= left + mOneHandGap) return -1;
+        int keysTop = getPaddingTop(), keysBottom = getHeight() - getPaddingBottom();
+        if (me.getY() < keysTop || me.getY() >= keysBottom) return -1;
+        return me.getY() < (keysTop + keysBottom) / 2f ? 0 : 1;
+    }
+
+    private boolean handleOneHandButtons(MotionEvent me) {
+        if (mOneHandGap <= 0 || mIsExtensionType) return false;
+        switch (me.getActionMasked()) {
+        case MotionEvent.ACTION_DOWN:
+            mOneHandButton = oneHandButtonAt(me);
+            if (mOneHandButton >= 0) invalidate();
+            return mOneHandButton >= 0;
+        case MotionEvent.ACTION_UP:
+            if (mOneHandButton < 0) return false;
+            int button = mOneHandButton;
+            mOneHandButton = -1;
+            invalidate();
+            if (oneHandButtonAt(me) == button) {
+                getOnKeyboardActionListener().onKey(
+                        button == 0 ? KEYCODE_ONE_HAND_SWAP : KEYCODE_ONE_HAND_EXIT, null, 0, 0);
+            }
+            return true;
+        case MotionEvent.ACTION_CANCEL:
+            if (mOneHandButton < 0) return false;
+            mOneHandButton = -1;
+            invalidate();
+            return true;
+        default:
+            return mOneHandButton >= 0;
+        }
+    }
+
+    private void drawOneHandButtons(Canvas c) {
+        if (mOneHandGap <= 0 || mIsExtensionType) return;
+        if (mOneHandSwapIcon == null) {
+            mOneHandSwapIcon = getContext().getDrawable(R.drawable.ic_one_hand_swap).mutate();
+            mOneHandExitIcon = getContext().getDrawable(R.drawable.ic_one_hand_exit).mutate();
+        }
+        int color = getKeyTextColor();
+        float d = getResources().getDisplayMetrics().density;
+        int size = Math.round(Math.min(28 * d, mOneHandGap * 0.6f));
+        int cx = oneHandGapLeft() + mOneHandGap / 2;
+        int keysTop = getPaddingTop(), keysBottom = getHeight() - getPaddingBottom();
+        int quarter = (keysBottom - keysTop) / 4;
+        android.graphics.drawable.Drawable[] icons = { mOneHandSwapIcon, mOneHandExitIcon };
+        for (int i = 0; i < 2; i++) {
+            int cy = keysTop + quarter * (i * 2 + 1);
+            if (i == mOneHandButton) {
+                mOneHandPaint.setColor((color & 0x00FFFFFF) | 0x26000000);
+                c.drawCircle(cx, cy, size * 0.9f, mOneHandPaint);
+            }
+            icons[i].setTint(color);
+            icons[i].setBounds(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2);
+            icons[i].draw(c);
+        }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent me) {
         LatinKeyboard keyboard = (LatinKeyboard) getKeyboard();
@@ -334,6 +484,8 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
             mLastY = (int) me.getY();
             invalidate();
         }
+        if (handleOneHandButtons(me)) return true;
+        if (handleSpaceCursor(me)) return true;
 
         // If an extension keyboard is visible or this is an extension keyboard, don't look
         // for sudden jumps. Otherwise, if there was a sudden jump, return without processing the
@@ -448,7 +600,9 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
             Keyboard keyboard = mExtensionKeyboard;
             mExtension.setKeyboard(keyboard);
             mExtension.setExtensionType(true);
-            mExtension.setPadding(0, 0, 0, 0);
+            // In one-handed mode the extension row sits over the keys, not the empty side
+            mExtension.setPadding(mOneHandKeysRight ? mOneHandGap : 0, 0,
+                    mOneHandKeysRight ? 0 : mOneHandGap, 0);
             mExtension.setOnKeyboardActionListener(
                     new ExtensionKeyboardListener(getOnKeyboardActionListener()));
             mExtension.setPopupParent(this);
@@ -644,6 +798,7 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
                 }
             }
         }
+        drawOneHandButtons(c);
         if (LatinIME.sKeyboardSettings.showTouchPos || DEBUG_LINE) {
             if (mPaint == null) {
                 mPaint = new Paint();

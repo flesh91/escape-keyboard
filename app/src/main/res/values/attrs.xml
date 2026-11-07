@@ -36,9 +36,35 @@
 
         <!-- Color to use for key hint labels. -->
         <attr name="keyHintColor" format="color" />
+        <!-- Extra gap between the hint labels and the key's right edge (themes whose key
+             background has no content padding of its own). -->
+        <attr name="keyHintInset" format="dimension" />
 
         <!-- Color to use for cursor key labels. -->
         <attr name="keyCursorColor" format="color" />
+
+        <!-- Fill and label colour of a sticky modifier (Shift, Ctrl, Alt, Meta) while it is on. -->
+        <attr name="keyActiveColor" format="color" />
+        <!-- Corner radius of the on/locked fill: the theme's key corner radius -->
+        <attr name="keyActiveRadius" format="dimension" />
+        <attr name="keyActiveTextColor" format="color" />
+
+        <!-- Bubble shown above a pressed key and its label colour; unset keeps the classic
+             dark bubble with white text. -->
+        <attr name="keyPreviewBackground" format="reference" />
+        <attr name="keyPreviewTextColor" format="color" />
+
+        <!-- Label and icon colour of function keys (Shift, Ctrl, Tab, Backspace, arrows...);
+             unset: keyTextColor like the letters. -->
+        <attr name="keyFunctionTextColor" format="color" />
+        <!-- Own backgrounds for Esc, Enter and the space bar (accent keycaps); unset: the
+             keyBackground selector. keyAccentTextColor labels Esc and Enter. -->
+        <attr name="keyEscapeBackground" format="reference" />
+        <attr name="keyEnterBackground" format="reference" />
+        <attr name="keySpaceBackground" format="reference" />
+        <attr name="keyAccentTextColor" format="color" />
+        <!-- Esc label colour when it differs from keyAccentTextColor -->
+        <attr name="keyEscapeTextColor" format="color" />
 
         <!-- Do symbols need to be inverted (for light-background themes)? -->
         <attr name="invertSymbols" format="boolean" />

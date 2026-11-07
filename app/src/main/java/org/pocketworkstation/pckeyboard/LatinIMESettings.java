@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -19,147 +20,215 @@ package org.pocketworkstation.pckeyboard;
 import java.util.HashMap;
 import java.util.Map;
 
-import android.app.Dialog;
-import android.app.backup.BackupManager;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
-/*
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.Signature;*/
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
-import android.preference.ListPreference;
-import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceGroup;
 import android.text.AutoText;
 import android.text.InputType;
 import android.util.Log;
 
-public class LatinIMESettings extends PreferenceActivity
-        implements SharedPreferences.OnSharedPreferenceChangeListener,
-        DialogInterface.OnDismissListener {
+import android.widget.Toast;
+
+import androidx.fragment.app.Fragment;
+import androidx.preference.ListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceGroup;
+
+public class LatinIMESettings extends SettingsActivity
+        implements PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
     private static final String QUICK_FIXES_KEY = "quick_fixes";
     private static final String PREDICTION_SETTINGS_KEY = "prediction_settings";
     private static final String VOICE_SETTINGS_KEY = "voice_mode";
-    /* package */ static final String PREF_SETTINGS_KEY = "settings_key";
+    /* package */ static final String PREF_SETTINGS_KEY = "show_settings_key";
     static final String INPUT_CONNECTION_INFO = "input_connection_info";    
+    private static final String DEBUGGING_KEY = "debugging";
+    private static final String PREF_DEBUG_UNLOCKED = "debug_settings_unlocked";
+    private static final int DEBUG_TAPS = 5;
 
     private static final String TAG = "LatinIMESettings";
 
-    // Dialog ids
-    private static final int VOICE_INPUT_CONFIRM_DIALOG = 0;
-
-    private CheckBoxPreference mQuickFixes;
-    private ListPreference mVoicePreference;
-    private ListPreference mSettingsKeyPreference;
-    private ListPreference mKeyboardModePortraitPreference;
-    private ListPreference mKeyboardModeLandscapePreference;
-    private Preference mInputConnectionInfo;
-    private Preference mLabelVersion;
-
-    private boolean mVoiceOn;
-
-    private boolean mOkClicked = false;
-    private String mVoiceModeOff;
-
     @Override
-    protected void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
-        addPreferencesFromResource(R.xml.prefs);
-        mQuickFixes = (CheckBoxPreference) findPreference(QUICK_FIXES_KEY);
-        mVoicePreference = (ListPreference) findPreference(VOICE_SETTINGS_KEY);
-        mSettingsKeyPreference = (ListPreference) findPreference(PREF_SETTINGS_KEY);
-        mInputConnectionInfo = (Preference) findPreference(INPUT_CONNECTION_INFO);
-        mLabelVersion = (Preference) findPreference("label_version");
-
-
-        // TODO(klausw): remove these when no longer needed
-        mKeyboardModePortraitPreference = (ListPreference) findPreference("pref_keyboard_mode_portrait");
-        mKeyboardModeLandscapePreference = (ListPreference) findPreference("pref_keyboard_mode_landscape");
-        
-        SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
-        prefs.registerOnSharedPreferenceChangeListener(this);
-
-        mVoiceModeOff = getString(R.string.voice_mode_off);
-        mVoiceOn = !(prefs.getString(VOICE_SETTINGS_KEY, mVoiceModeOff).equals(mVoiceModeOff));
+    protected Fragment createFragment() {
+        return new MainPrefs();
     }
 
+    /** A section row on the main screen opens its screen in place, with its title. */
     @Override
-    protected void onResume() {
-        super.onResume();
-        int autoTextSize = AutoText.getSize(getListView());
-        if (autoTextSize < 1) {
-            ((PreferenceGroup) findPreference(PREDICTION_SETTINGS_KEY))
-                    .removePreference(mQuickFixes);
-        }
-        
-        Log.i(TAG, "compactModeEnabled=" + LatinIME.sKeyboardSettings.compactModeEnabled);
-        if (!LatinIME.sKeyboardSettings.compactModeEnabled) {
-            CharSequence[] oldEntries = mKeyboardModePortraitPreference.getEntries();
-            CharSequence[] oldValues = mKeyboardModePortraitPreference.getEntryValues();
-            
-            if (oldEntries.length > 2) {
-                CharSequence[] newEntries = new CharSequence[] { oldEntries[0], oldEntries[2] };
-                CharSequence[] newValues = new CharSequence[] { oldValues[0], oldValues[2] };
-                mKeyboardModePortraitPreference.setEntries(newEntries);
-                mKeyboardModePortraitPreference.setEntryValues(newValues);
-                mKeyboardModeLandscapePreference.setEntries(newEntries);
-                mKeyboardModeLandscapePreference.setEntryValues(newValues);
+    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
+        Bundle args = new Bundle(pref.getExtras());
+        args.putCharSequence(ARG_TITLE, pref.getTitle());
+        Fragment f = getSupportFragmentManager().getFragmentFactory()
+                .instantiate(getClassLoader(), pref.getFragment());
+        f.setArguments(args);
+        getSupportFragmentManager().beginTransaction()
+                .setCustomAnimations(R.anim.settings_open_enter, R.anim.settings_open_exit,
+                        R.anim.settings_close_enter, R.anim.settings_close_exit)
+                .replace(R.id.settings_container, f)
+                .addToBackStack(null)
+                .commit();
+        return true;
+    }
+
+    /** Every settings screen: the main list (no arguments) or one section (argument "xml"). */
+    public static class MainPrefs extends PrefsFragment {
+        private Preference mQuickFixes;
+        private ListPreference mVoicePreference;
+        private ListPreference mKeyboardModePortraitPreference;
+        private ListPreference mKeyboardModeLandscapePreference;
+        private Preference mInputConnectionInfo;
+        private Preference mLabelVersion;
+        private Preference mDebugging;
+        private int mVersionTaps;
+        private Toast mToast;
+
+        @Override
+        protected int getPreferencesResId() {
+            String xml = getArguments() != null ? getArguments().getString("xml") : null;
+            if (xml == null) return R.xml.prefs;
+            switch (xml) {
+                case "prefs_layout": return R.xml.prefs_layout;
+                case "prefs_appearance": return R.xml.prefs_appearance;
+                case "prefs_typing": return R.xml.prefs_typing;
+                case "prefs_correction": return R.xml.prefs_correction;
+                case "prefs_clipboard": return R.xml.prefs_clipboard;
+                case "prefs_feedback": return R.xml.prefs_feedback;
+                case "prefs_actions": return R.xml.prefs_actions;
+                case "prefs_terminal": return R.xml.prefs_terminal;
+                case "prefs_advanced": return R.xml.prefs_advanced;
+                default: return R.xml.prefs;
             }
         }
-        
-        updateSummaries();
 
-        String version = "custom";
-        //*//Signature check removed by Pulya Max
-        /*
-        try {
-            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
-            version = info.versionName;
-            boolean isOfficial = false;
-            for (Signature sig : info.signatures) {
-                byte[] b = sig.toByteArray();
-                int out = 0;
-                for (int i = 0; i < b.length; ++i) {
-                    int pos = i % 4;
-                    out ^= b[i] << (pos * 4);
+        @Override
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            super.onCreatePreferences(savedInstanceState, rootKey);
+            mQuickFixes = findPreference(QUICK_FIXES_KEY);
+            mVoicePreference = findPreference(VOICE_SETTINGS_KEY);
+            mInputConnectionInfo = findPreference(INPUT_CONNECTION_INFO);
+            mLabelVersion = findPreference("label_version");
+            if (mLabelVersion != null) setupDebugging();
+            Preference licenses = findPreference("licenses");
+            if (licenses != null) {
+                licenses.setIntent(new android.content.Intent(requireContext(), LicensesActivity.class));
+            }
+
+            // TODO(klausw): remove these when no longer needed
+            mKeyboardModePortraitPreference = findPreference("pref_keyboard_mode_portrait");
+            mKeyboardModeLandscapePreference = findPreference("pref_keyboard_mode_landscape");
+        }
+
+        /**
+         * The debugging section is hidden until "Version" is tapped 5 times, like Android's
+         * developer options; it stays shown until hidden again from inside the section.
+         */
+        private void setupDebugging() {
+            final SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+            mDebugging = findPreference(DEBUGGING_KEY);
+            mDebugging.setVisible(prefs.getBoolean(PREF_DEBUG_UNLOCKED, false));
+            mLabelVersion.setOnPreferenceClickListener(p -> {
+                if (mDebugging.isVisible()) {
+                    toast(getString(R.string.debug_already_shown));
+                    return true;
                 }
-                if (out == -466825) {
-                    isOfficial = true;
+                int left = DEBUG_TAPS - ++mVersionTaps;
+                if (left <= 0) {
+                    prefs.edit().putBoolean(PREF_DEBUG_UNLOCKED, true).apply();
+                    mDebugging.setVisible(true);
+                    toast(getString(R.string.debug_shown));
+                } else if (left <= 3) {
+                    toast(getResources().getQuantityString(R.plurals.debug_taps_left, left, left));
                 }
-                //version += " [" + Integer.toHexString(out) + "]";
+                return true;
+            });
+            findPreference("debug_settings_hide").setOnPreferenceClickListener(p -> {
+                prefs.edit().putBoolean(PREF_DEBUG_UNLOCKED, false).apply();
+                androidx.preference.SwitchPreferenceCompat touchPos = findPreference("pref_touch_pos");
+                if (touchPos != null) touchPos.setChecked(false);
+                mDebugging.setVisible(false);
+                mVersionTaps = 0;
+                toast(getString(R.string.debug_hidden));
+                return true;
+            });
+        }
+
+        private void toast(String text) {
+            if (mToast != null) mToast.cancel();
+            mToast = Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT);
+            mToast.show();
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            if (mQuickFixes != null && AutoText.getSize(getListView()) < 1) {
+                ((PreferenceGroup) findPreference(PREDICTION_SETTINGS_KEY))
+                        .removePreference(mQuickFixes);
+                mQuickFixes = null;
             }
-            version += isOfficial ? " official" : " custom";
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Could not find version info.");
-        }*/
 
-        mLabelVersion.setSummary(version);
-    }
+            Log.i(TAG, "compactModeEnabled=" + LatinIME.sKeyboardSettings.compactModeEnabled);
+            if (!LatinIME.sKeyboardSettings.compactModeEnabled && mKeyboardModePortraitPreference != null) {
+                CharSequence[] oldEntries = mKeyboardModePortraitPreference.getEntries();
+                CharSequence[] oldValues = mKeyboardModePortraitPreference.getEntryValues();
 
-    @Override
-    protected void onDestroy() {
-        getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(
-                this);
-        super.onDestroy();
-    }
+                if (oldEntries.length > 2) {
+                    CharSequence[] newEntries = new CharSequence[] { oldEntries[0], oldEntries[2] };
+                    CharSequence[] newValues = new CharSequence[] { oldValues[0], oldValues[2] };
+                    mKeyboardModePortraitPreference.setEntries(newEntries);
+                    mKeyboardModePortraitPreference.setEntryValues(newValues);
+                    mKeyboardModeLandscapePreference.setEntries(newEntries);
+                    mKeyboardModeLandscapePreference.setEntryValues(newValues);
+                }
+            }
 
-    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        (new BackupManager(this)).dataChanged();
-        // If turning on voice input, show dialog
-        if (key.equals(VOICE_SETTINGS_KEY) && !mVoiceOn) {
-            if (!prefs.getString(VOICE_SETTINGS_KEY, mVoiceModeOff)
-                    .equals(mVoiceModeOff)) {
-                showVoiceConfirmation();
+            updateSummaries();
+            updateVoiceModeSummary();
+
+            ListPreference renderMode = findPreference(LatinIME.PREF_RENDER_MODE);
+            if (renderMode != null && LatinKeyboardBaseView.sSetRenderMode == null) {
+                renderMode.setEnabled(false);
+                renderMode.setSummary(R.string.render_mode_unavailable);
+            }
+
+            if (mLabelVersion != null) {
+                String version = "custom";
+                try {
+                    version = requireContext().getPackageManager()
+                            .getPackageInfo(requireContext().getPackageName(), 0).versionName;
+                } catch (PackageManager.NameNotFoundException e) {
+                    Log.e(TAG, "Could not find version info.");
+                }
+                mLabelVersion.setSummary(version);
             }
         }
-        mVoiceOn = !(prefs.getString(VOICE_SETTINGS_KEY, mVoiceModeOff).equals(mVoiceModeOff));
-        updateVoiceModeSummary();
-        updateSummaries();
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+            super.onSharedPreferenceChanged(prefs, key);
+            updateVoiceModeSummary();
+            updateSummaries();
+        }
+
+        private void updateSummaries() {
+            Resources res = getResources();
+
+            if (mInputConnectionInfo != null) mInputConnectionInfo.setSummary(String.format("%s type=%s",
+                    LatinIME.sKeyboardSettings.editorPackageName,
+                    inputTypeDesc(LatinIME.sKeyboardSettings.editorInputType)
+                    ));
+        }
+
+        private void updateVoiceModeSummary() {
+            if (mVoicePreference == null) return;
+            int index = mVoicePreference.findIndexOfValue(mVoicePreference.getValue());
+            if (index >= 0) {
+                mVoicePreference.setSummary(
+                        getResources().getStringArray(R.array.voice_input_modes_summary)[index]);
+            }
+        }
     }
 
     static Map<Integer, String> INPUT_CLASSES = new HashMap<Integer, String>();
@@ -243,47 +312,4 @@ public class LatinIMESettings extends PreferenceActivity
         return out.toString();
     }
 
-    private void updateSummaries() {
-        Resources res = getResources();
-        mSettingsKeyPreference.setSummary(
-                res.getStringArray(R.array.settings_key_modes)
-                [mSettingsKeyPreference.findIndexOfValue(mSettingsKeyPreference.getValue())]);
-
-        mInputConnectionInfo.setSummary(String.format("%s type=%s",
-                LatinIME.sKeyboardSettings.editorPackageName,
-                inputTypeDesc(LatinIME.sKeyboardSettings.editorInputType)
-                ));
-    }
-
-    private void showVoiceConfirmation() {
-        mOkClicked = false;
-        showDialog(VOICE_INPUT_CONFIRM_DIALOG);
-    }
-
-    private void updateVoiceModeSummary() {
-        mVoicePreference.setSummary(
-                getResources().getStringArray(R.array.voice_input_modes_summary)
-                [mVoicePreference.findIndexOfValue(mVoicePreference.getValue())]);
-    }
-
-    /*
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        switch (id) {
-            default:
-                Log.e(TAG, "unknown dialog " + id);
-                return null;
-        }
-    }*/
-
-    public void onDismiss(DialogInterface dialog) {
-        if (!mOkClicked) {
-            // This assumes that onPreferenceClick gets called first, and this if the user
-            // agreed after the warning, we set the mOkClicked value to true.
-            mVoicePreference.setValue(mVoiceModeOff);
-        }
-    }
-
-    /*private void updateVoicePreference() {
-    }*/
 }

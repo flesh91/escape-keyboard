@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme: keys of the long-press panel -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true" android:drawable="@drawable/key_graphite_popup_selected" />
+    <item android:drawable="@drawable/key_graphite_popup" />
+</selector>

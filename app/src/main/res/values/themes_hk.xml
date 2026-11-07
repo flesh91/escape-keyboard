@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 (Material You) theme for the app's own screens; the keyboard itself has its own themes. -->
+<resources>
+    <style name="Theme.HK" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">?attr/colorSurfaceContainer</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="preferenceTheme">@style/HK.PreferenceTheme</item>
+    </style>
+
+    <style name="HK.PreferenceTheme" parent="PreferenceThemeOverlay">
+        <item name="switchPreferenceCompatStyle">@style/HK.Preference.Switch</item>
+    </style>
+
+    <!-- Material You switch instead of the AppCompat one -->
+    <style name="HK.Preference.Switch" parent="Preference.SwitchPreferenceCompat.Material">
+        <item name="android:widgetLayout">@layout/preference_material_switch</item>
+    </style>
+
+    <!-- Small coloured heading above a group, like the system Settings app -->
+    <style name="HK.SectionHeader" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">16dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <!-- Clipboard entry editor: a dialog over whatever app is in front -->
+    <style name="Theme.HK.Dialog" parent="Theme.Material3.DayNight.Dialog">
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowSoftInputMode">stateVisible|adjustResize</item>
+    </style>
+
+    <!-- Emoji panel inside the keyboard window, light or dark like the keyboard theme -->
+    <style name="HK.EmojiPanel.Light" parent="Theme.Material3.Light.NoActionBar" />
+    <style name="HK.EmojiPanel.Dark" parent="Theme.Material3.Dark.NoActionBar" />
+</resources>

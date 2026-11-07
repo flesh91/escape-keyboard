@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme: grey letter keys, slate function keys, blue modifiers when on -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Caps/modifier lock. -->
+    <item android:state_active="true" android:drawable="@drawable/key_graphite_lock" />
+
+    <!-- Sticky modifiers (Shift, Ctrl, Alt). -->
+    <item android:state_checkable="true" android:state_checked="true"
+          android:drawable="@drawable/key_graphite_on" />
+    <item android:state_checkable="true"
+          android:drawable="@drawable/key_graphite_func" />
+
+    <!-- Function keys, the space bar included. -->
+    <item android:state_middle="true" android:state_pressed="true"
+          android:drawable="@drawable/key_graphite_func_pressed" />
+    <item android:state_middle="true"
+          android:drawable="@drawable/key_graphite_func" />
+    <item android:state_single="true" android:state_pressed="true"
+          android:drawable="@drawable/key_graphite_func_pressed" />
+    <item android:state_single="true"
+          android:drawable="@drawable/key_graphite_func" />
+
+    <!-- Empty background keys. -->
+    <item android:state_empty="true" android:state_pressed="true"
+          android:drawable="@drawable/key_graphite_letter_pressed" />
+    <item android:state_empty="true"
+          android:drawable="@android:color/transparent" />
+
+    <!-- Letter keys. -->
+    <item android:state_pressed="true"
+          android:drawable="@drawable/key_graphite_letter_pressed" />
+    <item android:drawable="@drawable/key_graphite_letter" />
+</selector>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keycap theme: white letter caps, blue-grey modifiers; Esc, Enter and the space bar
+     have their own caps (keyEscapeBackground and the like) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sticky modifiers (Shift, Ctrl, Alt); keyActiveColor paints them while on. -->
+    <item android:state_checkable="true" android:state_pressed="true"
+          android:drawable="@drawable/key_keycap_func_pressed" />
+    <item android:state_checkable="true"
+          android:drawable="@drawable/key_keycap_func" />
+    <!-- Function keys (Backspace, Tab, arrows...). -->
+    <item android:state_single="true" android:state_pressed="true"
+          android:drawable="@drawable/key_keycap_func_pressed" />
+    <item android:state_single="true"
+          android:drawable="@drawable/key_keycap_func" />
+    <!-- Empty background keys. -->
+    <item android:state_empty="true" android:state_pressed="true"
+          android:drawable="@drawable/key_keycap_letter_pressed" />
+    <item android:state_empty="true"
+          android:drawable="@android:color/transparent" />
+    <!-- Letter keys. -->
+    <item android:state_pressed="true"
+          android:drawable="@drawable/key_keycap_letter_pressed" />
+    <item android:drawable="@drawable/key_keycap_letter" />
+</selector>

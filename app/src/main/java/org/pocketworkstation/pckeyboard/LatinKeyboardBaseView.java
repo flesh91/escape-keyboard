@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 The Android Open Source Project
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +28,8 @@ import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Paint.Align;
 import android.graphics.PorterDuff;
@@ -34,10 +37,12 @@ import android.graphics.Rect;
 import android.graphics.Region.Op;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
 import android.graphics.drawable.StateListDrawable;
 
 import org.pocketworkstation.pckeyboard.Keyboard.Key;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
@@ -48,7 +53,9 @@ import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.RoundedCorner;
 import android.view.View;
+import android.view.WindowInsets;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.PopupWindow;
 import android.widget.TextView;
@@ -179,21 +186,41 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     private float mLabelScale = 1.0f;
     private int mKeyTextColor;
     private int mKeyHintColor;
+    private int mKeyHintInset;
     private int mKeyCursorColor;
+    // Sticky modifiers that are on get a solid fill so Ctrl/Alt/Shift state is obvious
+    private int mKeyActiveColor;
+    private float mKeyActiveRadius = -1;  // not set: the Google themes' 6dp
+    private int mKeyActiveTextColor = 0xFFFFFFFF;
+    private final Paint mActivePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final android.graphics.RectF mActiveRect = new android.graphics.RectF();
     private boolean mInvertSymbols;
     private boolean mRecolorSymbols;
     private Typeface mKeyTextStyle = Typeface.DEFAULT;
+    // Word labels of function keys (Esc, Ctrl, Fn): semi-bold strokes match the icons' lines
+    private static final Typeface FUNCTION_LABEL_TYPEFACE = Build.VERSION.SDK_INT >= 28
+            ? Typeface.create(Typeface.DEFAULT, 600, false) : Typeface.DEFAULT_BOLD;
     private float mLabelTextSize;
     private int mSymbolColorScheme = 0;
     private int mShadowColor;
     private float mShadowRadius;
     private Drawable mKeyBackground;
+    // Optional per-key keycaps and label colours, see attrs.xml
+    private Drawable mKeyEscapeBackground;
+    private Drawable mKeyEnterBackground;
+    private Drawable mKeySpaceBackground;
+    private int mKeyFunctionTextColor;
+    private int mKeyAccentTextColor;
+    private int mKeyEscapeTextColor;
     private int mBackgroundAlpha;
     private float mBackgroundDimAmount;
     private float mKeyHysteresisDistance;
     private float mVerticalCorrection;
     protected int mPreviewOffset;
     protected int mPreviewHeight;
+    /** Theme's preview bubble and label colour, 0 when the theme keeps the classic one. */
+    protected int mPreviewBackground;
+    protected int mPreviewTextColor;
     protected int mPopupLayout;
 
     // Main keyboard
@@ -261,6 +288,22 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     private final Rect mDirtyRect = new Rect();
     /** The keyboard bitmap for faster updates */
     private Bitmap mBuffer;
+
+    // Bottom screen corners in view coordinates {centerX, centerY, radius}; radius 0 = none.
+    // When the keyboard reaches the screen bottom (no navigation bar space) the corner keys
+    // are cut along a curve concentric with the screen corner instead of the square key edge.
+    private final float[] mCornerBL = new float[3];
+    private final float[] mCornerBR = new float[3];
+    // Same for the keyboard's own rounded top corners (setTopCornerRadius), when the keys
+    // reach the top of the rounded panel (no suggestion strip above them).
+    private final float[] mCornerTL = new float[3];
+    private final float[] mCornerTR = new float[3];
+    private float mTopCornerRadius;
+    private final int[] mPanelLocation = new int[2];
+    private final int[] mWindowLocation = new int[2];
+    private final Paint mCornerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Path mCornerPath = new Path();
+    private final Path mCornerCircle = new Path();
     /** Notes if the keyboard just changed, so that we could possibly reallocate the mBuffer. */
     private boolean mKeyboardChanged;
     private Key mInvalidatedKey;
@@ -277,7 +320,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     private final float KEY_LABEL_VERTICAL_ADJUSTMENT_FACTOR = 0.55f;
     private final String KEY_LABEL_HEIGHT_REFERENCE_CHAR = "H";
     /* package */ static Method sSetRenderMode;
-    private static int sPrevRenderMode = -1;
+    // Per view: a recreated keyboard view (theme change) must get its layer type too
+    private int mPrevRenderMode = -1;
 
     private static final float[] INVERTING_MATRIX = {
             -1.f, 0, 0, 0, 255, // Red
@@ -454,10 +498,10 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     }
     
     private void setRenderModeIfPossible(int mode) {
-        if (sSetRenderMode != null && mode != sPrevRenderMode) {
+        if (sSetRenderMode != null && mode != mPrevRenderMode) {
             try {
                 sSetRenderMode.invoke(this, mode, null);
-                sPrevRenderMode = mode;
+                mPrevRenderMode = mode;
                 Log.i(TAG, "render mode set to " + LatinIME.sKeyboardSettings.renderMode);
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
@@ -490,6 +534,18 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             
             if(attr== R.styleable.LatinKeyboardBaseView_keyBackground)
                 mKeyBackground = a.getDrawable(attr);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyEscapeBackground)
+                mKeyEscapeBackground = a.getDrawable(attr);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyEnterBackground)
+                mKeyEnterBackground = a.getDrawable(attr);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keySpaceBackground)
+                mKeySpaceBackground = a.getDrawable(attr);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyFunctionTextColor)
+                mKeyFunctionTextColor = a.getColor(attr, 0);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyAccentTextColor)
+                mKeyAccentTextColor = a.getColor(attr, 0);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyEscapeTextColor)
+                mKeyEscapeTextColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyHysteresisDistance)
                 mKeyHysteresisDistance = a.getDimensionPixelOffset(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_verticalCorrection)
@@ -500,8 +556,16 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 mKeyTextColor = a.getColor(attr, 0xFF000000);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyHintColor)
                 mKeyHintColor = a.getColor(attr, 0xFFBBBBBB);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyHintInset)
+                mKeyHintInset = a.getDimensionPixelSize(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyCursorColor)
                 mKeyCursorColor = a.getColor(attr, 0xFF000000);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyActiveColor)
+                mKeyActiveColor = a.getColor(attr, 0);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyActiveRadius)
+                mKeyActiveRadius = a.getDimension(attr, -1);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyActiveTextColor)
+                mKeyActiveTextColor = a.getColor(attr, 0xFFFFFFFF);
             else if(attr== R.styleable.LatinKeyboardBaseView_invertSymbols)
                 mInvertSymbols = a.getBoolean(attr, false);
             else if(attr== R.styleable.LatinKeyboardBaseView_recolorSymbols)
@@ -558,6 +622,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
 
         mPadding = new Rect(0, 0, 0, 0);
         mKeyBackground.getPadding(mPadding);
+        mCornerPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
 
         mSwipeThreshold = (int) (300 * res.getDisplayMetrics().density);
         // TODO: Refer frameworks/base/core/res/res/values/config.xml
@@ -770,6 +835,20 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         return mShowPreview;
     }
 
+    /** Label colour of this theme (the suggestion strip uses it too). */
+    int getKeyTextColor() {
+        return mKeyTextColor;
+    }
+
+    /**
+     * Key icons follow the label size like text does: about 1.2x the key text size, which is
+     * Material's 24dp on the compact portrait layout, smaller on the narrow full layout keys.
+     */
+    static float iconScale(float keyTextSizePx, float labelScale, float density) {
+        float s = keyTextSizePx * labelScale * 1.2f / (24 * density);
+        return Math.max(0.5f, Math.min(1.5f, s));
+    }
+
     private boolean isBlackSym() {
         return mSymbolColorScheme == 1;
     }
@@ -879,6 +958,179 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         }
     }
 
+    /**
+     * Solid fill over an active sticky modifier (canvas translated to the key); a locked
+     * key (Caps Lock, double-tapped modifier) also gets a bar near its bottom edge.
+     */
+    private void drawActiveHighlight(Canvas canvas, Drawable bg, Key key) {
+        float d = getResources().getDisplayMetrics().density;
+        float radius;
+        if (bg.getCurrent() instanceof InsetDrawable) {
+            // tile themes: fill exactly the visible tile
+            mActiveRect.set(mPadding.left, mPadding.top, key.width - mPadding.right, key.height - mPadding.bottom);
+            radius = mKeyActiveRadius >= 0 ? mKeyActiveRadius : 6 * d;
+        } else {
+            mActiveRect.set(2 * d, 2 * d, key.width - 2 * d, key.height - 2 * d);
+            radius = 5 * d;
+        }
+        mActivePaint.setColor(mKeyActiveColor);
+        canvas.drawRoundRect(mActiveRect, radius, radius, mActivePaint);
+        if (key.locked) {
+            float barW = (mActiveRect.width()) * 0.4f, barH = 3 * d;
+            float cx = mActiveRect.centerX(), bottom = mActiveRect.bottom - 4 * d;
+            mActivePaint.setColor(mKeyActiveTextColor);
+            canvas.drawRoundRect(cx - barW / 2, bottom - barH, cx + barW / 2, bottom, barH / 2, barH / 2, mActivePaint);
+        }
+    }
+
+    /**
+     * Radius in px of the rounded top corners of the panel holding this view (the suggestion
+     * strip and keyboard container); 0 = square.
+     */
+    public void setTopCornerRadius(float radius) {
+        if (mTopCornerRadius == radius) return;
+        mTopCornerRadius = radius;
+        invalidateAllKeys();
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        // Moved under or out from under the suggestion strip: the corner keys change shape,
+        // and a plain move doesn't redraw the view
+        if (changed && mTopCornerRadius > 0) invalidateAllKeys();
+    }
+
+    private void updateTopCorners() {
+        mCornerTL[2] = 0;
+        mCornerTR[2] = 0;
+        float r = mTopCornerRadius;
+        if (r <= 0 || !(getParent() instanceof View)) return;
+        View panel = (View) getParent();
+        panel.getLocationInWindow(mPanelLocation);
+        getLocationInWindow(mWindowLocation);
+        float cy = mPanelLocation[1] + r - mWindowLocation[1];
+        if (cy <= 0) return; // the suggestion strip takes the curve, the keys are below it
+        mCornerTL[0] = mPanelLocation[0] + r - mWindowLocation[0];
+        mCornerTR[0] = mPanelLocation[0] + panel.getWidth() - r - mWindowLocation[0];
+        mCornerTL[1] = mCornerTR[1] = cy;
+        mCornerTL[2] = mCornerTR[2] = r;
+    }
+
+    private void updateScreenCorners() {
+        updateTopCorners();
+        mCornerBL[2] = 0;
+        mCornerBR[2] = 0;
+        if (Build.VERSION.SDK_INT < 31) return;
+        WindowInsets insets = getRootWindowInsets();
+        if (insets == null) return;
+        getLocationInWindow(mWindowLocation);
+        setCorner(mCornerBL, insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT));
+        setCorner(mCornerBR, insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT));
+    }
+
+    private void setCorner(float[] out, RoundedCorner corner) {
+        if (Build.VERSION.SDK_INT < 31 || corner == null || corner.getRadius() <= 0) return;
+        out[0] = corner.getCenter().x - mWindowLocation[0];
+        out[1] = corner.getCenter().y - mWindowLocation[1];
+        out[2] = corner.getRadius();
+    }
+
+    /**
+     * Draws a key background (canvas already translated to the key) and, for a key in a
+     * bottom screen corner, rounds its outer corner concentrically with the screen corner.
+     */
+    private void drawKeyBackground(Canvas canvas, Drawable bg, int left, int top, int w, int h) {
+        boolean bl = inCorner(mCornerBL, true, left, top, w, h);
+        boolean br = inCorner(mCornerBR, false, left, top, w, h);
+        boolean tl = inTopCorner(mCornerTL, true, left, top, w);
+        boolean tr = inTopCorner(mCornerTR, false, left, top, w);
+        if (!bl && !br && !tl && !tr) {
+            bg.draw(canvas);
+            return;
+        }
+        // Keys drawn with a gap (inset tiles) keep the same gap along the curve
+        boolean tile = bg.getCurrent() instanceof InsetDrawable;
+        float gap = tile ? Math.min(mPadding.left, mPadding.bottom) : 0;
+        float topGap = tile ? Math.min(mPadding.left, mPadding.top) : 0;
+        int save = canvas.saveLayer(0, 0, w, h, null);
+        bg.draw(canvas);
+        if (bl) cutCorner(canvas, mCornerBL, true, false, gap, left, top);
+        if (br) cutCorner(canvas, mCornerBR, false, false, gap, left, top);
+        if (tl) cutCorner(canvas, mCornerTL, true, true, topGap, left, top);
+        if (tr) cutCorner(canvas, mCornerTR, false, true, topGap, left, top);
+        canvas.restoreToCount(save);
+    }
+
+    /** The key's keycap: its own for Esc, Enter or space when the theme has one. */
+    private Drawable keyBackgroundFor(Key key) {
+        if (key.codes != null && key.codes.length > 0) {
+            switch (key.codes[0]) {
+            case LatinKeyboardView.KEYCODE_ESCAPE:
+                if (mKeyEscapeBackground != null) return mKeyEscapeBackground;
+                break;
+            case LatinIME.ASCII_ENTER:
+                if (mKeyEnterBackground != null) return mKeyEnterBackground;
+                break;
+            case LatinIME.ASCII_SPACE:
+                if (mKeySpaceBackground != null) return mKeySpaceBackground;
+                break;
+            }
+        }
+        return mKeyBackground;
+    }
+
+    private int keyTextColorFor(Key key, int[] drawableState) {
+        if (mKeyEscapeTextColor != 0 && mKeyEscapeBackground != null && key.codes != null
+                && key.codes.length > 0 && key.codes[0] == LatinKeyboardView.KEYCODE_ESCAPE) {
+            return mKeyEscapeTextColor;
+        }
+        if (mKeyAccentTextColor != 0 && key.codes != null && key.codes.length > 0
+                && ((key.codes[0] == LatinKeyboardView.KEYCODE_ESCAPE && mKeyEscapeBackground != null)
+                || (key.codes[0] == LatinIME.ASCII_ENTER && mKeyEnterBackground != null))) {
+            return mKeyAccentTextColor;
+        }
+        if (mKeyFunctionTextColor != 0 && key.codes != null && key.codes.length > 0
+                && key.codes[0] != LatinIME.ASCII_SPACE) {
+            for (int s : drawableState) {
+                if (s == android.R.attr.state_single || s == android.R.attr.state_checkable) {
+                    return mKeyFunctionTextColor;
+                }
+            }
+        }
+        return mKeyTextColor;
+    }
+
+    private boolean inTopCorner(float[] c, boolean left, int x, int y, int w) {
+        if (c[2] <= 0) return false;
+        if (y >= c[1]) return false; // key starts below the curved part
+        return left ? x < c[0] : x + w > c[0];
+    }
+
+    private boolean inCorner(float[] c, boolean left, int x, int y, int w, int h) {
+        if (c[2] <= 0) return false;
+        if (y + h <= c[1]) return false; // key ends above the curved part
+        return left ? x < c[0] : x + w > c[0];
+    }
+
+    /** Clears the part of the key outside the corner circle (in key-local coordinates). */
+    private void cutCorner(Canvas canvas, float[] c, boolean left, boolean top, float gap,
+            int keyX, int keyY) {
+        float cx = c[0] - keyX, cy = c[1] - keyY, r = c[2];
+        float big = r + getHeight() + getWidth();
+        float y0 = top ? cy - big : cy, y1 = top ? cy : cy + big;
+        mCornerPath.reset();
+        if (left) {
+            mCornerPath.addRect(cx - big, y0, cx, y1, Path.Direction.CW);
+        } else {
+            mCornerPath.addRect(cx, y0, cx + big, y1, Path.Direction.CW);
+        }
+        mCornerCircle.reset();
+        mCornerCircle.addCircle(cx, cy, Math.max(0, r - gap), Path.Direction.CW);
+        mCornerPath.op(mCornerCircle, Path.Op.DIFFERENCE);
+        canvas.drawPath(mCornerPath, mCornerPaint);
+    }
+
     private void onBufferDraw(Canvas canvas) {
         //Log.i(TAG, "onBufferDraw called");
         if (/*mBuffer == null ||*/ mKeyboardChanged) {
@@ -904,7 +1156,6 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         final Paint paint = mPaint;
         final Paint paintHint = mPaintHint;
         paintHint.setColor(mKeyHintColor);
-        final Drawable keyBackground = mKeyBackground;
         final Rect clipRegion = mClipRegion;
         final Rect padding = mPadding;
         final int kbdPaddingLeft = getPaddingLeft();
@@ -954,6 +1205,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         mKeyTextSize = Math.min(medianKeyHeight * 6 / 10, medianKeyWidth * 6 / 10);
         mLabelTextSize = mKeyTextSize * 3 / 4;
 
+        updateScreenCorners();
+
         int keysDrawn = 0;
         for (int i = 0; i < keyCount; i++) {
             final Key key = keys[i];
@@ -968,10 +1221,13 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 continue;
             }
             keysDrawn++;
-            paint.setColor(key.isCursor ? mKeyCursorColor : mKeyTextColor);
-
             int[] drawableState = key.getCurrentDrawableState();
+            final Drawable keyBackground = keyBackgroundFor(key);
             keyBackground.setState(drawableState);
+            final int keyTextColor = keyTextColorFor(key, drawableState);
+
+            final boolean active = mKeyActiveColor != 0 && key.sticky && (key.on || key.locked);
+            paint.setColor(active ? mKeyActiveTextColor : key.isCursor ? mKeyCursorColor : keyTextColor);
 
             // Switch the character to uppercase if shift is pressed
             String label = key.getCaseLabel();
@@ -995,7 +1251,13 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             if (mBackgroundAlpha != 255) {
                 keyBackground.setAlpha(mBackgroundAlpha);
             }
-            keyBackground.draw(canvas);
+            if (yscale == 1.0f) {
+                drawKeyBackground(canvas, keyBackground,
+                        key.x + kbdPaddingLeft, key.y + kbdPaddingTop, key.width, key.height);
+            } else {
+                keyBackground.draw(canvas);
+            }
+            if (active) drawActiveHighlight(canvas, keyBackground, key);
             if (yscale != 1.0f)  canvas.restore();
 
             boolean shouldDrawIcon = true;
@@ -1005,9 +1267,10 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 if (label.length() > 1 && key.codes.length < 2) {
                     //Log.i(TAG, "mLabelTextSize=" + mLabelTextSize + " LatinIME.sKeyboardSettings.labelScale=" + LatinIME.sKeyboardSettings.labelScale);
                     labelSize = (int)(mLabelTextSize * mLabelScale);
-                    paint.setTypeface(Typeface.DEFAULT);
+                    paint.setTypeface(FUNCTION_LABEL_TYPEFACE);
                 } else {
-                    labelSize = (int)(mKeyTextSize * mLabelScale);
+                    // arrow glyphs (cursor keys) are small in the font, bring them up to the icons
+                    labelSize = (int)(mKeyTextSize * mLabelScale * (key.isCursor ? 1.15f : 1f));
                     paint.setTypeface(mKeyTextStyle);
                 }
                 paint.setFakeBoldText(key.isCursor);
@@ -1025,7 +1288,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                     paintHint.setTextSize(hintTextSize);
 
                     final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int x = key.width - padding.right;
+                    int x = key.width - padding.right - mKeyHintInset;
                     int baseline = padding.top + hintLabelHeight * 12/10;
                     if (Character.getType(hint.charAt(0)) == Character.NON_SPACING_MARK) {
                         drawDeadKeyLabel(canvas, hint, x, baseline, paintHint);
@@ -1041,7 +1304,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                     paintHint.setTextSize(hintTextSize);
 
                     final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int x = key.width - padding.right;
+                    int x = key.width - padding.right - mKeyHintInset;
                     int baseline = padding.top + hintLabelHeight * (hint.equals("") ? 12 : 26)/10;
                     if (Character.getType(altHint.charAt(0)) == Character.NON_SPACING_MARK) {
                         drawDeadKeyLabel(canvas, altHint, x, baseline, paintHint);
@@ -1091,15 +1354,27 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                     drawableX = 0;
                     drawableY = NUMBER_HINT_VERTICAL_ADJUSTMENT_PIXEL;
                 } else {
-                    drawableWidth = icon.getIntrinsicWidth();
-                    drawableHeight = icon.getIntrinsicHeight();
+                    float scale = icon instanceof android.graphics.drawable.VectorDrawable
+                            ? iconScale(mKeyTextSize, mLabelScale, getResources().getDisplayMetrics().density)
+                            : 1f;
+                    drawableWidth = Math.round(icon.getIntrinsicWidth() * scale);
+                    drawableHeight = Math.round(icon.getIntrinsicHeight() * scale);
                     drawableX = (key.width + padding.left - padding.right - drawableWidth) / 2;
                     drawableY = (key.height + padding.top - padding.bottom - drawableHeight) / 2;
                 }
                 canvas.translate(drawableX, drawableY);
                 icon.setBounds(0, 0, drawableWidth, drawableHeight);
 
-                if (iconColorFilter != null) {
+                if (active) {
+                    icon.setColorFilter(new PorterDuffColorFilter(mKeyActiveTextColor, PorterDuff.Mode.SRC_IN));
+                    icon.draw(canvas);
+                    icon.setColorFilter(null);
+                } else if (iconColorFilter != null && mRecolorSymbols && keyTextColor != mKeyTextColor) {
+                    // Function and accent keys of themes that colour their labels apart
+                    icon.setColorFilter(new PorterDuffColorFilter(keyTextColor, PorterDuff.Mode.SRC_ATOP));
+                    icon.draw(canvas);
+                    icon.setColorFilter(null);
+                } else if (iconColorFilter != null) {
                     // Re-color the icon to match the theme, and draw a shadow for it manually.
                     //
                     // This doesn't seem to look quite right, possibly a problem with using
@@ -1139,6 +1414,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
 
         if (LatinIME.sKeyboardSettings.showTouchPos || DEBUG) {
             if (LatinIME.sKeyboardSettings.showTouchPos || mShowTouchPoints) {
+                canvas.save();
+                canvas.translate(kbdPaddingLeft, kbdPaddingTop); // trackers use key coordinates
                 for (PointerTracker tracker : mPointerTrackers) {
                     int startX = tracker.getStartX();
                     int startY = tracker.getStartY();
@@ -1153,6 +1430,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                     paint.setColor(0xFF00FF00);
                     canvas.drawCircle((startX + lastX) / 2, (startY + lastY) / 2, 2, paint);
                 }
+                canvas.restore();
             }
         }
 
@@ -1200,8 +1478,21 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         // Should not draw hint icon in key preview
         Drawable icon = key.icon;
         if (icon != null && !shouldDrawLabelAndIcon(key)) {
-            mPreviewText.setCompoundDrawables(null, null, null,
-                    key.iconPreview != null ? key.iconPreview : icon);
+            Drawable preview = key.iconPreview != null ? key.iconPreview : icon;
+            if (preview instanceof LatinKeyboard.SlidingLocaleDrawable) {
+                // Drawn only in this bubble: recolour it in place (null keeps it as drawn)
+                preview.setColorFilter(mPreviewTextColor == 0 ? null
+                        : new PorterDuffColorFilter(mPreviewTextColor, PorterDuff.Mode.SRC_IN));
+            } else if (mPreviewTextColor != 0 && preview.getConstantState() != null) {
+                // The preview icons are white: a copy in the theme's label colour, the
+                // key keeps drawing its own
+                Drawable tinted = preview.getConstantState().newDrawable(getResources()).mutate();
+                tinted.setBounds(preview.getBounds());
+                tinted.setColorFilter(new PorterDuffColorFilter(mPreviewTextColor,
+                        PorterDuff.Mode.SRC_IN));
+                preview = tinted;
+            }
+            mPreviewText.setCompoundDrawables(null, null, null, preview);
             mPreviewText.setText(null);
         } else {
             mPreviewText.setCompoundDrawables(null, null, null, null);
@@ -1225,24 +1516,28 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             lp.height = popupHeight;
         }
 
-        int popupPreviewX = key.x - (popupWidth - key.width) / 2;
-        int popupPreviewY = key.y - popupHeight + mPreviewOffset;
+        // Keys are drawn shifted by the view's padding (the camera cutout in landscape)
+        int popupPreviewX = getPaddingLeft() + key.x - (popupWidth - key.width) / 2;
+        int popupPreviewY = getPaddingTop() + key.y - popupHeight + mPreviewOffset;
 
         mHandler.cancelDismissPreview();
-        if (mOffsetInWindow == null) {
-            mOffsetInWindow = new int[2];
-            getLocationInWindow(mOffsetInWindow);
-            mOffsetInWindow[0] += mPopupPreviewOffsetX; // Offset may be zero
-            mOffsetInWindow[1] += mPopupPreviewOffsetY; // Offset may be zero
-            int[] windowLocation = new int[2];
-            getLocationOnScreen(windowLocation);
-            mWindowY = windowLocation[1];
-        }
+        // Measured every time: the suggestion strip above the keyboard shows and hides,
+        // moving the keyboard inside its window
+        if (mOffsetInWindow == null) mOffsetInWindow = new int[2];
+        getLocationInWindow(mOffsetInWindow);
+        mOffsetInWindow[0] += mPopupPreviewOffsetX; // Offset may be zero
+        mOffsetInWindow[1] += mPopupPreviewOffsetY; // Offset may be zero
+        int[] windowLocation = new int[2];
+        getLocationOnScreen(windowLocation);
+        mWindowY = windowLocation[1];
         // Set the preview background state.
         // Retrieve and cache the popup keyboard if any.
         boolean hasPopup = (getLongPressKeyboard(key) != null);
         // Set background manually, the StateListDrawable doesn't work.
-        mPreviewText.setBackgroundDrawable(getResources().getDrawable(hasPopup ? R.drawable.keyboard_key_feedback_more_background : R.drawable.keyboard_key_feedback_background));
+        int previewBackground = mPreviewBackground != 0 ? mPreviewBackground
+                : hasPopup ? R.drawable.keyboard_key_feedback_more_background
+                : R.drawable.keyboard_key_feedback_background;
+        mPreviewText.setBackgroundDrawable(getResources().getDrawable(previewBackground));
         popupPreviewX += mOffsetInWindow[0];
         popupPreviewY += mOffsetInWindow[1];
 
@@ -1250,7 +1545,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         if (popupPreviewY + mWindowY < 0) {
             // If the key you're pressing is on the left side of the keyboard, show the popup on
             // the right, offset by enough to see at least one key to the left/right.
-            if (key.x + key.width <= getWidth() / 2) {
+            if (getPaddingLeft() + key.x + key.width <= getWidth() / 2) {
                 popupPreviewX += (int) (key.width * 2.5);
             } else {
                 popupPreviewX -= (int) (key.width * 2.5);
@@ -1432,10 +1727,9 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         mMiniKeyboardContainer.measure(MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.AT_MOST),
                 MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.AT_MOST));
 
-        if (mWindowOffset == null) {
-            mWindowOffset = new int[2];
-            getLocationInWindow(mWindowOffset);
-        }
+        // Measured every time, the suggestion strip moves the keyboard (see showKey)
+        if (mWindowOffset == null) mWindowOffset = new int[2];
+        getLocationInWindow(mWindowOffset);
 
         // Get width of a key in the mini popup keyboard = "miniKeyWidth".
         // On the other hand, "popupKey.width" is width of the pressed key on the main keyboard.
@@ -1463,7 +1757,9 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         popupY -= mMiniKeyboardContainer.getMeasuredHeight();
         popupY += mMiniKeyboardContainer.getPaddingBottom();
         final int x = popupX;
-        final int y = mShowPreview && isOneRowKeys(miniKeys) ? mPopupPreviewDisplayedY : popupY;
+        // Right above the pressed key; the key preview's height used to lift one-row popups
+        // far above the finger
+        final int y = popupY;
 
         int adjustedX = x;
         if (x < 0) {
@@ -1488,8 +1784,9 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         // Inject down event on the key to mini keyboard.
         long eventTime = SystemClock.uptimeMillis();
         mMiniKeyboardPopupTime = eventTime;
-        MotionEvent downEvent = generateMiniKeyboardMotionEvent(MotionEvent.ACTION_DOWN, popupKey.x
-                + popupKey.width / 2, popupKey.y + popupKey.height / 2, eventTime);
+        MotionEvent downEvent = generateMiniKeyboardMotionEvent(MotionEvent.ACTION_DOWN,
+                getPaddingLeft() + popupKey.x + popupKey.width / 2,
+                getPaddingTop() + popupKey.y + popupKey.height / 2, eventTime);
         mMiniKeyboard.onTouchEvent(downEvent);
         downEvent.recycle();
 
@@ -1616,8 +1913,12 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         final long eventTime = me.getEventTime();
         final int index = me.getActionIndex();
         final int id = me.getPointerId(index);
-        final int x = (int)me.getX(index);
-        final int y = (int)me.getY(index);
+        // Keys are drawn shifted by the view's padding (the camera cutout in landscape),
+        // while key coordinates start at 0: take the padding off before finding the key
+        final int padLeft = getPaddingLeft();
+        final int padTop = getPaddingTop();
+        final int x = (int)me.getX(index) - padLeft;
+        final int y = (int)me.getY(index) - padTop;
 
         // Needs to be called after the gesture detector gets a turn, as it may have
         // displayed the mini keyboard
@@ -1677,7 +1978,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             if (!mIgnoreMove) {
                 for (int i = 0; i < pointerCount; i++) {
                     PointerTracker tracker = getPointerTracker(me.getPointerId(i));
-                    tracker.onMoveEvent((int)me.getX(i), (int)me.getY(i), eventTime);
+                    tracker.onMoveEvent((int)me.getX(i) - padLeft, (int)me.getY(i) - padTop, eventTime);
                 }
             }
         } else {

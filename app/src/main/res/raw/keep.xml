@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The main dictionaries are found by name (LatinIME.getDictionary), the shrinker can't see that -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/main" />

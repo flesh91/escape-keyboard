@@ -1,6 +1,7 @@
 /*
 **
 ** Copyright 2009, The Android Open Source Project
+** Modifications Copyright (C) 2026 Yaroslav Bezzubets
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -283,6 +284,8 @@ Dictionary::sameAsTyped(unsigned short *word, int length)
 }
 
 static char QUOTE = '\'';
+// A hyphen the user did not type is skipped like the apostrophe: "щонебудь" finds "що-небудь"
+static char HYPHEN = '-';
 
 void
 Dictionary::getWordsRec(int pos, int depth, int maxDepth, bool completion, int snr, int inputIndex,
@@ -328,8 +331,9 @@ Dictionary::getWordsRec(int pos, int depth, int maxDepth, bool completion, int s
                 getWordsRec(childrenAddress, depth + 1, maxDepth,
                             completion, snr, inputIndex, diffs);
             }
-        } else if ((c == QUOTE && currentChars[0] != QUOTE) || mSkipPos == depth) {
-            // Skip the ' or other letter and continue deeper
+        } else if ((c == QUOTE && currentChars[0] != QUOTE)
+                || (c == HYPHEN && currentChars[0] != HYPHEN) || mSkipPos == depth) {
+            // Skip the ' or - or other letter and continue deeper
             mWord[depth] = c;
             if (childrenAddress != 0) {
                 getWordsRec(childrenAddress, depth + 1, maxDepth, false, snr, inputIndex, diffs);

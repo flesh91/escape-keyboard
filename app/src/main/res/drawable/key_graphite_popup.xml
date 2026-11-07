@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite theme, rebuilt as shapes from the reference theme's key images: key in the long-press panel -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:paddingMode="stack">
+    <item android:left="2.6dp" android:top="5.9dp" android:right="2.6dp" android:bottom="8.25dp">
+        <shape android:shape="rectangle"><corners android:radius="1.5dp" /><solid android:color="@color/graphite_popup_key" /></shape>
+    </item>
+</layer-list>
