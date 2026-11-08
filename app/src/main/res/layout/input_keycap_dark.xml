@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keycap theme, dark: the same mechanical keyboard on a near-black case -->
+<org.pocketworkstation.pckeyboard.LatinKeyboardView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:latin="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/LatinkeyboardBaseView"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/keyboard_bottom_padding"
+        android:background="@drawable/keyboard_keycap_dark_background"
+        latin:shadowRadius="0"
+        latin:keyTextColor="@color/keycap_dark_text"
+        latin:keyFunctionTextColor="@color/keycap_dark_func_text"
+        latin:keyAccentTextColor="@color/keycap_dark_accent_text"
+        latin:keyEscapeTextColor="@color/keycap_dark_esc_text"
+        latin:keySpaceTextColor="@color/keycap_dark_space_text"
+        latin:keyPreviewBackground="@drawable/key_preview_keycap_dark"
+        latin:keyPreviewTextColor="@color/keycap_dark_text"
+        latin:recolorSymbols="true"
+        latin:keyHintColor="@color/keycap_dark_hint"
+        latin:keyHintInset="3dp"
+        latin:keyCursorColor="@color/keycap_dark_func_text"
+        latin:keyActiveColor="@color/keycap_dark_active"
+        latin:keyActiveRadius="5dp"
+        latin:keyActiveTextColor="@color/keycap_dark_on_active"
+
+        latin:keyBackground="@drawable/btn_keyboard_key_keycap_dark"
+        latin:keyEscapeBackground="@drawable/btn_keyboard_key_keycap_dark_esc"
+        latin:keyEnterBackground="@drawable/btn_keyboard_key_keycap_dark_enter"
+        latin:keySpaceBackground="@drawable/btn_keyboard_key_keycap_dark_space"
+        latin:popupLayout="@layout/input_popup_keycap_dark"
+        />

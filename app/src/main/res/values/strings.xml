@@ -769,7 +769,7 @@
         <item>Voice input (Settings on a long press)</item>
     </string-array>
     <string name="layout_graphite" translatable="false">Graphite</string>
-    <string name="layout_keycap" translatable="false">Keycap</string>
+    <string name="layout_keycap">Keycap (follows system theme)</string>
     <string name="layout_ios_system">Cupertino (follows system theme)</string>
     <string name="screen_clipboard">Clipboard</string>
     <string name="screen_clipboard_summary">History of copied text, pinned items</string>

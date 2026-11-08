@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press panel of the Keycap dark theme: a letter-cap card on its side -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle"><corners android:radius="10dp" /><solid android:color="@color/keycap_dark_letter_side" /></shape>
+    </item>
+    <item android:bottom="3dp">
+        <shape android:shape="rectangle"><corners android:radius="10dp" /><solid android:color="@color/keycap_dark_letter" /></shape>
+    </item>
+</layer-list>

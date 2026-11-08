@@ -65,6 +65,8 @@
         <attr name="keyAccentTextColor" format="color" />
         <!-- Esc label colour when it differs from keyAccentTextColor -->
         <attr name="keyEscapeTextColor" format="color" />
+        <!-- Space bar label colour on its own keycap; unset: keyTextColor -->
+        <attr name="keySpaceTextColor" format="color" />
 
         <!-- Do symbols need to be inverted (for light-background themes)? -->
         <attr name="invertSymbols" format="boolean" />

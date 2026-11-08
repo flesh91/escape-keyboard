@@ -1457,9 +1457,11 @@ public class LatinIME extends InputMethodService implements
             boolean dark = theme == R.layout.input_ios_dark;
             int text = res.getColor(dark ? R.color.ios_dark_text : R.color.ios_light_text);
             mCandidateView.setThemeColors(text, text, text, true);
-        } else if (theme == R.layout.input_keycap) {
-            int text = res.getColor(R.color.keycap_text);
-            mCandidateView.setThemeColors(text, res.getColor(R.color.keycap_recommended), text, true);
+        } else if (theme == R.layout.input_keycap || theme == R.layout.input_keycap_dark) {
+            boolean dark = theme == R.layout.input_keycap_dark;
+            int text = res.getColor(dark ? R.color.keycap_dark_text : R.color.keycap_text);
+            mCandidateView.setThemeColors(text, res.getColor(dark ? R.color.keycap_dark_recommended
+                    : R.color.keycap_recommended), text, true);
         } else if (theme == R.layout.input_graphite) {
             mCandidateView.setThemeColors(res.getColor(R.color.graphite_text),
                     res.getColor(R.color.graphite_candidate_recommended),
@@ -1490,8 +1492,9 @@ public class LatinIME extends InputMethodService implements
         } else if (theme == R.layout.input_ios_light || theme == R.layout.input_ios_dark) {
             strip.setBackgroundColor(res.getColor(theme == R.layout.input_ios_dark
                     ? R.color.ios_dark_bg : R.color.ios_light_bg));
-        } else if (theme == R.layout.input_keycap) {
-            strip.setBackgroundColor(res.getColor(R.color.keycap_bg_top));
+        } else if (theme == R.layout.input_keycap || theme == R.layout.input_keycap_dark) {
+            strip.setBackgroundColor(res.getColor(theme == R.layout.input_keycap_dark
+                    ? R.color.keycap_dark_bg_top : R.color.keycap_bg_top));
         } else if (theme == R.layout.input_graphite) {
             strip.setBackgroundResource(R.drawable.candidate_graphite_background);
         } else if (mKeyboardSwitcher.getInputView() != null) {

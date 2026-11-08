@@ -151,6 +151,35 @@
     <color name="keycap_on_active">#10302D</color>
     <color name="keycap_selected">#A8E6E2</color>
     <color name="keycap_recommended">#17655F</color>
+    <!-- Keycap dark: grey letter caps and slate modifiers on a near-black case; the accent
+         caps are toned down and keep dark labels -->
+    <color name="keycap_dark_bg_top">#2A2E35</color>
+    <color name="keycap_dark_bg_bottom">#1E2126</color>
+    <color name="keycap_dark_letter">#454A53</color>
+    <color name="keycap_dark_letter_side">#2C3036</color>
+    <color name="keycap_dark_letter_pressed">#3B4048</color>
+    <color name="keycap_dark_func">#5A6678</color>
+    <color name="keycap_dark_func_side">#3E4756</color>
+    <color name="keycap_dark_func_pressed">#4F5A6B</color>
+    <color name="keycap_dark_esc">#D9473D</color>
+    <color name="keycap_dark_esc_side">#A0332B</color>
+    <color name="keycap_dark_esc_pressed">#C83F36</color>
+    <color name="keycap_dark_enter">#34B5AD</color>
+    <color name="keycap_dark_enter_side">#23837D</color>
+    <color name="keycap_dark_enter_pressed">#2EA59E</color>
+    <color name="keycap_dark_space">#E0B43F</color>
+    <color name="keycap_dark_space_side">#A9862A</color>
+    <color name="keycap_dark_space_pressed">#D1A737</color>
+    <color name="keycap_dark_text">#E6E9ED</color>
+    <color name="keycap_dark_func_text">#EEF2F7</color>
+    <color name="keycap_dark_esc_text">#FFFFFF</color>
+    <color name="keycap_dark_accent_text">#0F2D2B</color>
+    <color name="keycap_dark_space_text">#3D3110</color>
+    <color name="keycap_dark_hint">#A1A8B2</color>
+    <color name="keycap_dark_active">#34B5AD</color>
+    <color name="keycap_dark_on_active">#0F2D2B</color>
+    <color name="keycap_dark_selected">#267D77</color>
+    <color name="keycap_dark_recommended">#6FD9D1</color>
 
     <!-- Graphite theme: colours measured from the reference theme's key images -->
     <color name="graphite_bg_line">#0E1012</color>

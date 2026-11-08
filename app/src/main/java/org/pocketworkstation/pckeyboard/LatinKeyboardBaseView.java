@@ -212,6 +212,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     private int mKeyFunctionTextColor;
     private int mKeyAccentTextColor;
     private int mKeyEscapeTextColor;
+    private int mKeySpaceTextColor;
     private int mBackgroundAlpha;
     private float mBackgroundDimAmount;
     private float mKeyHysteresisDistance;
@@ -546,6 +547,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 mKeyAccentTextColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyEscapeTextColor)
                 mKeyEscapeTextColor = a.getColor(attr, 0);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keySpaceTextColor)
+                mKeySpaceTextColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyHysteresisDistance)
                 mKeyHysteresisDistance = a.getDimensionPixelOffset(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_verticalCorrection)
@@ -1118,6 +1121,10 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 && ((key.codes[0] == LatinKeyboardView.KEYCODE_ESCAPE && mKeyEscapeBackground != null)
                 || (key.codes[0] == LatinIME.ASCII_ENTER && mKeyEnterBackground != null))) {
             return mKeyAccentTextColor;
+        }
+        if (mKeySpaceTextColor != 0 && mKeySpaceBackground != null && key.codes != null
+                && key.codes.length > 0 && key.codes[0] == LatinIME.ASCII_SPACE) {
+            return mKeySpaceTextColor;
         }
         if (mKeyFunctionTextColor != 0 && key.codes != null && key.codes.length > 0
                 && key.codes[0] != LatinIME.ASCII_SPACE) {

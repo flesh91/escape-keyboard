@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keycap dark theme: func pressed keycap -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="2dp" android:insetRight="2dp"
+    android:insetTop="2.5dp" android:insetBottom="2.5dp">
+    <layer-list>
+        <item android:top="2dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="6dp" />
+                <solid android:color="@color/keycap_dark_func_side" />
+            </shape>
+        </item>
+        <item android:left="1.5dp" android:top="2.5dp" android:right="1.5dp" android:bottom="1.5dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <solid android:color="@color/keycap_dark_func_pressed" />
+            </shape>
+        </item>
+    </layer-list>
+</inset>

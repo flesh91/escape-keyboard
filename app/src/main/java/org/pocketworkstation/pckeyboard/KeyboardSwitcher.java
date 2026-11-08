@@ -77,7 +77,7 @@ public class KeyboardSwitcher implements
         R.layout.input_google_you_light, // THEME_GOOGLE_YOU, resolved by night mode
         R.layout.input_graphite,
         R.layout.input_ios_light, // THEME_IOS_SYSTEM, resolved by night mode
-        R.layout.input_keycap,
+        R.layout.input_keycap, // THEME_KEYCAP_SYSTEM, resolved by night mode
     };
 
     // Google keyboard style, light or dark following the system theme
@@ -86,6 +86,8 @@ public class KeyboardSwitcher implements
     private static final int THEME_GOOGLE_YOU = 11;
     // iPhone keyboard look, light or dark following the system theme
     private static final int THEME_IOS_SYSTEM = 13;
+    // Mechanical keycaps, light or dark following the system theme
+    private static final int THEME_KEYCAP_SYSTEM = 14;
 
     // Tables which contains resource ids for each character theme color
     private static final int KBD_PHONE = R.xml.kbd_phone;
@@ -613,12 +615,15 @@ public class KeyboardSwitcher implements
 
     private int resolveTheme(int layoutId) {
         if (layoutId == THEME_GOOGLE_SYSTEM || layoutId == THEME_GOOGLE_YOU
-                || layoutId == THEME_IOS_SYSTEM) {
+                || layoutId == THEME_IOS_SYSTEM || layoutId == THEME_KEYCAP_SYSTEM) {
             int night = mInputMethodService.getResources().getConfiguration().uiMode
                     & Configuration.UI_MODE_NIGHT_MASK;
             boolean dark = night == Configuration.UI_MODE_NIGHT_YES;
             if (layoutId == THEME_IOS_SYSTEM) {
                 return dark ? R.layout.input_ios_dark : R.layout.input_ios_light;
+            }
+            if (layoutId == THEME_KEYCAP_SYSTEM) {
+                return dark ? R.layout.input_keycap_dark : R.layout.input_keycap;
             }
             if (layoutId == THEME_GOOGLE_YOU) {
                 return dark ? R.layout.input_google_you_dark : R.layout.input_google_you_light;

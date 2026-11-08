@@ -47,7 +47,8 @@ by Klaus Weidner, including later changes by Maxim Pulya, rebuilt for Android 17
 
 **Themes**
 - Google (follows the system, light, dark, wallpaper colours / Material You).
-- Cupertino, Keycap, Graphite, and the classic Hacker's Keyboard themes.
+- Cupertino and Keycap (light or dark, following the system), Graphite, and the classic
+  Hacker's Keyboard themes.
 
 **Settings**
 - Material 3 settings with full Ukrainian and Russian translations.

@@ -548,6 +548,7 @@
     <string name="title_about">О приложении</string>
     <string name="layout_google_you">Google (цвета обоев)</string>
     <string name="layout_ios_system">Cupertino (по теме системы)</string>
+    <string name="layout_keycap">Keycap (по теме системы)</string>
     <string name="title_debug_hide">Скрыть отладку</string>
     <string name="summary_debug_hide">Показать снова: 5 раз нажмите «Версия»</string>
     <string name="debug_shown">Пункты отладки показаны</string>

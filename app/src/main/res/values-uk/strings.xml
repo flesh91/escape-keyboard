@@ -368,6 +368,7 @@
     <string name="title_about">Про застосунок</string>
     <string name="layout_google_you">Google (кольори шпалер)</string>
     <string name="layout_ios_system">Cupertino (за темою системи)</string>
+    <string name="layout_keycap">Keycap (за темою системи)</string>
     <string name="title_debug_hide">Сховати налагодження</string>
     <string name="summary_debug_hide">Показати знову: 5 разів натисніть «Версія»</string>
     <string name="debug_shown">Пункти налагодження показано</string>

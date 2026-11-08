@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keycap dark theme: the near-black case -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="270" android:startColor="@color/keycap_dark_bg_top"
+        android:endColor="@color/keycap_dark_bg_bottom" />
+</shape>
