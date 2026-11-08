@@ -68,6 +68,37 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
 
     private static final String PREF_POSITION = "clipboard_window_";
 
+    /** Colours and corners of the window; LatinIME matches them to the keyboard theme. */
+    static final class Style {
+        boolean light;     // ripples, and the plain colours below
+        int bar, surface;  // title bar, list
+        int text, secondary, accent, divider;
+        int outline;       // a rim like the theme's keycaps, 0 for none
+        float radius = 16; // dp
+
+        /** The plain window of the classic themes. */
+        static Style plain(boolean light) {
+            Style s = new Style();
+            s.light = light;
+            s.bar = s.surface = light ? 0xFFFFFFFF : 0xFF2D2F31;
+            s.text = light ? 0xFF1F1F1F : 0xFFE3E3E3;
+            s.secondary = light ? 0xFF5F6368 : 0xFF9AA0A6;
+            s.accent = light ? 0xFFE8710A : 0xFFFFB74D;
+            s.divider = light ? 0x1F000000 : 0x33FFFFFF;
+            return s;
+        }
+
+        Style colors(android.content.res.Resources res, int bar, int surface, int text,
+                int secondary, int accent) {
+            this.bar = res.getColor(bar);
+            this.surface = res.getColor(surface);
+            this.text = res.getColor(text);
+            this.secondary = res.getColor(secondary);
+            this.accent = res.getColor(accent);
+            return this;
+        }
+    }
+
     ClipboardWindow(LatinIME ime) {
         mIme = ime;
         mHistory = ClipboardHistory.get(ime);
@@ -92,25 +123,38 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
      * Opens where the user last dragged it (per orientation), at first above the keyboard area
      * on the right; over the keyboard only when there is no room above it.
      */
-    void show(View anchor, View inputArea, boolean light) {
+    void show(View anchor, View inputArea, Style style) {
         dismiss();
         mCtx = new ContextThemeWrapper(mIme,
-                light ? R.style.HK_EmojiPanel_Light : R.style.HK_EmojiPanel_Dark);
+                style.light ? R.style.HK_EmojiPanel_Light : R.style.HK_EmojiPanel_Dark);
         float d = mIme.getResources().getDisplayMetrics().density;
-        int surface = light ? 0xFFFFFFFF : 0xFF2D2F31;
-        mTextColor = light ? 0xFF1F1F1F : 0xFFE3E3E3;
-        mSecondaryColor = light ? 0xFF5F6368 : 0xFF9AA0A6;
-        mPinnedColor = light ? 0xFFE8710A : 0xFFFFB74D;
-        mDividerColor = light ? 0x1F000000 : 0x33FFFFFF;
+        float radius = style.radius * d;
+        mTextColor = style.text;
+        mSecondaryColor = style.secondary;
+        mPinnedColor = style.accent;
+        mDividerColor = style.divider;
 
         LinearLayout root = new LinearLayout(mCtx);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackground(roundRect(surface, 16 * d));
+        GradientDrawable frame = roundRect(style.surface, radius);
+        int rim = 0;
+        if (style.outline != 0) {
+            // the content sits inside the rim, so the title bar doesn't paint over it
+            rim = Math.max(1, Math.round(1.5f * d));
+            frame.setStroke(rim, style.outline);
+            root.setPadding(rim, rim, rim, rim);
+        }
+        root.setBackground(frame);
         root.setClipToOutline(true);
+        float inner = Math.max(0, radius - rim);
 
         LinearLayout bar = new LinearLayout(mCtx);
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
+        GradientDrawable barBackground = new GradientDrawable();
+        barBackground.setColor(style.bar);
+        barBackground.setCornerRadii(new float[] {inner, inner, inner, inner, 0, 0, 0, 0});
+        bar.setBackground(barBackground);
         bar.setPadding((int) (16 * d), 0, (int) (4 * d), 0);
         TextView title = new TextView(mCtx);
         title.setText(R.string.clipboard_title);
@@ -158,7 +202,10 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         mUndoBar.setOrientation(LinearLayout.HORIZONTAL);
         mUndoBar.setGravity(Gravity.CENTER_VERTICAL);
         mUndoBar.setPadding((int) (16 * d), 0, (int) (4 * d), 0);
-        mUndoBar.setBackgroundColor(mDividerColor);
+        GradientDrawable undoBackground = new GradientDrawable();
+        undoBackground.setColor(mDividerColor);
+        undoBackground.setCornerRadii(new float[] {0, 0, 0, 0, inner, inner, inner, inner});
+        mUndoBar.setBackground(undoBackground);
         TextView deleted = new TextView(mCtx);
         deleted.setText(R.string.clipboard_deleted);
         deleted.setTextColor(mSecondaryColor);
@@ -204,7 +251,7 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         mWidth = width;
         mHeight = height;
         mPopup = new PopupWindow(root, width, height, false);
-        mPopup.setBackgroundDrawable(roundRect(surface, 16 * d));  // outline for the shadow
+        mPopup.setBackgroundDrawable(roundRect(style.surface, radius));  // outline for the shadow
         mPopup.setElevation(8 * d);
         mPopup.setOutsideTouchable(false);
         mPopup.setTouchable(true);

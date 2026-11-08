@@ -1319,7 +1319,62 @@ public class LatinIME extends InputMethodService implements
         if (keyboard == null || keyboard.getWindowToken() == null) return;
         if (mClipboardWindow == null) mClipboardWindow = new ClipboardWindow(this);
         View inputArea = mCandidateViewAndKeyboardView != null ? mCandidateViewAndKeyboardView : keyboard;
-        mClipboardWindow.show(keyboard, inputArea, isLightTheme());
+        mClipboardWindow.show(keyboard, inputArea, clipboardStyle());
+    }
+
+    /**
+     * The clipboard window in the keyboard's colours: the case behind the keys as its title
+     * bar, a key colour as its list, the theme accent for pinned entries.
+     */
+    private ClipboardWindow.Style clipboardStyle() {
+        int theme = mKeyboardSwitcher.getThemeLayout();
+        Resources res = getResources();
+        ClipboardWindow.Style s = ClipboardWindow.Style.plain(isLightTheme());
+        boolean you = theme == R.layout.input_google_you_light || theme == R.layout.input_google_you_dark;
+        if (you) {
+            boolean dark = theme == R.layout.input_google_you_dark;
+            s.colors(res, dark ? R.color.google_you_dark_bg : R.color.google_you_light_bg,
+                    dark ? R.color.google_you_dark_letter : R.color.google_you_light_letter,
+                    dark ? R.color.google_you_dark_text : R.color.google_you_light_text,
+                    dark ? R.color.google_you_dark_hint : R.color.google_you_light_hint,
+                    dark ? R.color.google_you_dark_accent : R.color.google_you_light_accent);
+        } else if (theme == R.layout.input_google_light || theme == R.layout.input_google_dark) {
+            boolean dark = theme == R.layout.input_google_dark;
+            s.colors(res, dark ? R.color.google_dark_bg : R.color.google_light_bg,
+                    dark ? R.color.google_dark_letter : R.color.google_light_letter,
+                    dark ? R.color.google_dark_text : R.color.google_light_text,
+                    dark ? R.color.google_dark_hint : R.color.google_light_hint,
+                    dark ? R.color.google_dark_accent : R.color.google_light_accent);
+        } else if (theme == R.layout.input_ios_light || theme == R.layout.input_ios_dark) {
+            boolean dark = theme == R.layout.input_ios_dark;
+            s.colors(res, dark ? R.color.ios_dark_bg : R.color.ios_light_bg,
+                    dark ? R.color.ios_dark_func : R.color.ios_light_letter,
+                    dark ? R.color.ios_dark_text : R.color.ios_light_text,
+                    dark ? R.color.ios_dark_hint : R.color.ios_light_hint,
+                    dark ? R.color.ios_dark_active : R.color.ios_light_active);
+            s.radius = 13;
+        } else if (theme == R.layout.input_keycap || theme == R.layout.input_keycap_dark) {
+            boolean dark = theme == R.layout.input_keycap_dark;
+            s.colors(res, dark ? R.color.keycap_dark_bg_top : R.color.keycap_bg_top,
+                    dark ? R.color.keycap_dark_letter_pressed : R.color.keycap_letter,
+                    dark ? R.color.keycap_dark_text : R.color.keycap_func_text,
+                    dark ? R.color.keycap_dark_hint : R.color.keycap_hint,
+                    dark ? R.color.keycap_dark_recommended : R.color.keycap_recommended);
+            s.outline = s.divider = res.getColor(dark ? R.color.keycap_dark_letter_side
+                    : R.color.keycap_letter_side);
+            s.radius = 10;
+        } else if (theme == R.layout.input_graphite) {
+            s.colors(res, R.color.graphite_bg_end, R.color.graphite_bg_center, R.color.graphite_text,
+                    R.color.graphite_hint, R.color.graphite_lock_bottom);
+            s.outline = res.getColor(R.color.graphite_bg_line);
+            s.radius = 8;
+        } else if (theme == R.layout.input_material_black) {
+            s.colors(res, R.color.key_background_material_black, R.color.key_background_material_black,
+                    R.color.key_text_color_material_black, R.color.key_hint_letter_color_material_black,
+                    R.color.candidate_recommended);
+            s.outline = 0x33FFFFFF;  // black on a dark app would have no edge
+        }
+        return s;
     }
 
     private void dismissClipboardWindow() {
