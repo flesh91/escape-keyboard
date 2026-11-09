@@ -244,10 +244,13 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         mScreenWidth = mIme.getResources().getDisplayMetrics().widthPixels;
         mScreenHeight = mIme.getResources().getDisplayMetrics().heightPixels;
         int spaceAbove = areaOnScreen[1] - mStatusBar - 2 * margin;
-        int height = (int) Math.min(mScreenHeight * 0.55f, 480 * d);
+        // 30% smaller across the screen's long side: lower in portrait, narrower in landscape
+        boolean landscape = "land".equals(orientation());
+        int height = (int) (Math.min(mScreenHeight * 0.55f, 480 * d) * (landscape ? 1f : 0.7f));
         boolean above = spaceAbove >= 200 * d;
         if (above) height = Math.min(height, spaceAbove);
-        int width = (int) Math.min(anchorWidth - 16 * d, Math.max(anchorWidth * 0.75f, 300 * d));
+        int width = (int) (Math.min(anchorWidth - 16 * d, Math.max(anchorWidth * 0.75f, 300 * d))
+                * (landscape ? 0.7f : 1f));
         mWidth = width;
         mHeight = height;
         mPopup = new PopupWindow(root, width, height, false);

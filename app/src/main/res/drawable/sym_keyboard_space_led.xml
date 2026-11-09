@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Space bar mark while a highlighted suggestion is pending (space will insert it). Shapes
+     instead of the old mdpi/hdpi PNG, so it stays sharp on any screen; same size, place and
+     orange as the PNG's bar and its glow. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="35dp" android:height="33dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    <item android:top="25dp" android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="3dp" />
+            <solid android:color="#26FFAE2E" />
+        </shape>
+    </item>
+    <item android:top="27dp" android:bottom="3dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="1.5dp" />
+            <solid android:color="#FFF17100" />
+        </shape>
+    </item>
+</layer-list>
