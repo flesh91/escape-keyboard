@@ -34,7 +34,6 @@
         latin:keyPreviewTextColor="@color/google_light_text"
         latin:recolorSymbols="true"
         latin:keyHintColor="@color/google_light_hint"
-        latin:keyHintInset="3dp"
         latin:keyActiveColor="@color/google_light_active"
         latin:keyActiveTextColor="@color/google_light_on_active"
         latin:keyCursorColor="@color/google_light_text"

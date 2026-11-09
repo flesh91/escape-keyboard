@@ -8,8 +8,9 @@ android {
         applicationId 'app.escapekeyboard'
         minSdk 21
         targetSdk 37
-        versionCode 173
-        versionName "1.0"
+        // The build number is the version code and the last part of the version name
+        versionCode 178
+        versionName "1.0.${versionCode}"
         externalNativeBuild {
             cmake {
                 cppFlags ""

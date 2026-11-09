@@ -33,7 +33,6 @@
         latin:keyPreviewTextColor="@color/google_dark_text"
         latin:recolorSymbols="true"
         latin:keyHintColor="@color/google_dark_hint"
-        latin:keyHintInset="3dp"
         latin:keyCursorColor="@color/google_dark_text"
         latin:keyActiveColor="@color/google_dark_active"
         latin:keyActiveTextColor="@color/google_dark_on_active"

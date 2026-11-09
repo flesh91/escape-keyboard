@@ -186,7 +186,9 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     private float mLabelScale = 1.0f;
     private int mKeyTextColor;
     private int mKeyHintColor;
-    private int mKeyHintInset;
+    // Hint labels sit this far from the key's top and side edges in every theme, whatever
+    // content padding the theme's key background has
+    private int mHintEdge, mHintTop;
     private int mKeyCursorColor;
     // Sticky modifiers that are on get a solid fill so Ctrl/Alt/Shift state is obvious
     private int mKeyActiveColor;
@@ -559,8 +561,6 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 mKeyTextColor = a.getColor(attr, 0xFF000000);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyHintColor)
                 mKeyHintColor = a.getColor(attr, 0xFFBBBBBB);
-            else if(attr== R.styleable.LatinKeyboardBaseView_keyHintInset)
-                mKeyHintInset = a.getDimensionPixelSize(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyCursorColor)
                 mKeyCursorColor = a.getColor(attr, 0xFF000000);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyActiveColor)
@@ -628,6 +628,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         mCornerPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
 
         mSwipeThreshold = (int) (300 * res.getDisplayMetrics().density);
+        mHintEdge = Math.round(5 * res.getDisplayMetrics().density);
+        mHintTop = Math.round(3 * res.getDisplayMetrics().density);
         // TODO: Refer frameworks/base/core/res/res/values/config.xml
         // TODO(klausw): turn off mDisambiguateSwipe if no swipe actions are set?
         mDisambiguateSwipe = res.getBoolean(R.bool.config_swipeDisambiguation);
@@ -977,6 +979,39 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         canvas.drawText(accent, x, baseline, paint);
     }
 
+    private final Rect mHintBounds = new Rect();
+
+    /**
+     * Draws a hint label. Signs wider or taller than a digit (@, №, %, $, brackets) are scaled
+     * down to about a digit's size, so they don't look bigger than the other hints.
+     */
+    private void drawHint(Canvas canvas, String hint, int x, int baseline, Paint paint, int size,
+            Align align) {
+        paint.setTextAlign(align);
+        if (Character.getType(hint.charAt(0)) == Character.NON_SPACING_MARK) {
+            drawDeadKeyLabel(canvas, hint, x, baseline, paint);
+        } else {
+            paint.getTextBounds("0", 0, 1, mHintBounds);
+            final float maxWidth = mHintBounds.width() * 1.15f;
+            final float maxHeight = mHintBounds.height() * 1.1f;
+            final float digitMiddle = baseline + mHintBounds.exactCenterY();
+            paint.getTextBounds(hint, 0, hint.length(), mHintBounds);
+            float scale = 1f;
+            if (mHintBounds.width() > maxWidth) scale = maxWidth / mHintBounds.width();
+            if (mHintBounds.height() > maxHeight) scale = Math.min(scale, maxHeight / mHintBounds.height());
+            float y = baseline;
+            if (scale < 1f) {
+                // smaller, and centred on the digit height: a bracket would hang below it
+                paint.setTextSize(size * scale);
+                paint.getTextBounds(hint, 0, hint.length(), mHintBounds);
+                y = digitMiddle - mHintBounds.exactCenterY();
+            }
+            canvas.drawText(hint, x, y, paint);
+        }
+        paint.setTextSize(size);
+        paint.setTextAlign(Align.RIGHT);
+    }
+
     private int getLabelHeight(Paint paint, int labelSize) {
         Integer labelHeightValue = mTextHeightCache.get(labelSize);
         if (labelHeightValue != null) {
@@ -1320,8 +1355,9 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 // Draw a drop shadow for the text
                 paint.setShadowLayer(mShadowRadius, 0, 0, mShadowColor);
 
-                // Hint labels stack in the top right corner: the shifted character, then the
-                // first popup character under it
+                // Hint labels: the shifted character in the top right corner; the first popup
+                // character beside it in the top left, like the two legends on a PC keycap, or
+                // in the top right when it is the only one
                 String hint = key.getHintLabel(showHints7Bit(), showHintsAll());
                 if (key.isShifted() && key.shiftLabel != null && !hint.equals("")
                         && hint.charAt(0) == key.shiftLabel.charAt(0)) {
@@ -1329,40 +1365,27 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 }
                 String altHint = key.getAltHintLabel(showHints7Bit(), showHintsAll());
                 final int hintTextSize = (int)(mKeyTextSize * 0.6 * mLabelScale);
-                final int hintX = key.width - padding.right - mKeyHintInset;
-                float hintWidth = 0;
+                final int hintX = key.width - mHintEdge;
                 if (!hint.equals("") || !altHint.equals("")) {
                     paintHint.setTextSize(hintTextSize);
-                    hintWidth = Math.max(paintHint.measureText(hint), paintHint.measureText(altHint));
-                }
-                if (!hint.equals("")) {
-                    final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int baseline = padding.top + hintLabelHeight * 16/10;
-                    if (Character.getType(hint.charAt(0)) == Character.NON_SPACING_MARK) {
-                        drawDeadKeyLabel(canvas, hint, hintX, baseline, paintHint);
-                    } else {
-                        canvas.drawText(hint, hintX, baseline, paintHint);
+                    final int hintBaseline = mHintTop
+                            + getLabelHeight(paintHint, hintTextSize) * 16/10;
+                    if (!hint.equals("")) {
+                        drawHint(canvas, hint, hintX, hintBaseline, paintHint, hintTextSize, Align.RIGHT);
                     }
-                }
-                if (!altHint.equals("")) {
-                    final int hintLabelHeight = getLabelHeight(paintHint, hintTextSize);
-                    int baseline = padding.top + hintLabelHeight * (hint.equals("") ? 16 : 30)/10;
-                    if (Character.getType(altHint.charAt(0)) == Character.NON_SPACING_MARK) {
-                        drawDeadKeyLabel(canvas, altHint, hintX, baseline, paintHint);
-                    } else {
-                        canvas.drawText(altHint, hintX, baseline, paintHint);
+                    if (!altHint.equals("")) {
+                        if (hint.equals("")) {
+                            drawHint(canvas, altHint, hintX, hintBaseline, paintHint, hintTextSize,
+                                    Align.RIGHT);
+                        } else {
+                            drawHint(canvas, altHint, mHintEdge, hintBaseline,
+                                    paintHint, hintTextSize, Align.LEFT);
+                        }
                     }
                 }
 
-                // Draw main key label, moved left on a narrow key so it doesn't touch the hints
-                int centerX = (key.width + padding.left - padding.right) / 2;
-                if (hintWidth > 0) {
-                    final float halfLabel = paint.measureText(label) / 2;
-                    final float rightLimit = hintX - hintWidth - hintTextSize * 0.15f;
-                    if (centerX + halfLabel > rightLimit) {
-                        centerX = (int) Math.max(padding.left + halfLabel, rightLimit - halfLabel);
-                    }
-                }
+                // Draw main key label, always centred so the labels of a row stay in line
+                final int centerX = (key.width + padding.left - padding.right) / 2;
                 final int centerY = (key.height + padding.top - padding.bottom) / 2;
                 final float baseline = centerY
                         + labelHeight * KEY_LABEL_VERTICAL_ADJUSTMENT_FACTOR;

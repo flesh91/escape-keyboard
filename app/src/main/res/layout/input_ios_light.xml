@@ -15,7 +15,6 @@
         latin:keyPreviewTextColor="@color/ios_light_text"
         latin:recolorSymbols="true"
         latin:keyHintColor="@color/ios_light_hint"
-        latin:keyHintInset="3dp"
         latin:keyCursorColor="@color/ios_light_text"
         latin:keyActiveColor="@color/ios_light_active"
         latin:keyActiveRadius="5.5dp"

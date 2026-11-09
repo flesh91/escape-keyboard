@@ -18,7 +18,6 @@
         latin:keyPreviewTextColor="@color/keycap_text"
         latin:recolorSymbols="true"
         latin:keyHintColor="@color/keycap_hint"
-        latin:keyHintInset="3dp"
         latin:keyCursorColor="@color/keycap_func_text"
         latin:keyActiveColor="@color/keycap_active"
         latin:keyActiveRadius="5dp"

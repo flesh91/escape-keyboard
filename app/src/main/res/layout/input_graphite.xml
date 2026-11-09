@@ -14,7 +14,6 @@
         latin:keyPreviewTextColor="@color/graphite_text"
         latin:recolorSymbols="true"
         latin:keyHintColor="@color/graphite_hint"
-        latin:keyHintInset="0.75dp"
         latin:keyCursorColor="@color/graphite_text"
         latin:shadowColor="@color/graphite_text_shadow"
         latin:shadowRadius="1"

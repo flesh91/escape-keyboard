@@ -36,9 +36,6 @@
 
         <!-- Color to use for key hint labels. -->
         <attr name="keyHintColor" format="color" />
-        <!-- Extra gap between the hint labels and the key's right edge (themes whose key
-             background has no content padding of its own). -->
-        <attr name="keyHintInset" format="dimension" />
 
         <!-- Color to use for cursor key labels. -->
         <attr name="keyCursorColor" format="color" />
