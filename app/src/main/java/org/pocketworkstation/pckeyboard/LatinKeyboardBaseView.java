@@ -520,6 +520,16 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         this(context, attrs, R.attr.keyboardViewStyle);
     }
 
+    // keyTextStyle flags beside bold (1) and italic (2), see attrs.xml
+    private static final int KEY_TEXT_MONOSPACE = 4;
+
+    /** The letter typeface of a keyTextStyle value: bold/italic, optionally in the monospace family. */
+    private static Typeface keyTextTypeface(int flags) {
+        int style = flags & Typeface.BOLD_ITALIC;
+        if ((flags & KEY_TEXT_MONOSPACE) != 0) return Typeface.create(Typeface.MONOSPACE, style);
+        return Typeface.defaultFromStyle(style);
+    }
+
     public LatinKeyboardBaseView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
@@ -595,7 +605,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                         mKeyTextStyle = Typeface.DEFAULT_BOLD;
                         break;
                     default:
-                        mKeyTextStyle = Typeface.defaultFromStyle(textStyle);
+                        mKeyTextStyle = keyTextTypeface(textStyle);
                         break;
                 }}
             else if(attr==R.styleable.LatinKeyboardBaseView_symbolColorScheme)

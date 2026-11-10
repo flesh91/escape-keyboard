@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Retro terminal theme: Enter keycap pressed, 2dp down, the face darker -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="2dp" android:insetRight="2dp"
+    android:insetTop="2.5dp" android:insetBottom="2.5dp">
+    <layer-list>
+        <!-- contact shadow on the case -->
+        <item android:top="3dp" android:bottom="-0.5dp">
+            <shape android:shape="rectangle"><corners android:radius="5dp" /><solid android:color="@color/retro_shadow" /></shape>
+        </item>
+        <!-- skirt: the sides and the lower bevel, darker towards the bottom -->
+        <item android:top="2dp">
+            <shape android:shape="rectangle"><corners android:radius="4.5dp" /><gradient android:angle="270" android:startColor="@color/retro_enter_side_top" android:endColor="@color/retro_enter_side" /></shape>
+        </item>
+        <!-- highlight along the top edge of the face -->
+        <item android:left="1.5dp" android:top="2.5dp" android:right="1.5dp" android:bottom="1.5dp">
+            <shape android:shape="rectangle"><corners android:radius="3.5dp" /><solid android:color="@color/retro_enter" /></shape>
+        </item>
+        <!-- face -->
+        <item android:left="1.5dp" android:top="3.25dp" android:right="1.5dp" android:bottom="1.5dp">
+            <shape android:shape="rectangle"><corners android:radius="3.5dp" /><solid android:color="@color/retro_enter_pressed" /></shape>
+        </item>
+        <!-- matte dish: a touch lighter at the top, darker at the bottom -->
+        <item android:left="1.5dp" android:top="2.5dp" android:right="1.5dp" android:bottom="1.5dp">
+            <shape android:shape="rectangle"><corners android:radius="3.5dp" /><gradient android:angle="270" android:startColor="@color/retro_dish_top" android:centerColor="@color/retro_dish_mid" android:endColor="@color/retro_dish_bottom" /></shape>
+        </item>
+    </layer-list>
+</inset>

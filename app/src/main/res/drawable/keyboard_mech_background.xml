@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mechanical theme: the plate behind the keys, silver-grey aluminium: a faint vertical
+     gradient and a fainter sheen across the middle -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="270" android:startColor="@color/mech_bg_top" android:endColor="@color/mech_bg_bottom" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="0" android:startColor="@color/mech_sheen_clear" android:centerColor="@color/mech_sheen" android:endColor="@color/mech_sheen_clear" />
+        </shape>
+    </item>
+</layer-list>

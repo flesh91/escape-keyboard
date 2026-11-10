@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Retro terminal theme: suggestion strip, autofill row and macro row background
+     (LatinIME.applyStripBackground): the case, a touch lighter at the top, flowing into the
+     keyboard below it -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="270" android:startColor="@color/retro_strip_top"
+        android:endColor="@color/retro_strip_bg" />
+</shape>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mechanical theme: Enter keycap, pressed.
+     The cap sinks 2dp: the front skirt shrinks to 1.5dp, the shadow tightens, the face
+     is a touch darker and its rim dimmer; the contour follows the body down. Same padding
+     as at rest, so the label stays put. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="2dp" android:insetRight="2dp"
+    android:insetTop="2.5dp" android:insetBottom="2.5dp">
+    <layer-list>
+        <item android:left="-0.25dp" android:top="4.5dp" android:right="-0.25dp" android:bottom="-1dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="6.5dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_shadow_clear" android:endColor="@color/mech_shadow_far" />
+            </shape>
+        </item>
+        <item android:top="4.5dp" android:bottom="-0.5dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="6.5dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_shadow_clear" android:endColor="@color/mech_shadow_near" />
+            </shape>
+        </item>
+        <item android:top="2dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="6dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_enter_side_top" android:centerColor="@color/mech_enter_side_top" android:centerY="0.86" android:endColor="@color/mech_enter_side" />
+            </shape>
+        </item>
+        <item android:top="2dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="6dp" />
+                <solid android:color="@android:color/transparent" />
+                <stroke android:width="0.5dp" android:color="@color/mech_contour" />
+            </shape>
+        </item>
+        <item android:left="1.5dp" android:top="2.5dp" android:right="1.5dp" android:bottom="2.25dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <solid android:color="@color/mech_enter_top" />
+            </shape>
+        </item>
+        <item android:left="1.5dp" android:top="3dp" android:right="1.5dp" android:bottom="1.5dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_enter_pressed" android:endColor="@color/mech_enter_pressed_bottom" />
+            </shape>
+        </item>
+    </layer-list>
+</inset>

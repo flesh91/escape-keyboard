@@ -1370,6 +1370,7 @@ public class LatinIME extends InputMethodService implements
         int theme = mKeyboardSwitcher.getThemeLayout();
         Resources res = getResources();
         ClipboardWindow.Style s = ClipboardWindow.Style.plain(isLightTheme());
+        int[] own = ownColorTheme(theme);
         boolean you = theme == R.layout.input_google_you_light || theme == R.layout.input_google_you_dark;
         if (you) {
             boolean dark = theme == R.layout.input_google_you_dark;
@@ -1413,6 +1414,12 @@ public class LatinIME extends InputMethodService implements
                     R.color.key_text_color_material_black, R.color.key_hint_letter_color_material_black,
                     R.color.candidate_recommended);
             s.outline = 0x33FFFFFF;  // black on a dark app would have no edge
+        } else if (own != null) {
+            s.colors(res, own[OWN_CLIP_BAR], own[OWN_CLIP_SURFACE], own[OWN_CLIP_TEXT],
+                    own[OWN_CLIP_SECONDARY], own[OWN_CLIP_ACCENT]);
+            s.outline = res.getColor(own[OWN_CLIP_OUTLINE]);
+            s.divider = res.getColor(own[OWN_CLIP_DIVIDER]);
+            s.radius = res.getInteger(own[OWN_CLIP_RADIUS]);
         }
         return s;
     }
@@ -1540,6 +1547,7 @@ public class LatinIME extends InputMethodService implements
         applyStripBackground(mCandidateViewContainer);
         int theme = mKeyboardSwitcher.getThemeLayout();
         Resources res = getResources();
+        int[] own = ownColorTheme(theme);
         boolean you = theme == R.layout.input_google_you_light || theme == R.layout.input_google_you_dark;
         if (you || theme == R.layout.input_google_light || theme == R.layout.input_google_dark) {
             boolean dark = theme == R.layout.input_google_dark || theme == R.layout.input_google_you_dark;
@@ -1561,6 +1569,9 @@ public class LatinIME extends InputMethodService implements
             mCandidateView.setThemeColors(res.getColor(R.color.graphite_text),
                     res.getColor(R.color.graphite_candidate_recommended),
                     res.getColor(R.color.graphite_candidate_other), true);
+        } else if (own != null) {
+            mCandidateView.setThemeColors(res.getColor(own[OWN_STRIP_TEXT]),
+                    res.getColor(own[OWN_STRIP_RECOMMENDED]), res.getColor(own[OWN_STRIP_OTHER]), true);
         } else if (mKeyboardSwitcher.getInputView() != null) {
             // Other themes: the strip continues the keyboard's background and label colour
             LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
@@ -1578,6 +1589,7 @@ public class LatinIME extends InputMethodService implements
     private void applyStripBackground(View strip) {
         int theme = mKeyboardSwitcher.getThemeLayout();
         Resources res = getResources();
+        int[] own = ownColorTheme(theme);
         boolean you = theme == R.layout.input_google_you_light || theme == R.layout.input_google_you_dark;
         if (you || theme == R.layout.input_google_light || theme == R.layout.input_google_dark) {
             boolean dark = theme == R.layout.input_google_dark || theme == R.layout.input_google_you_dark;
@@ -1592,6 +1604,8 @@ public class LatinIME extends InputMethodService implements
                     ? R.color.keycap_dark_bg_top : R.color.keycap_bg_top));
         } else if (theme == R.layout.input_graphite) {
             strip.setBackgroundResource(R.drawable.candidate_graphite_background);
+        } else if (own != null) {
+            strip.setBackgroundResource(own[OWN_STRIP]);
         } else if (mKeyboardSwitcher.getInputView() != null) {
             android.graphics.drawable.Drawable bg = mKeyboardSwitcher.getInputView().getBackground();
             if (bg != null && bg.getConstantState() != null) {
@@ -1604,9 +1618,53 @@ public class LatinIME extends InputMethodService implements
 
     private boolean isLightTheme() {
         int theme = mKeyboardSwitcher.getThemeLayout();
+        int[] own = ownColorTheme(theme);
+        if (own != null) return getResources().getBoolean(own[OWN_IS_LIGHT]);
         return theme == R.layout.input_google_light || theme == R.layout.input_google_you_light
                 || theme == R.layout.input_material_light || theme == R.layout.input_ios_light
                 || theme == R.layout.input_keycap;
+    }
+
+    // Themes with all their colours in their own values/colors_P.xml (P = mech or retro),
+    // a row per layout, light and dark. The columns are names every such file defines,
+    // listed at its top; drawable/candidate_P_background.xml paints P_strip_bg
+    private static final int OWN_LAYOUT = 0, OWN_IS_LIGHT = 1, OWN_STRIP = 2, OWN_STRIP_TEXT = 3,
+            OWN_STRIP_RECOMMENDED = 4, OWN_STRIP_OTHER = 5, OWN_CLIP_BAR = 6, OWN_CLIP_SURFACE = 7,
+            OWN_CLIP_TEXT = 8, OWN_CLIP_SECONDARY = 9, OWN_CLIP_ACCENT = 10, OWN_CLIP_OUTLINE = 11,
+            OWN_CLIP_DIVIDER = 12, OWN_CLIP_RADIUS = 13;
+    private static final int[][] OWN_COLOR_THEMES = {
+        { R.layout.input_mech, R.bool.mech_is_light, R.drawable.candidate_mech_background,
+            R.color.mech_strip_text, R.color.mech_strip_recommended, R.color.mech_strip_other,
+            R.color.mech_clip_bar, R.color.mech_clip_surface, R.color.mech_clip_text,
+            R.color.mech_clip_secondary, R.color.mech_clip_accent, R.color.mech_clip_outline,
+            R.color.mech_clip_divider, R.integer.mech_clip_radius },
+        { R.layout.input_mech_dark, R.bool.mech_dark_is_light,
+            R.drawable.candidate_mech_dark_background, R.color.mech_dark_strip_text,
+            R.color.mech_dark_strip_recommended, R.color.mech_dark_strip_other,
+            R.color.mech_dark_clip_bar, R.color.mech_dark_clip_surface, R.color.mech_dark_clip_text,
+            R.color.mech_dark_clip_secondary, R.color.mech_dark_clip_accent,
+            R.color.mech_dark_clip_outline, R.color.mech_dark_clip_divider,
+            R.integer.mech_dark_clip_radius },
+        { R.layout.input_retro, R.bool.retro_is_light, R.drawable.candidate_retro_background,
+            R.color.retro_strip_text, R.color.retro_strip_recommended, R.color.retro_strip_other,
+            R.color.retro_clip_bar, R.color.retro_clip_surface, R.color.retro_clip_text,
+            R.color.retro_clip_secondary, R.color.retro_clip_accent, R.color.retro_clip_outline,
+            R.color.retro_clip_divider, R.integer.retro_clip_radius },
+        { R.layout.input_retro_dark, R.bool.retro_dark_is_light,
+            R.drawable.candidate_retro_dark_background, R.color.retro_dark_strip_text,
+            R.color.retro_dark_strip_recommended, R.color.retro_dark_strip_other,
+            R.color.retro_dark_clip_bar, R.color.retro_dark_clip_surface,
+            R.color.retro_dark_clip_text, R.color.retro_dark_clip_secondary,
+            R.color.retro_dark_clip_accent, R.color.retro_dark_clip_outline,
+            R.color.retro_dark_clip_divider, R.integer.retro_dark_clip_radius },
+    };
+
+    /** The OWN_COLOR_THEMES row of a theme layout, null for the other themes. */
+    private static int[] ownColorTheme(int theme) {
+        for (int[] row : OWN_COLOR_THEMES) {
+            if (row[OWN_LAYOUT] == theme) return row;
+        }
+        return null;
     }
 
     /**

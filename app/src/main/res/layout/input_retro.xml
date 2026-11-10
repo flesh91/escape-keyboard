@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Retro terminal theme. Colours: values/colors_retro.xml (retro_*).
+     Letters and the key preview in bold monospace, like a terminal. keyActiveColor is
+     #00000000 (off): the sticky modifiers draw their own on and locked caps (an amber cap
+     with its LED lit, see drawable/btn_keyboard_key_retro.xml). -->
+<org.pocketworkstation.pckeyboard.LatinKeyboardView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:latin="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/LatinkeyboardBaseView"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/keyboard_bottom_padding"
+        android:background="@drawable/keyboard_retro_background"
+        latin:shadowRadius="0"
+        latin:keyTextStyle="monospace|bold"
+        latin:keyTextColor="@color/retro_text"
+        latin:keyFunctionTextColor="@color/retro_func_text"
+        latin:keyAccentTextColor="@color/retro_accent_text"
+        latin:keyEscapeTextColor="@color/retro_esc_text"
+        latin:keySpaceTextColor="@color/retro_space_text"
+        latin:keyPreviewBackground="@drawable/key_preview_retro"
+        latin:keyPreviewTextColor="@color/retro_preview_text"
+        latin:recolorSymbols="true"
+        latin:keyHintColor="@color/retro_hint"
+        latin:keyCursorColor="@color/retro_cursor"
+        latin:keyActiveColor="@color/retro_active"
+        latin:keyActiveRadius="5dp"
+        latin:keyActiveTextColor="@color/retro_on_active"
+
+        latin:keyBackground="@drawable/btn_keyboard_key_retro"
+        latin:keyEscapeBackground="@drawable/btn_keyboard_key_retro_esc"
+        latin:keyEnterBackground="@drawable/btn_keyboard_key_retro_enter"
+        latin:keySpaceBackground="@drawable/btn_keyboard_key_retro_space"
+        latin:popupLayout="@layout/input_popup_retro"
+        />

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mechanical dark theme: space bar keycap.
+     From the plate up: the shadow the cap casts (two layers, fading out towards its top,
+     reaching out of the inset into the gap between keys), the cap body (its 3.5dp front skirt
+     and 1.5dp sides show), the contour along the body's edge (one colour for every cap, so
+     every skirt ends at the same line), the light rim along the top edge, the top face.
+     The inset is the drawable's padding and the body and face sit where the Keycap theme's
+     do, so labels and hints are placed as in every other theme. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="2dp" android:insetRight="2dp"
+    android:insetTop="2.5dp" android:insetBottom="2.5dp">
+    <layer-list>
+        <item android:left="-0.5dp" android:top="3dp" android:right="-0.5dp" android:bottom="-1.5dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="7dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_dark_shadow_clear" android:endColor="@color/mech_dark_shadow_far" />
+            </shape>
+        </item>
+        <item android:top="3dp" android:bottom="-0.75dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="6.5dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_dark_shadow_clear" android:endColor="@color/mech_dark_shadow_near" />
+            </shape>
+        </item>
+        <item>
+            <shape android:shape="rectangle">
+                <corners android:radius="6dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_dark_space_side_top" android:centerColor="@color/mech_dark_space_side_top" android:centerY="0.86" android:endColor="@color/mech_dark_space_side" />
+            </shape>
+        </item>
+        <item>
+            <shape android:shape="rectangle">
+                <corners android:radius="6dp" />
+                <solid android:color="@android:color/transparent" />
+                <stroke android:width="0.5dp" android:color="@color/mech_dark_contour" />
+            </shape>
+        </item>
+        <item android:left="1.5dp" android:top="0.5dp" android:right="1.5dp" android:bottom="4.25dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <solid android:color="@color/mech_dark_space_hl" />
+            </shape>
+        </item>
+        <item android:left="1.5dp" android:top="1dp" android:right="1.5dp" android:bottom="3.5dp">
+            <shape android:shape="rectangle">
+                <corners android:radius="5dp" />
+                <gradient android:angle="270" android:startColor="@color/mech_dark_space_top" android:centerColor="@color/mech_dark_space" android:endColor="@color/mech_dark_space_bottom" />
+            </shape>
+        </item>
+    </layer-list>
+</inset>

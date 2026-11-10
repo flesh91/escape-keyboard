@@ -372,6 +372,8 @@
         <item>@string/layout_ios_system</item>
         <item>@string/layout_graphite</item>
         <item>@string/layout_keycap</item>
+        <item>@string/layout_mech</item>
+        <item>@string/layout_retro</item>
         <item>@string/layout_ics</item>
 		<item>@string/layout_material_black</item>
         <item>@string/layout_material_dark</item>
@@ -394,6 +396,8 @@
         <item>13</item>
         <item>12</item>
         <item>14</item>
+        <item>15</item>
+        <item>18</item>
         <item>0</item>
         <item>7</item>
         <item>4</item>
@@ -773,6 +777,8 @@
     </string-array>
     <string name="layout_graphite" translatable="false">Graphite</string>
     <string name="layout_keycap">Keycap (follows system theme)</string>
+    <string name="layout_mech">Mechanical (follows system theme)</string>
+    <string name="layout_retro">Retro terminal (follows system theme)</string>
     <string name="layout_ios_system">Cupertino (follows system theme)</string>
     <string name="screen_clipboard">Clipboard</string>
     <string name="screen_clipboard_summary">History of copied text, pinned items</string>

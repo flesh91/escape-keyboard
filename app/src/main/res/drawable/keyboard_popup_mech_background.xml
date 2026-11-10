@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press panel of the Mechanical theme: a small aluminium tray over its shadow,
+     with a dark rim (1.5dp at the bottom, so the bottom caps end on the plate), a light bevel along the top and a plate face; its keys
+     are letter caps (btn_keyboard_key_popup_mech) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="1.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <gradient android:angle="270" android:startColor="@color/mech_shadow_clear" android:endColor="@color/mech_popup_shadow" />
+        </shape>
+    </item>
+    <item android:left="1dp" android:right="1dp" android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="11dp" />
+            <solid android:color="@color/mech_popup_side" />
+        </shape>
+    </item>
+    <item android:left="1.75dp" android:right="1.75dp" android:bottom="3.25dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="10dp" />
+            <solid android:color="@color/mech_popup_hl" />
+        </shape>
+    </item>
+    <item android:left="1.75dp" android:top="0.75dp" android:right="1.75dp" android:bottom="2.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="10dp" />
+            <gradient android:angle="270" android:startColor="@color/mech_popup_bg" android:endColor="@color/mech_popup_bg_bottom" />
+        </shape>
+    </item>
+</layer-list>

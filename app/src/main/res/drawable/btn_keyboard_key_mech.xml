@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mechanical theme: letter caps and function caps; Esc, Enter and the space bar
+     have their own caps (keyEscapeBackground and the like). Every cap has the same padding
+     (the Keycap theme's: its inset), which the keyboard reads from this drawable to centre
+     the labels. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sticky modifiers (Shift, Ctrl, Alt); keyActiveColor paints their face while on. -->
+    <item android:state_checkable="true" android:state_pressed="true"
+          android:drawable="@drawable/key_mech_func_pressed" />
+    <item android:state_checkable="true"
+          android:drawable="@drawable/key_mech_func" />
+    <!-- Function keys (Backspace, Tab, arrows...). -->
+    <item android:state_single="true" android:state_pressed="true"
+          android:drawable="@drawable/key_mech_func_pressed" />
+    <item android:state_single="true"
+          android:drawable="@drawable/key_mech_func" />
+    <!-- Empty background keys. -->
+    <item android:state_empty="true" android:state_pressed="true"
+          android:drawable="@drawable/key_mech_letter_pressed" />
+    <item android:state_empty="true"
+          android:drawable="@android:color/transparent" />
+    <!-- Letter keys. -->
+    <item android:state_pressed="true"
+          android:drawable="@drawable/key_mech_letter_pressed" />
+    <item android:drawable="@drawable/key_mech_letter" />
+</selector>

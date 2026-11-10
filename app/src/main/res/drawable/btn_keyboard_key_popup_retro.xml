@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press panel keys of the Retro terminal theme: the one under the finger is a small
+     amber cap pushed in (the Keycap theme's pressed face); the others are printed on the
+     panel. The inset is the padding, the Keycap theme's, so the labels sit where they do in
+     every other theme -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <inset android:insetLeft="2dp" android:insetRight="2dp"
+            android:insetTop="2.5dp" android:insetBottom="2.5dp">
+            <layer-list>
+                <!-- skirt -->
+                <item android:top="2dp">
+                    <shape android:shape="rectangle"><corners android:radius="4.5dp" /><solid android:color="@color/retro_selected_side" /></shape>
+                </item>
+                <!-- highlight along the top edge, then the face -->
+                <item android:left="1.5dp" android:top="2.5dp" android:right="1.5dp" android:bottom="1.5dp">
+                    <shape android:shape="rectangle"><corners android:radius="3.5dp" /><solid android:color="@color/retro_selected_hi" /></shape>
+                </item>
+                <item android:left="1.5dp" android:top="3.25dp" android:right="1.5dp" android:bottom="1.5dp">
+                    <shape android:shape="rectangle"><corners android:radius="3.5dp" /><solid android:color="@color/retro_selected" /></shape>
+                </item>
+                <item android:left="1.5dp" android:top="2.5dp" android:right="1.5dp" android:bottom="1.5dp">
+                    <shape android:shape="rectangle"><corners android:radius="3.5dp" /><gradient android:angle="270" android:startColor="@color/retro_dish_top" android:centerColor="@color/retro_dish_mid" android:endColor="@color/retro_dish_bottom" /></shape>
+                </item>
+            </layer-list>
+        </inset>
+    </item>
+    <item android:drawable="@android:color/transparent" />
+</selector>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Retro terminal theme, dark: letter, function and sticky modifier caps; Esc, Enter and the
+     space bar have their own caps (keyEscapeBackground and the like). keyActiveColor is off:
+     the modifiers draw their own on and locked caps, an amber cap with its LED lit. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Locked modifier (Caps Lock, a double-tapped Ctrl or Alt): LED lit, deeper amber; the cap sits as at rest. -->
+    <item android:state_active="true" android:state_pressed="true"
+          android:drawable="@drawable/key_retro_dark_mod_lock_pressed" />
+    <item android:state_active="true"
+          android:drawable="@drawable/key_retro_dark_mod_lock" />
+    <!-- Sticky modifier on (Shift, Ctrl, Alt for the next key): amber cap, LED lit. -->
+    <item android:state_checkable="true" android:state_checked="true" android:state_pressed="true"
+          android:drawable="@drawable/key_retro_dark_mod_on_pressed" />
+    <item android:state_checkable="true" android:state_checked="true"
+          android:drawable="@drawable/key_retro_dark_mod_on" />
+    <!-- Sticky modifier off: a function cap with its LED window dark. -->
+    <item android:state_checkable="true" android:state_pressed="true"
+          android:drawable="@drawable/key_retro_dark_mod_pressed" />
+    <item android:state_checkable="true"
+          android:drawable="@drawable/key_retro_dark_mod" />
+    <!-- Function keys (Backspace, Tab, arrows, F-keys...). -->
+    <item android:state_single="true" android:state_pressed="true"
+          android:drawable="@drawable/key_retro_dark_func_pressed" />
+    <item android:state_single="true"
+          android:drawable="@drawable/key_retro_dark_func" />
+    <!-- Empty background keys. -->
+    <item android:state_empty="true" android:state_pressed="true"
+          android:drawable="@drawable/key_retro_dark_letter_pressed" />
+    <item android:state_empty="true"
+          android:drawable="@android:color/transparent" />
+    <!-- Letter keys. -->
+    <item android:state_pressed="true"
+          android:drawable="@drawable/key_retro_dark_letter_pressed" />
+    <item android:drawable="@drawable/key_retro_dark_letter" />
+</selector>

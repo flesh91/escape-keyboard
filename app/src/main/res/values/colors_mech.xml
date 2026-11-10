@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Mechanical theme ("follows system theme"): every colour of the theme, the light variant
+    as mech_*, the dark one as mech_dark_*. The theme's own files all carry "mech" in their name:
+    layout/input_mech.xml, input_mech_dark.xml, input_popup_mech.xml, input_popup_mech_dark.xml,
+    drawable/*mech*.xml and this file. KeyboardSwitcher picks input_mech or input_mech_dark by
+    the system night mode.
+
+    The look: sculpted keycaps on an aluminium plate. Every cap (drawable/key_mech*_CAP.xml) is
+    drawn from the plate up: a soft shadow on the plate, the cap body whose front skirt shows
+    3.5dp below the top face (1.5dp once pressed: the cap sinks), a thin contour along the body's
+    edge, a light rim along its top edge and the top face itself, a vertical gradient lighter at
+    the top. Letters, the space bar and the long-press keys are one colour, function and modifier
+    caps a darker shade, Esc and Enter accent caps (muted red, amber). Colours of a cap CAP:
+      CAP_top, CAP, CAP_bottom        top face gradient (top edge, middle, bottom edge)
+      CAP_hl                          the light rim along the top edge
+      CAP_side_top, CAP_side          the body: its sides, and the bottom of the front skirt
+      CAP_pressed, CAP_pressed_bottom top face gradient while pressed (the rim is CAP_top)
+    Every skirt is meant to read as the same height, whatever the cap's colour, so the skirts
+    follow one rule instead of being picked by eye: a skirt is its own face (CAP_bottom) in less
+    light, in linear RGB times 0.72 where it shows below the face and 0.52 at its bottom edge
+    (dark variant: 0.60 and 0.45), keeping the hue of the cap. The white letter caps go a touch
+    deeper (0.66 and 0.47), or their skirt would be the colour of the plate. The contour, one
+    colour for every cap of a variant, marks where each cap ends against the plate, so a pale
+    skirt on a pale plate and a dark one on a dark plate stop at the same line.
+
+    Names LatinIME reads, required in both variants as mech_NAME and mech_dark_NAME
+    (colours unless noted); renaming or removing one breaks the build:
+      is_light (bool)       light look of the system navigation bar buttons (dark icons),
+                            the emoji panel, the autofill chips and the clipboard window
+                            ripples; true for a light keyboard
+      strip_bg              suggestion strip, autofill row and macro row background,
+                            drawn by drawable/candidate_mech_background.xml (and _dark_)
+      strip_text            suggestions, and the tint of the strip dividers
+      strip_recommended     the suggestion that space would insert
+      strip_other           suggestions from other sources
+      clip_bar              clipboard window: title bar
+      clip_surface          clipboard window: the list of entries
+      clip_text             clipboard window: entry and title text
+      clip_secondary        clipboard window: secondary text and icons
+      clip_accent           clipboard window: pinned entries, actions
+      clip_outline          clipboard window: the rim around it (#00000000 for none)
+      clip_divider          clipboard window: lines between entries
+      clip_radius (integer) clipboard window corner radius, in dp
+
+    The other names below are only used by this theme's own layouts and drawables, so the
+    theme may add, rename or drop them freely.
+-->
+<resources>
+
+    <!-- ==== Light variant: layout/input_mech.xml ==== -->
+    <bool name="mech_is_light">true</bool>
+    <integer name="mech_clip_radius">8</integer>
+    <!-- Plate behind the keys (keyboard_mech_background): silver-grey aluminium, a faint vertical gradient and a fainter horizontal sheen -->
+    <color name="mech_bg_top">#CBCED3</color>
+    <color name="mech_bg_bottom">#B4B8BE</color>
+    <color name="mech_sheen">#16FFFFFF</color>
+    <color name="mech_sheen_clear">#00FFFFFF</color>
+    <!-- Soft shadow each cap casts on the plate: its outer, fainter part and its inner part; they fade out towards the top of the cap -->
+    <color name="mech_shadow_far">#1F000000</color>
+    <color name="mech_shadow_near">#38000000</color>
+    <color name="mech_shadow_clear">#00000000</color>
+    <!-- Contour along the edge of every cap body (sides and the bottom of the skirt), drawn over the body: translucent, so it is always a little darker than the skirt under it and than the plate -->
+    <color name="mech_contour">#59000000</color>
+    <!-- Letter caps (key_mech_letter*); the long-press keys use them too -->
+    <color name="mech_letter_top">#FCFCFC</color>
+    <color name="mech_letter">#F1F2F3</color>
+    <color name="mech_letter_bottom">#E3E5E8</color>
+    <color name="mech_letter_hl">#FFFFFF</color>
+    <color name="mech_letter_side_top">#C9CBCE</color>
+    <color name="mech_letter_side">#A0A3A9</color>
+    <color name="mech_letter_pressed">#E4E6E9</color>
+    <color name="mech_letter_pressed_bottom">#D6D9DD</color>
+    <!-- Function and sticky modifier caps (key_mech_func*), a darker shade: Shift, Ctrl, Alt, Tab, Backspace, arrows... -->
+    <color name="mech_func_top">#B3B7BE</color>
+    <color name="mech_func">#A7ABB2</color>
+    <color name="mech_func_bottom">#9A9EA6</color>
+    <color name="mech_func_hl">#CED1D6</color>
+    <color name="mech_func_side_top">#8D9199</color>
+    <color name="mech_func_side">#70757D</color>
+    <color name="mech_func_pressed">#9DA1A8</color>
+    <color name="mech_func_pressed_bottom">#9195A0</color>
+    <!-- Esc cap (key_mech_esc*): muted red -->
+    <color name="mech_esc_top">#C24A40</color>
+    <color name="mech_esc">#B6433A</color>
+    <color name="mech_esc_bottom">#A63C34</color>
+    <color name="mech_esc_hl">#D86C62</color>
+    <color name="mech_esc_side_top">#953A33</color>
+    <color name="mech_esc_side">#782E27</color>
+    <color name="mech_esc_pressed">#AA3E35</color>
+    <color name="mech_esc_pressed_bottom">#9A372F</color>
+    <!-- Enter cap (key_mech_enter*): amber -->
+    <color name="mech_enter_top">#EEB758</color>
+    <color name="mech_enter">#E4AB49</color>
+    <color name="mech_enter_bottom">#D69C3B</color>
+    <color name="mech_enter_hl">#F8D184</color>
+    <color name="mech_enter_side_top">#C38F36</color>
+    <color name="mech_enter_side">#A1732A</color>
+    <color name="mech_enter_pressed">#D99F3E</color>
+    <color name="mech_enter_pressed_bottom">#CA9334</color>
+    <!-- Space bar (key_mech_space*): a long letter cap -->
+    <color name="mech_space_top">@color/mech_letter_top</color>
+    <color name="mech_space">@color/mech_letter</color>
+    <color name="mech_space_bottom">@color/mech_letter_bottom</color>
+    <color name="mech_space_hl">@color/mech_letter_hl</color>
+    <color name="mech_space_side_top">@color/mech_letter_side_top</color>
+    <color name="mech_space_side">@color/mech_letter_side</color>
+    <color name="mech_space_pressed">@color/mech_letter_pressed</color>
+    <color name="mech_space_pressed_bottom">@color/mech_letter_pressed_bottom</color>
+    <!-- Bubble above a pressed key (key_preview_mech): a letter cap floating over its shadow -->
+    <color name="mech_preview_shadow">#2E000000</color>
+    <!-- Long-press panel (keyboard_popup_mech_background): a small aluminium tray, its face, rim, top bevel and shadow; its keys are letter caps, the one under the finger sinks with an amber face (selected) -->
+    <color name="mech_popup_bg">#D3D6DA</color>
+    <color name="mech_popup_bg_bottom">#C0C4CA</color>
+    <color name="mech_popup_side">#8F949B</color>
+    <color name="mech_popup_hl">#E6E8EB</color>
+    <color name="mech_popup_shadow">@color/mech_preview_shadow</color>
+    <color name="mech_selected">#F3C66E</color>
+    <color name="mech_selected_bottom">#E6B252</color>
+    <color name="mech_selected_hl">#FADB98</color>
+    <!-- Label colours, used by layout/input_mech.xml (keyTextColor and the like). #00000000 in
+         func_text, accent_text, esc_text or space_text means unset: the label then takes the
+         more general colour (accent_text, func_text, text). active is drawn over the cap (its
+         body, as in the Keycap theme) of a sticky modifier while it is on: a little translucent,
+         so the cap keeps its shading -->
+    <color name="mech_text">#25282D</color>
+    <color name="mech_func_text">#17191D</color>
+    <color name="mech_accent_text">#2B1D06</color>
+    <color name="mech_esc_text">#FFFFFF</color>
+    <color name="mech_space_text">@color/mech_text</color>
+    <color name="mech_hint">#454A51</color>
+    <color name="mech_cursor">@color/mech_func_text</color>
+    <color name="mech_active">#E0E4AB49</color>
+    <color name="mech_on_active">#2B1D06</color>
+    <color name="mech_preview_text">@color/mech_text</color>
+    <!-- Labels of the long-press panel (layout/input_popup_mech.xml) -->
+    <color name="mech_popup_text">@color/mech_text</color>
+    <color name="mech_popup_hint">@color/mech_hint</color>
+    <color name="mech_popup_cursor">@color/mech_text</color>
+    <!-- Read by LatinIME (see the list at the top of this file) -->
+    <color name="mech_strip_bg">@color/mech_bg_top</color>
+    <color name="mech_strip_text">#25282D</color>
+    <color name="mech_strip_recommended">#6A4206</color>
+    <color name="mech_strip_other">#4A4F56</color>
+    <color name="mech_clip_bar">@color/mech_bg_top</color>
+    <color name="mech_clip_surface">@color/mech_letter</color>
+    <color name="mech_clip_text">@color/mech_func_text</color>
+    <color name="mech_clip_secondary">@color/mech_hint</color>
+    <color name="mech_clip_accent">@color/mech_strip_recommended</color>
+    <!-- Clipboard window rim and dividers: shades of their own, so that retuning the cap skirts leaves the window alone -->
+    <color name="mech_clip_outline">#B3B7BD</color>
+    <color name="mech_clip_divider">#D3D6DA</color>
+
+    <!-- ==== Dark variant: layout/input_mech_dark.xml ==== -->
+    <bool name="mech_dark_is_light">false</bool>
+    <integer name="mech_dark_clip_radius">8</integer>
+    <!-- Plate behind the keys (keyboard_mech_dark_background): matte anodised graphite, a faint vertical gradient and a fainter horizontal sheen -->
+    <color name="mech_dark_bg_top">#212327</color>
+    <color name="mech_dark_bg_bottom">#17181B</color>
+    <color name="mech_dark_sheen">#08FFFFFF</color>
+    <color name="mech_dark_sheen_clear">#00FFFFFF</color>
+    <!-- Soft shadow each cap casts on the plate: its outer, fainter part and its inner part; they fade out towards the top of the cap -->
+    <color name="mech_dark_shadow_far">#30000000</color>
+    <color name="mech_dark_shadow_near">#5C000000</color>
+    <color name="mech_dark_shadow_clear">#00000000</color>
+    <!-- Contour along the edge of every cap body (sides and the bottom of the skirt), drawn over the body: near black, darker than any skirt and than the shadowed plate -->
+    <color name="mech_dark_contour">#08090B</color>
+    <!-- Letter caps (key_mech_dark_letter*); the long-press keys use them too -->
+    <color name="mech_dark_letter_top">#52565D</color>
+    <color name="mech_dark_letter">#4A4E55</color>
+    <color name="mech_dark_letter_bottom">#41444A</color>
+    <color name="mech_dark_letter_hl">#6B6F77</color>
+    <color name="mech_dark_letter_side_top">#34373D</color>
+    <color name="mech_dark_letter_side">#2B2D31</color>
+    <color name="mech_dark_letter_pressed">#42454B</color>
+    <color name="mech_dark_letter_pressed_bottom">#3A3D42</color>
+    <!-- Function and sticky modifier caps (key_mech_dark_func*), a darker shade: Shift, Ctrl, Alt, Tab, Backspace, arrows...
+         Kept a little above the plate, so that their skirt, darker still, does not sink into it -->
+    <color name="mech_dark_func_top">#404349</color>
+    <color name="mech_dark_func">#3A3D42</color>
+    <color name="mech_dark_func_bottom">#33353A</color>
+    <color name="mech_dark_func_hl">#54575D</color>
+    <color name="mech_dark_func_side_top">#282B2F</color>
+    <color name="mech_dark_func_side">#212226</color>
+    <color name="mech_dark_func_pressed">#35383D</color>
+    <color name="mech_dark_func_pressed_bottom">#2E3035</color>
+    <!-- Esc cap (key_mech_dark_esc*): muted red -->
+    <color name="mech_dark_esc_top">#A9453D</color>
+    <color name="mech_dark_esc">#9D3F37</color>
+    <color name="mech_dark_esc_bottom">#8E3831</color>
+    <color name="mech_dark_esc_hl">#C2625A</color>
+    <color name="mech_dark_esc_side_top">#762F28</color>
+    <color name="mech_dark_esc_side">#602621</color>
+    <color name="mech_dark_esc_pressed">#913A33</color>
+    <color name="mech_dark_esc_pressed_bottom">#83342D</color>
+    <!-- Enter cap (key_mech_dark_enter*): amber -->
+    <color name="mech_dark_enter_top">#D49E42</color>
+    <color name="mech_dark_enter">#C99338</color>
+    <color name="mech_dark_enter_bottom">#BA852D</color>
+    <color name="mech_dark_enter_hl">#E6B964</color>
+    <color name="mech_dark_enter_side_top">#9D7027</color>
+    <color name="mech_dark_enter_side">#815B20</color>
+    <color name="mech_dark_enter_pressed">#BE8A31</color>
+    <color name="mech_dark_enter_pressed_bottom">#B38029</color>
+    <!-- Space bar (key_mech_dark_space*): a long letter cap -->
+    <color name="mech_dark_space_top">@color/mech_dark_letter_top</color>
+    <color name="mech_dark_space">@color/mech_dark_letter</color>
+    <color name="mech_dark_space_bottom">@color/mech_dark_letter_bottom</color>
+    <color name="mech_dark_space_hl">@color/mech_dark_letter_hl</color>
+    <color name="mech_dark_space_side_top">@color/mech_dark_letter_side_top</color>
+    <color name="mech_dark_space_side">@color/mech_dark_letter_side</color>
+    <color name="mech_dark_space_pressed">@color/mech_dark_letter_pressed</color>
+    <color name="mech_dark_space_pressed_bottom">@color/mech_dark_letter_pressed_bottom</color>
+    <!-- Bubble above a pressed key (key_preview_mech_dark): a letter cap floating over its shadow -->
+    <color name="mech_dark_preview_shadow">#59000000</color>
+    <!-- Long-press panel (keyboard_popup_mech_dark_background): a small aluminium tray, its face, rim, top bevel and shadow; its keys are letter caps, the one under the finger sinks with an amber face (selected) -->
+    <color name="mech_dark_popup_bg">#2A2D32</color>
+    <color name="mech_dark_popup_bg_bottom">#202226</color>
+    <color name="mech_dark_popup_side">#0E0F11</color>
+    <color name="mech_dark_popup_hl">#3D4046</color>
+    <color name="mech_dark_popup_shadow">@color/mech_dark_preview_shadow</color>
+    <color name="mech_dark_selected">#7E551B</color>
+    <color name="mech_dark_selected_bottom">#6E4A16</color>
+    <color name="mech_dark_selected_hl">#9E7234</color>
+    <!-- Label colours, used by layout/input_mech_dark.xml (keyTextColor and the like). #00000000 in
+         func_text, accent_text, esc_text or space_text means unset: the label then takes the
+         more general colour (accent_text, func_text, text). active is drawn over the cap (its
+         body, as in the Keycap theme) of a sticky modifier while it is on: a little translucent,
+         so the cap keeps its shading -->
+    <color name="mech_dark_text">#ECEEF1</color>
+    <color name="mech_dark_func_text">#D9DCE1</color>
+    <color name="mech_dark_accent_text">#2A1B04</color>
+    <color name="mech_dark_esc_text">#FFF3F1</color>
+    <color name="mech_dark_space_text">@color/mech_dark_text</color>
+    <color name="mech_dark_hint">#ABB0B8</color>
+    <color name="mech_dark_cursor">@color/mech_dark_func_text</color>
+    <color name="mech_dark_active">#E0D49E42</color>
+    <color name="mech_dark_on_active">#2A1B04</color>
+    <color name="mech_dark_preview_text">@color/mech_dark_text</color>
+    <!-- Labels of the long-press panel (layout/input_popup_mech_dark.xml) -->
+    <color name="mech_dark_popup_text">@color/mech_dark_text</color>
+    <color name="mech_dark_popup_hint">#B4B9C0</color>
+    <color name="mech_dark_popup_cursor">@color/mech_dark_text</color>
+    <!-- Read by LatinIME (see the list at the top of this file) -->
+    <color name="mech_dark_strip_bg">@color/mech_dark_bg_top</color>
+    <color name="mech_dark_strip_text">#E4E6EA</color>
+    <color name="mech_dark_strip_recommended">#EDB75A</color>
+    <color name="mech_dark_strip_other">#AFB4BB</color>
+    <color name="mech_dark_clip_bar">@color/mech_dark_bg_top</color>
+    <!-- Clipboard window list and rim: shades of their own, so that retuning the function caps leaves the window alone -->
+    <color name="mech_dark_clip_surface">#34373C</color>
+    <color name="mech_dark_clip_text">@color/mech_dark_text</color>
+    <color name="mech_dark_clip_secondary">@color/mech_dark_hint</color>
+    <color name="mech_dark_clip_accent">@color/mech_dark_strip_recommended</color>
+    <color name="mech_dark_clip_outline">#4E5157</color>
+    <color name="mech_dark_clip_divider">#44474D</color>
+</resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mechanical theme: bubble above a pressed key, a big letter cap floating over its
+     shadow (skirt, rim, top face). The empty last item pads the text onto the top face. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="4dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <gradient android:angle="270" android:startColor="@color/mech_shadow_clear" android:endColor="@color/mech_preview_shadow" />
+        </shape>
+    </item>
+    <item android:left="1dp" android:right="1dp" android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="11dp" />
+            <gradient android:angle="270" android:startColor="@color/mech_letter_side_top" android:centerColor="@color/mech_letter_side_top" android:centerY="0.86" android:endColor="@color/mech_letter_side" />
+        </shape>
+    </item>
+    <item android:left="2dp" android:right="2dp" android:bottom="7.25dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="10dp" />
+            <solid android:color="@color/mech_letter_hl" />
+        </shape>
+    </item>
+    <item android:left="2dp" android:top="0.75dp" android:right="2dp" android:bottom="6.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="10dp" />
+            <gradient android:angle="270" android:startColor="@color/mech_letter_top" android:centerColor="@color/mech_letter" android:endColor="@color/mech_letter_bottom" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <padding android:left="2dp" android:top="0.75dp" android:right="2dp" android:bottom="6.5dp" />
+        </shape>
+    </item>
+</layer-list>

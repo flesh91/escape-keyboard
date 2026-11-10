@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mechanical theme, dark: sculpted keycaps on a matte anodised graphite plate. Charcoal
+     letter caps, darker graphite modifier caps, a muted red Esc and an amber Enter. Colours:
+     values/colors_mech.xml (mech_dark_*). The caps (drawable/key_mech_dark_*) have the Keycap
+     theme's padding and top face, so labels and hints sit as in every other theme;
+     keyActiveColor fills the cap (keyActiveRadius = the top face's corners, as in Keycap)
+     while a sticky modifier is on.
+     keyTextStyle: normal, bold, italic or monospace, combined with "|"
+     (for example "monospace|bold"); it sets the letter labels and the key preview. -->
+<org.pocketworkstation.pckeyboard.LatinKeyboardView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:latin="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/LatinkeyboardBaseView"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/keyboard_bottom_padding"
+        android:background="@drawable/keyboard_mech_dark_background"
+        latin:shadowRadius="0"
+        latin:keyTextStyle="normal"
+        latin:keyTextColor="@color/mech_dark_text"
+        latin:keyFunctionTextColor="@color/mech_dark_func_text"
+        latin:keyAccentTextColor="@color/mech_dark_accent_text"
+        latin:keyEscapeTextColor="@color/mech_dark_esc_text"
+        latin:keySpaceTextColor="@color/mech_dark_space_text"
+        latin:keyPreviewBackground="@drawable/key_preview_mech_dark"
+        latin:keyPreviewTextColor="@color/mech_dark_preview_text"
+        latin:recolorSymbols="true"
+        latin:keyHintColor="@color/mech_dark_hint"
+        latin:keyCursorColor="@color/mech_dark_cursor"
+        latin:keyActiveColor="@color/mech_dark_active"
+        latin:keyActiveRadius="5dp"
+        latin:keyActiveTextColor="@color/mech_dark_on_active"
+
+        latin:keyBackground="@drawable/btn_keyboard_key_mech_dark"
+        latin:keyEscapeBackground="@drawable/btn_keyboard_key_mech_dark_esc"
+        latin:keyEnterBackground="@drawable/btn_keyboard_key_mech_dark_enter"
+        latin:keySpaceBackground="@drawable/btn_keyboard_key_mech_dark_space"
+        latin:popupLayout="@layout/input_popup_mech_dark"
+        />

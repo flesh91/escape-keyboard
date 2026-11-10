@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press panel of the Retro terminal theme: one big cap on its shadow -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle"><corners android:radius="9dp" /><solid android:color="@color/retro_shadow" /></shape>
+    </item>
+    <!-- skirt: 3.5dp of lower bevel -->
+    <item android:left="0.5dp" android:right="0.5dp" android:bottom="1dp">
+        <shape android:shape="rectangle"><corners android:radius="8.5dp" /><gradient android:angle="270" android:startColor="@color/retro_popup_side_top" android:endColor="@color/retro_popup_side" /></shape>
+    </item>
+    <!-- highlight along the top edge, the face, the dish -->
+    <item android:left="1.75dp" android:top="0.5dp" android:right="1.75dp" android:bottom="4.5dp">
+        <shape android:shape="rectangle"><corners android:radius="7dp" /><solid android:color="@color/retro_popup_hi" /></shape>
+    </item>
+    <item android:left="1.75dp" android:top="1.25dp" android:right="1.75dp" android:bottom="4.5dp">
+        <shape android:shape="rectangle"><corners android:radius="7dp" /><solid android:color="@color/retro_popup_bg" /></shape>
+    </item>
+    <item android:left="1.75dp" android:top="0.5dp" android:right="1.75dp" android:bottom="4.5dp">
+        <shape android:shape="rectangle"><corners android:radius="7dp" /><gradient android:angle="270" android:startColor="@color/retro_dish_top" android:centerColor="@color/retro_dish_mid" android:endColor="@color/retro_dish_bottom" /></shape>
+    </item>
+</layer-list>

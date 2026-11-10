@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Retro terminal theme ("follows system theme"): every colour of the theme, the light variant
+    as retro_*, the dark one as retro_dark_*. The theme's own files all carry "retro" in their name:
+    layout/input_retro.xml, input_retro_dark.xml, input_popup_retro.xml, input_popup_retro_dark.xml,
+    drawable/*retro*.xml and this file. KeyboardSwitcher picks input_retro or input_retro_dark by
+    the system night mode.
+
+    The look: a 1980s terminal keyboard. Light: cream ABS letter caps, warm grey function caps,
+    burnt orange Esc and Enter on a beige case. Dark ("night"): dark warm grey caps on a
+    charcoal-brown case with amber legends, like an amber CRT, Esc and Enter in muted amber.
+    Caps are matte and flat-topped: a thin highlight along the top edge, a 3.5dp lower bevel
+    (the skirt), a contact shadow on the case. Cap and face sit where the Keycap theme's do,
+    with its padding, so labels and hints are placed as in every other theme. Sticky modifiers carry a small LED window that
+    lights when the modifier is on or locked (drawn by the drawables, keyActiveColor is off).
+
+    Names LatinIME reads, required in both variants as retro_NAME and retro_dark_NAME
+    (colours unless noted); renaming or removing one breaks the build:
+      is_light (bool)       light look of the system navigation bar buttons (dark icons),
+                            the emoji panel, the autofill chips and the clipboard window
+                            ripples; true for a light keyboard
+      strip_bg              suggestion strip, autofill row and macro row background,
+                            drawn by drawable/candidate_retro_background.xml (and _dark_)
+      strip_text            suggestions, and the tint of the strip dividers
+      strip_recommended     the suggestion that space would insert
+      strip_other           suggestions from other sources
+      clip_bar              clipboard window: title bar
+      clip_surface          clipboard window: the list of entries
+      clip_text             clipboard window: entry and title text
+      clip_secondary        clipboard window: secondary text and icons
+      clip_accent           clipboard window: pinned entries, actions
+      clip_outline          clipboard window: the rim around it (#00000000 for none)
+      clip_divider          clipboard window: lines between entries
+      clip_radius (integer) clipboard window corner radius, in dp
+
+    The other names below are only used by this theme's own layouts and drawables, so the
+    theme may add, rename or drop them freely. Every keycap kind K (letter, func, esc, enter,
+    space, mod_on, mod_lock) has: K (the face), K_hi (the highlight along its top edge),
+    K_side_top and K_side (the skirt, a gradient from its top to its bottom edge) and
+    K_pressed (the face while pressed; the pressed highlight is the resting face colour).
+-->
+<resources>
+    <!-- ==== Light variant: layout/input_retro.xml ==== -->
+    <bool name="retro_is_light">true</bool>
+    <integer name="retro_clip_radius">6</integer>
+    <!-- Case behind the keys (keyboard_retro_background): beige ABS, a vertical gradient -->
+    <color name="retro_bg_top">#DCD2BE</color>
+    <color name="retro_bg_bottom">#CDC1A9</color>
+    <!-- Contact shadow of a cap on the case, and the faint dish over every face (top to bottom) -->
+    <color name="retro_shadow">#38281E14</color>
+    <color name="retro_dish_top">#1AFFFFFF</color>
+    <color name="retro_dish_mid">#00FFFFFF</color>
+    <color name="retro_dish_bottom">#10000000</color>
+    <!-- Letter keycaps (key_retro_letter*): cream ABS -->
+    <color name="retro_letter">#F3EDE0</color>
+    <color name="retro_letter_hi">#FCF9F2</color>
+    <color name="retro_letter_side_top">#DCD0B9</color>
+    <color name="retro_letter_side">#C3B497</color>
+    <color name="retro_letter_pressed">#E7DFCF</color>
+    <!-- Function keycaps (key_retro_func*): Backspace, Tab, arrows, F-keys...; also the sticky
+         modifiers while off (key_retro_mod*): warm grey -->
+    <color name="retro_func">#BFB6A6</color>
+    <color name="retro_func_hi">#D0C8BA</color>
+    <color name="retro_func_side_top">#A89E8C</color>
+    <color name="retro_func_side">#8E8473</color>
+    <color name="retro_func_pressed">#B1A898</color>
+    <!-- Sticky modifier on (key_retro_mod_on*): the cap turns pale amber, its LED lights -->
+    <color name="retro_mod_on">#ECC88A</color>
+    <color name="retro_mod_on_hi">#F6DDAE</color>
+    <color name="retro_mod_on_side_top">#CDA567</color>
+    <color name="retro_mod_on_side">#AC8546</color>
+    <color name="retro_mod_on_pressed">#E0BA78</color>
+    <!-- Sticky modifier locked (key_retro_mod_lock*): deeper amber, LED lit -->
+    <color name="retro_mod_lock">#E4B567</color>
+    <color name="retro_mod_lock_hi">#EEC888</color>
+    <color name="retro_mod_lock_side_top">#BF9550</color>
+    <color name="retro_mod_lock_side">#A27A38</color>
+    <color name="retro_mod_lock_pressed">#D7A858</color>
+    <!-- LED window of the sticky modifiers: off (a smoked lens) and lit, each with the shadow
+         of its recess along the top and left edges -->
+    <color name="retro_led_off">#988A76</color>
+    <color name="retro_led_off_edge">#5E5141</color>
+    <color name="retro_led_on">#C4250A</color>
+    <color name="retro_led_on_edge">#7A1806</color>
+    <!-- Esc keycap (key_retro_esc*): burnt orange -->
+    <color name="retro_esc">#9E4618</color>
+    <color name="retro_esc_hi">#B45B2B</color>
+    <color name="retro_esc_side_top">#853A12</color>
+    <color name="retro_esc_side">#6C2E0D</color>
+    <color name="retro_esc_pressed">#8D3E14</color>
+    <!-- Enter keycap (key_retro_enter*): the same burnt orange as Esc -->
+    <color name="retro_enter">@color/retro_esc</color>
+    <color name="retro_enter_hi">@color/retro_esc_hi</color>
+    <color name="retro_enter_side_top">@color/retro_esc_side_top</color>
+    <color name="retro_enter_side">@color/retro_esc_side</color>
+    <color name="retro_enter_pressed">@color/retro_esc_pressed</color>
+    <!-- Space bar keycap (key_retro_space*): cream, like the letters -->
+    <color name="retro_space">@color/retro_letter</color>
+    <color name="retro_space_hi">@color/retro_letter_hi</color>
+    <color name="retro_space_side_top">@color/retro_letter_side_top</color>
+    <color name="retro_space_side">@color/retro_letter_side</color>
+    <color name="retro_space_pressed">@color/retro_letter_pressed</color>
+    <!-- Bubble above a pressed key (key_preview_retro): its soft shadow, then a letter cap -->
+    <color name="retro_preview_shadow">#2E281E14</color>
+    <!-- Long-press panel (keyboard_popup_retro_background), a big cream cap, and the key under
+         the finger (btn_keyboard_key_popup_retro), a small amber cap -->
+    <color name="retro_popup_bg">@color/retro_letter</color>
+    <color name="retro_popup_hi">@color/retro_letter_hi</color>
+    <color name="retro_popup_side_top">@color/retro_letter_side_top</color>
+    <color name="retro_popup_side">@color/retro_letter_side</color>
+    <color name="retro_selected">#E9C07A</color>
+    <color name="retro_selected_hi">#F3D59E</color>
+    <color name="retro_selected_side">#B98F4E</color>
+    <!-- Label colours, used by layout/input_retro.xml (keyTextColor and the like). #00000000 in
+         func_text, accent_text, esc_text or space_text means unset: the label then takes the
+         more general colour (accent_text, func_text, text) -->
+    <color name="retro_text">#2E2822</color>
+    <color name="retro_func_text">#2A241E</color>
+    <color name="retro_accent_text">#FFF4E4</color>
+    <color name="retro_esc_text">@color/retro_accent_text</color>
+    <color name="retro_space_text">#5E5243</color>
+    <color name="retro_hint">#54473A</color>
+    <color name="retro_cursor">@color/retro_func_text</color>
+    <!-- keyActiveColor off (#00000000): the on and locked modifiers are drawn by the
+         drawables (amber cap, lit LED), their labels keep func_text -->
+    <color name="retro_active">#00000000</color>
+    <color name="retro_on_active">@color/retro_func_text</color>
+    <color name="retro_preview_text">@color/retro_text</color>
+    <!-- Labels of the long-press panel (layout/input_popup_retro.xml) -->
+    <color name="retro_popup_text">@color/retro_text</color>
+    <color name="retro_popup_hint">@color/retro_hint</color>
+    <color name="retro_popup_cursor">@color/retro_text</color>
+    <!-- Read by LatinIME (see the list at the top of this file); the strip is a gradient from
+         strip_top down to strip_bg, the top of the case, so it flows into the keyboard -->
+    <color name="retro_strip_bg">@color/retro_bg_top</color>
+    <color name="retro_strip_top">#E4DBCA</color>
+    <color name="retro_strip_text">#3A332B</color>
+    <color name="retro_strip_recommended">#8A3B12</color>
+    <color name="retro_strip_other">#5C5042</color>
+    <color name="retro_clip_bar">@color/retro_bg_top</color>
+    <color name="retro_clip_surface">@color/retro_letter</color>
+    <color name="retro_clip_text">@color/retro_text</color>
+    <color name="retro_clip_secondary">#6A5C4A</color>
+    <color name="retro_clip_accent">#8A3B12</color>
+    <color name="retro_clip_outline">@color/retro_letter_side</color>
+    <color name="retro_clip_divider">@color/retro_letter_side_top</color>
+
+    <!-- ==== Dark variant ("night", amber CRT): layout/input_retro_dark.xml ==== -->
+    <bool name="retro_dark_is_light">false</bool>
+    <integer name="retro_dark_clip_radius">6</integer>
+    <!-- Case behind the keys (keyboard_retro_dark_background): charcoal brown -->
+    <color name="retro_dark_bg_top">#2B2723</color>
+    <color name="retro_dark_bg_bottom">#1C1A17</color>
+    <!-- Contact shadow of a cap on the case, and the faint dish over every face (top to bottom) -->
+    <color name="retro_dark_shadow">#73000000</color>
+    <color name="retro_dark_dish_top">#0EFFFFFF</color>
+    <color name="retro_dark_dish_mid">#00FFFFFF</color>
+    <color name="retro_dark_dish_bottom">#1A000000</color>
+    <!-- Letter keycaps (key_retro_dark_letter*): dark warm grey -->
+    <color name="retro_dark_letter">#433D37</color>
+    <color name="retro_dark_letter_hi">#514A42</color>
+    <color name="retro_dark_letter_side_top">#312C27</color>
+    <color name="retro_dark_letter_side">#221F1B</color>
+    <color name="retro_dark_letter_pressed">#3A352F</color>
+    <!-- Function keycaps (key_retro_dark_func*), also the sticky modifiers while off
+         (key_retro_dark_mod*): a darker warm grey -->
+    <color name="retro_dark_func">#35302B</color>
+    <color name="retro_dark_func_hi">#423C36</color>
+    <color name="retro_dark_func_side_top">#27231F</color>
+    <color name="retro_dark_func_side">#1A1815</color>
+    <color name="retro_dark_func_pressed">#2E2A26</color>
+    <!-- Sticky modifier on (key_retro_dark_mod_on*): the cap warms to amber brown, LED lit -->
+    <color name="retro_dark_mod_on">#503B1E</color>
+    <color name="retro_dark_mod_on_hi">#5E4624</color>
+    <color name="retro_dark_mod_on_side_top">#3A2B16</color>
+    <color name="retro_dark_mod_on_side">#2A1F10</color>
+    <color name="retro_dark_mod_on_pressed">#47351C</color>
+    <!-- Sticky modifier locked (key_retro_dark_mod_lock*): LED lit -->
+    <color name="retro_dark_mod_lock">#533C1A</color>
+    <color name="retro_dark_mod_lock_hi">#614720</color>
+    <color name="retro_dark_mod_lock_side_top">#3C2C13</color>
+    <color name="retro_dark_mod_lock_side">#2C200D</color>
+    <color name="retro_dark_mod_lock_pressed">#4A3618</color>
+    <!-- LED window of the sticky modifiers: off and lit amber -->
+    <color name="retro_dark_led_off">#3A2E1E</color>
+    <color name="retro_dark_led_off_edge">#1F1810</color>
+    <color name="retro_dark_led_on">#FFC24A</color>
+    <color name="retro_dark_led_on_edge">#B97E1C</color>
+    <!-- Esc keycap (key_retro_dark_esc*): muted amber -->
+    <color name="retro_dark_esc">#DA8B34</color>
+    <color name="retro_dark_esc_hi">#E79E4C</color>
+    <color name="retro_dark_esc_side_top">#A8681F</color>
+    <color name="retro_dark_esc_side">#844F14</color>
+    <color name="retro_dark_esc_pressed">#CB7E2D</color>
+    <!-- Enter keycap (key_retro_dark_enter*): the same muted amber as Esc -->
+    <color name="retro_dark_enter">@color/retro_dark_esc</color>
+    <color name="retro_dark_enter_hi">@color/retro_dark_esc_hi</color>
+    <color name="retro_dark_enter_side_top">@color/retro_dark_esc_side_top</color>
+    <color name="retro_dark_enter_side">@color/retro_dark_esc_side</color>
+    <color name="retro_dark_enter_pressed">@color/retro_dark_esc_pressed</color>
+    <!-- Space bar keycap (key_retro_dark_space*): like the letters -->
+    <color name="retro_dark_space">@color/retro_dark_letter</color>
+    <color name="retro_dark_space_hi">@color/retro_dark_letter_hi</color>
+    <color name="retro_dark_space_side_top">@color/retro_dark_letter_side_top</color>
+    <color name="retro_dark_space_side">@color/retro_dark_letter_side</color>
+    <color name="retro_dark_space_pressed">@color/retro_dark_letter_pressed</color>
+    <!-- Bubble above a pressed key (key_preview_retro_dark): its shadow, then a letter cap -->
+    <color name="retro_dark_preview_shadow">#66000000</color>
+    <!-- Long-press panel (keyboard_popup_retro_dark_background) and the key under the finger -->
+    <color name="retro_dark_popup_bg">@color/retro_dark_letter</color>
+    <color name="retro_dark_popup_hi">@color/retro_dark_letter_hi</color>
+    <color name="retro_dark_popup_side_top">@color/retro_dark_letter_side_top</color>
+    <color name="retro_dark_popup_side">@color/retro_dark_letter_side</color>
+    <color name="retro_dark_selected">#563C19</color>
+    <color name="retro_dark_selected_hi">#634720</color>
+    <color name="retro_dark_selected_side">#3A2810</color>
+    <!-- Label colours, used by layout/input_retro_dark.xml (keyTextColor and the like). #00000000
+         in func_text, accent_text, esc_text or space_text means unset: the label then takes the
+         more general colour (accent_text, func_text, text) -->
+    <color name="retro_dark_text">#FFBE50</color>
+    <color name="retro_dark_func_text">#FFB244</color>
+    <color name="retro_dark_accent_text">#170E04</color>
+    <color name="retro_dark_esc_text">@color/retro_dark_accent_text</color>
+    <color name="retro_dark_space_text">@color/retro_dark_text</color>
+    <color name="retro_dark_hint">#D69A42</color>
+    <color name="retro_dark_cursor">#FFC864</color>
+    <!-- keyActiveColor off (#00000000): the on and locked modifiers are drawn by the
+         drawables (amber brown cap, lit LED), their labels keep func_text -->
+    <color name="retro_dark_active">#00000000</color>
+    <color name="retro_dark_on_active">@color/retro_dark_func_text</color>
+    <color name="retro_dark_preview_text">@color/retro_dark_text</color>
+    <!-- Labels of the long-press panel (layout/input_popup_retro_dark.xml) -->
+    <color name="retro_dark_popup_text">@color/retro_dark_text</color>
+    <color name="retro_dark_popup_hint">@color/retro_dark_hint</color>
+    <color name="retro_dark_popup_cursor">@color/retro_dark_cursor</color>
+    <!-- Read by LatinIME (see the list at the top of this file) -->
+    <color name="retro_dark_strip_bg">@color/retro_dark_bg_top</color>
+    <color name="retro_dark_strip_top">#312D28</color>
+    <color name="retro_dark_strip_text">#FFB244</color>
+    <color name="retro_dark_strip_recommended">#FFD27A</color>
+    <color name="retro_dark_strip_other">#D79B45</color>
+    <color name="retro_dark_clip_bar">@color/retro_dark_bg_top</color>
+    <color name="retro_dark_clip_surface">#33302A</color>
+    <color name="retro_dark_clip_text">@color/retro_dark_text</color>
+    <color name="retro_dark_clip_secondary">@color/retro_dark_hint</color>
+    <color name="retro_dark_clip_accent">#FFD27A</color>
+    <color name="retro_dark_clip_outline">#4A433B</color>
+    <color name="retro_dark_clip_divider">#3D3731</color>
+</resources>

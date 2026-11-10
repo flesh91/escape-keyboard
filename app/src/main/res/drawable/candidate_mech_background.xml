@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mechanical theme: suggestion strip, autofill row and macro row background
+     (LatinIME.applyStripBackground): the top colour of the plate with the same sheen, so the
+     strip and the keyboard read as one plate -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/mech_strip_bg" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="0" android:startColor="@color/mech_sheen_clear" android:centerColor="@color/mech_sheen" android:endColor="@color/mech_sheen_clear" />
+        </shape>
+    </item>
+</layer-list>

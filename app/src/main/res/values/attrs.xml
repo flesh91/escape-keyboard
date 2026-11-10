@@ -96,10 +96,13 @@
         <attr name="shadowRadius" format="float" />
         <attr name="backgroundDimAmount" format="float" />
 
+        <!-- Typeface of letter labels and the key preview; flags, so a family combines
+             with a style: "monospace|bold". Function labels keep their own typeface. -->
         <attr name="keyTextStyle">
             <flag name="normal" value="0" />
             <flag name="bold" value="1" />
             <flag name="italic" value="2" />
+            <flag name="monospace" value="4" />
         </attr>
 
         <attr name="symbolColorScheme">

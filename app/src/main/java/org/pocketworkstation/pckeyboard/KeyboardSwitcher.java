@@ -78,6 +78,11 @@ public class KeyboardSwitcher implements
         R.layout.input_graphite,
         R.layout.input_ios_light, // THEME_IOS_SYSTEM, resolved by night mode
         R.layout.input_keycap, // THEME_KEYCAP_SYSTEM, resolved by night mode
+        // 15-18: light layouts of the PAIRED_DARK_THEMES, resolved by night mode
+        R.layout.input_mech,
+        R.layout.input_keycap, // 16: theme dropped before release, fall back to Keycap
+        R.layout.input_keycap, // 17: theme dropped before release, fall back to Keycap
+        R.layout.input_retro,
     };
 
     // Google keyboard style, light or dark following the system theme
@@ -88,6 +93,16 @@ public class KeyboardSwitcher implements
     private static final int THEME_IOS_SYSTEM = 13;
     // Mechanical keycaps, light or dark following the system theme
     private static final int THEME_KEYCAP_SYSTEM = 14;
+    // Mechanical, Retro terminal: light or dark following the system
+    // theme, each with all its colours in values/colors_P.xml. THEMES holds the light
+    // layout from FIRST_PAIRED_THEME on, this the dark one in the same order
+    private static final int FIRST_PAIRED_THEME = 15;
+    private static final int[] PAIRED_DARK_THEMES = new int[] {
+        R.layout.input_mech_dark,
+        R.layout.input_keycap_dark, // 16: dropped, the Keycap fallback's dark half
+        R.layout.input_keycap_dark, // 17: dropped, the Keycap fallback's dark half
+        R.layout.input_retro_dark,
+    };
 
     // Tables which contains resource ids for each character theme color
     private static final int KBD_PHONE = R.xml.kbd_phone;
@@ -630,7 +645,16 @@ public class KeyboardSwitcher implements
             }
             return dark ? R.layout.input_google_dark : R.layout.input_google_light;
         }
+        int paired = layoutId - FIRST_PAIRED_THEME;
+        if (paired >= 0 && paired < PAIRED_DARK_THEMES.length && isNightMode()) {
+            return PAIRED_DARK_THEMES[paired];
+        }
         return THEMES[layoutId];
+    }
+
+    private boolean isNightMode() {
+        return (mInputMethodService.getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     }
 
     /** Layout resource of the theme in use, with "follow system" resolved. */

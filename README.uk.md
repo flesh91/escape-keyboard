@@ -51,7 +51,7 @@ Escape Keyboard — перероблений форк [Hacker's Keyboard](https:
 
 **Теми**
 - Google: за темою системи, світла, темна, кольори шпалер (Material You).
-- Cupertino і Keycap (світлі або темні за темою системи), Graphite і класичні теми
+- Cupertino, Keycap, «Механічна» і «Ретро-термінал» (світлі або темні за темою системи), Graphite і класичні теми
   Hacker's Keyboard.
 
 **Налаштування**
