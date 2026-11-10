@@ -16,6 +16,7 @@
 
 package org.pocketworkstation.pckeyboard;
 
+import android.app.KeyguardManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
@@ -36,6 +37,7 @@ import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -48,6 +50,10 @@ final class ClipboardHistory {
     static final String PREF_ENABLED = "clipboard_history";
     static final String PREF_SIZE = "clipboard_history_size";
     static final String DEFAULT_SIZE = "20";
+    static final String PREF_HIDE_LOCKED = "clipboard_hide_locked";
+    /** Hours an unpinned entry is kept, "0" for no limit. */
+    static final String PREF_EXPIRY = "clipboard_history_expiry";
+    static final String DEFAULT_EXPIRY = "0";
     /** Longer texts are not kept: the window shows a few lines anyway. */
     private static final int MAX_TEXT_LENGTH = 20000;
 
@@ -76,6 +82,8 @@ final class ClipboardHistory {
     private final List<Entry> mEntries = new ArrayList<>();
     private long mNextId = 1;
     private Listener mListener;
+    /** Hash of the last clip read from the clipboard, null for none yet. */
+    private Integer mSeenClip;
 
     static synchronized ClipboardHistory get(Context context) {
         if (sInstance == null) sInstance = new ClipboardHistory(context.getApplicationContext());
@@ -96,8 +104,21 @@ final class ClipboardHistory {
         return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(PREF_ENABLED, true);
     }
 
-    /** Remembers what is on the clipboard now, if history is on and the copy isn't sensitive. */
-    void rememberPrimaryClip(ClipboardManager cm) {
+    /** Whether the history must not be shown now: the device is locked and the setting says so. */
+    static boolean isHiddenNow(Context context) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        if (!sp.getBoolean(PREF_HIDE_LOCKED, true)) return false;
+        KeyguardManager km = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+        return km != null && km.isKeyguardLocked();
+    }
+
+    /**
+     * Remembers what is on the clipboard now, if history is on and the copy isn't sensitive.
+     * copied: it was just copied, so it goes to the top. Otherwise the clipboard is only looked
+     * at again (the window opens): a clip seen before is left as it is, whether it was kept,
+     * skipped as incognito, expired or deleted. incognito: the clip is seen but not kept.
+     */
+    void rememberPrimaryClip(ClipboardManager cm, boolean copied, boolean incognito) {
         if (cm == null || !isEnabled(mContext)) return;
         ClipData clip;
         try {
@@ -111,11 +132,24 @@ final class ClipboardHistory {
         // ClipDescription.EXTRA_IS_SENSITIVE (API 33), set by password managers and the like
         if (extras != null && extras.getBoolean("android.content.extra.IS_SENSITIVE", false)) return;
         CharSequence text = clip.getItemAt(0).getText();
-        if (text != null) add(text.toString());
+        if (text == null) return;
+        int hash = text.toString().hashCode();
+        boolean seen = mSeenClip != null && mSeenClip == hash;
+        mSeenClip = hash;
+        if (incognito) return;
+        if (copied) {
+            add(text.toString());
+        } else if (!seen) {
+            // ClipDescription.getTimestamp() (API 26): when it was really copied
+            long time = desc != null && Build.VERSION.SDK_INT >= 26 && desc.getTimestamp() > 0
+                    ? desc.getTimestamp() : System.currentTimeMillis();
+            addEarlier(text.toString(), time);
+        }
     }
 
     synchronized void add(String text) {
         if (text.trim().isEmpty() || text.length() > MAX_TEXT_LENGTH) return;
+        dropExpired();
         long now = System.currentTimeMillis();
         for (Entry e : mEntries) {
             if (e.text.equals(text)) {
@@ -125,6 +159,18 @@ final class ClipboardHistory {
             }
         }
         mEntries.add(new Entry(mNextId++, text, false, now));
+        trim();
+        changed();
+    }
+
+    /** Adds a text copied at the given time, unless it is kept already or too old. */
+    private synchronized void addEarlier(String text, long time) {
+        if (text.trim().isEmpty() || text.length() > MAX_TEXT_LENGTH) return;
+        dropExpired();
+        for (Entry e : mEntries) if (e.text.equals(text)) return;
+        long maxAge = maxAgeMs();
+        if (maxAge > 0 && time < System.currentTimeMillis() - maxAge) return;
+        mEntries.add(new Entry(mNextId++, text, false, time));
         trim();
         changed();
     }
@@ -182,9 +228,10 @@ final class ClipboardHistory {
         changed();
     }
 
-    /** Applies the size setting (pinned entries don't count). */
+    /** Applies the size and age settings (pinned entries don't count). */
     synchronized void applySizeSetting() {
-        if (trim()) changed();
+        boolean expired = dropExpired();
+        if (trim() || expired) changed();
     }
 
     private int maxSize() {
@@ -194,6 +241,31 @@ final class ClipboardHistory {
         } catch (NumberFormatException e) {
             return Integer.parseInt(DEFAULT_SIZE);
         }
+    }
+
+    private long maxAgeMs() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
+        try {
+            return Long.parseLong(sp.getString(PREF_EXPIRY, DEFAULT_EXPIRY)) * 3600000L;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Drops the unpinned entries older than the age setting. */
+    private boolean dropExpired() {
+        long maxAge = maxAgeMs();
+        if (maxAge <= 0) return false;
+        long oldest = System.currentTimeMillis() - maxAge;
+        boolean removed = false;
+        for (Iterator<Entry> it = mEntries.iterator(); it.hasNext(); ) {
+            Entry e = it.next();
+            if (!e.pinned && e.time < oldest) {
+                it.remove();
+                removed = true;
+            }
+        }
+        return removed;
     }
 
     /** Drops the oldest unpinned entries over the limit. */
@@ -234,6 +306,7 @@ final class ClipboardHistory {
                 mEntries.add(new Entry(mNextId++, o.getString("text"), o.optBoolean("pinned"),
                         o.optLong("time")));
             }
+            if (dropExpired()) save();
         } catch (java.io.FileNotFoundException e) {
             // nothing copied yet
         } catch (Exception e) {

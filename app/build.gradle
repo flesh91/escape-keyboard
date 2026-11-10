@@ -9,7 +9,7 @@ android {
         minSdk 21
         targetSdk 37
         // The build number is the version code and the last part of the version name
-        versionCode 179
+        versionCode 180
         versionName "1.0.${versionCode}"
         externalNativeBuild {
             cmake {

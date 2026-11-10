@@ -35,6 +35,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceManager;
 import androidx.preference.PreferenceScreen;
@@ -42,6 +43,7 @@ import androidx.preference.SwitchPreferenceCompat;
 
 public class InputLanguageSelection extends SettingsActivity {
     private static final String TAG = "PCKeyboardILS";
+    private static final String LANGUAGES_KEY = "languages";
     private static final String[] BLACKLIST_LANGUAGES = {
         "ko", "ja", "zh"
     };
@@ -195,7 +197,23 @@ public class InputLanguageSelection extends SettingsActivity {
             }
         }
 
-        PreferenceGroup parent = screen;
+        SwitchPreferenceCompat perApp = new SwitchPreferenceCompat(context);
+        perApp.setKey(LatinIME.PREF_REMEMBER_LANGUAGE_PER_APP);
+        perApp.setDefaultValue(getResources().getBoolean(R.bool.default_remember_language_per_app));
+        perApp.setTitle(R.string.title_remember_language_per_app);
+        perApp.setSummary(R.string.summary_remember_language_per_app);
+        perApp.setIconSpaceReserved(false);
+        // The options and the languages are kept apart, so the option doesn't read as a language
+        PreferenceCategory options = new PreferenceCategory(context);
+        options.setIconSpaceReserved(false);
+        screen.addPreference(options);
+        options.addPreference(perApp);
+
+        PreferenceCategory parent = new PreferenceCategory(context);
+        parent.setKey(LANGUAGES_KEY);
+        parent.setTitle(R.string.cat_languages);
+        parent.setIconSpaceReserved(false);
+        screen.addPreference(parent);
         for (int i = 0; i < mAvailableLanguages.size(); i++) {
             SwitchPreferenceCompat pref = new SwitchPreferenceCompat(context);
             pref.setPersistent(false); // the whole selection is saved in onPause
@@ -270,7 +288,8 @@ public class InputLanguageSelection extends SettingsActivity {
         super.onPause();
         // Save the selected languages
         String checkedLanguages = "";
-        PreferenceGroup parent = getPreferenceScreen();
+        PreferenceGroup parent = findPreference(LANGUAGES_KEY);
+        if (parent == null) return;
         int count = parent.getPreferenceCount();
         for (int i = 0; i < count; i++) {
             SwitchPreferenceCompat pref = (SwitchPreferenceCompat) parent.getPreference(i);

@@ -176,6 +176,28 @@ public class AutoDictionary extends ExpandableDictionary {
     }
 
     /**
+     * Forgets the learned words held in memory, including the ones not written yet.
+     * The database is emptied by {@link #clearDatabase}.
+     */
+    public void clearLearnedWords() {
+        synchronized (mPendingWritesLock) {
+            mPendingWrites = new HashMap<String, Integer>();
+        }
+        clearDictionary();
+    }
+
+    /**
+     * Schedules a background thread to delete the learned words of every locale. AsyncTasks
+     * run one at a time, so writes scheduled before it can't bring the words back.
+     */
+    static void clearDatabase(Context context) {
+        if (sOpenHelper == null) {
+            sOpenHelper = new DatabaseHelper(context.getApplicationContext());
+        }
+        new ClearDbTask(sOpenHelper).execute();
+    }
+
+    /**
      * This class helps open, create, and upgrade the database file.
      */
     private static class DatabaseHelper extends SQLiteOpenHelper {
@@ -213,6 +235,21 @@ public class AutoDictionary extends ExpandableDictionary {
         Cursor c = qb.query(db, null, selection, selectionArgs, null, null,
                 DEFAULT_SORT_ORDER);
         return c;
+    }
+
+    /** Async task to delete all the words from the database. */
+    private static class ClearDbTask extends AsyncTask<Void, Void, Void> {
+        private final DatabaseHelper mDbHelper;
+
+        public ClearDbTask(DatabaseHelper openHelper) {
+            mDbHelper = openHelper;
+        }
+
+        @Override
+        protected Void doInBackground(Void... v) {
+            mDbHelper.getWritableDatabase().delete(AUTODICT_TABLE_NAME, null, null);
+            return null;
+        }
     }
 
     /**

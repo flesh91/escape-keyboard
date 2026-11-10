@@ -67,7 +67,7 @@
             android:keyLabel="@string/key_ae04_main"
             android:shiftLabel="@string/key_ae04_shift"
             android:popupKeyboard="@xml/kbd_popup_template"
-            android:popupCharacters="$_" />
+            android:popupCharacters="$₴_" />
         <Key
             android:keyLabel="@string/key_ae05_main"
             android:shiftLabel="@string/key_ae05_shift"

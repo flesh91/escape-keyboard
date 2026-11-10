@@ -213,6 +213,21 @@ public class Suggest implements Dictionary.WordCallback {
         }
         matching = Math.max(matching, lessMatching);
 
+        // "normal" is the original rule; "modest" wants more letters in common, "aggressive" fewer
+        final String strength = LatinIME.sKeyboardSettings.autoCorrectStrength;
+        if ("modest".equals(strength)) {
+            if (minLength <= 4) {
+                return matching >= minLength - 1;
+            } else {
+                return matching > minLength * 2 / 3;
+            }
+        } else if ("aggressive".equals(strength)) {
+            if (minLength <= 4) {
+                return matching >= 1;
+            } else {
+                return matching > minLength / 3;
+            }
+        }
         if (minLength <= 4) {
             return matching >= 2;
         } else {

@@ -93,7 +93,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.emoji2.emojipicker.DefaultRecentEmojiProvider;
 import androidx.emoji2.emojipicker.EmojiPickerView;
+import androidx.emoji2.emojipicker.RecentEmojiProvider;
 import androidx.autofill.inline.UiVersions;
 import androidx.autofill.inline.common.ImageViewStyle;
 import androidx.autofill.inline.common.TextViewStyle;
@@ -144,6 +146,12 @@ public class LatinIME extends InputMethodService implements
 
     public static final String PREF_SELECTED_LANGUAGES = "selected_languages";
     public static final String PREF_INPUT_LANGUAGE = "input_language";
+    static final String PREF_REMEMBER_LANGUAGE_PER_APP = "remember_language_per_app";
+    // Separate file, so the package names stay out of the backed up settings
+    private static final String PREFS_APP_LANGUAGES = "app_languages";
+    static final String PREF_INCOGNITO_PRIVATE_FIELDS = "incognito_private_fields";
+    static final String PREF_INCOGNITO_ALWAYS = "incognito_always";
+    static final String PREF_LEARN_NEW_WORDS = "learn_new_words";
     private static final String PREF_RECORRECTION_ENABLED = "recorrection_enabled";
     static final String PREF_FULLSCREEN_OVERRIDE = "fullscreen_override";
     static final String PREF_FORCE_KEYBOARD_ON = "force_keyboard_on";
@@ -252,6 +260,10 @@ public class LatinIME extends InputMethodService implements
     private boolean mShowSuggestions;
     private boolean mIsShowingHint;
     private boolean mTabHack;
+    private boolean mRememberLanguagePerApp;
+    private boolean mIncognitoPrivateFields;
+    private boolean mIncognitoAlways;
+    private boolean mLearnNewWords;
     private boolean mFullscreenOverride;
     private boolean mForceKeyboardOn;
     private boolean mNavBarSpace;
@@ -414,7 +426,8 @@ public class LatinIME extends InputMethodService implements
         // Clipboard history: Android lets the active keyboard read what gets copied
         final ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         if (clipboard != null) {
-            mClipListener = () -> ClipboardHistory.get(this).rememberPrimaryClip(clipboard);
+            mClipListener = () -> ClipboardHistory.get(this)
+                    .rememberPrimaryClip(clipboard, true, isIncognito());
             clipboard.addPrimaryClipChangedListener(mClipListener);
         }
         final SharedPreferences prefs = PreferenceManager
@@ -434,6 +447,15 @@ public class LatinIME extends InputMethodService implements
                 res.getBoolean(R.bool.default_recorrection_enabled));
         mTabHack = prefs.getBoolean(PREF_CONNECTBOT_TAB_HACK,
                 res.getBoolean(R.bool.default_connectbot_tab_hack));
+        mRememberLanguagePerApp = prefs.getBoolean(PREF_REMEMBER_LANGUAGE_PER_APP,
+                res.getBoolean(R.bool.default_remember_language_per_app));
+        if (!mRememberLanguagePerApp) forgetAppLanguages();
+        mIncognitoPrivateFields = prefs.getBoolean(PREF_INCOGNITO_PRIVATE_FIELDS,
+                res.getBoolean(R.bool.default_incognito_private_fields));
+        mIncognitoAlways = prefs.getBoolean(PREF_INCOGNITO_ALWAYS,
+                res.getBoolean(R.bool.default_incognito_always));
+        mLearnNewWords = prefs.getBoolean(PREF_LEARN_NEW_WORDS,
+                res.getBoolean(R.bool.default_learn_new_words));
         mFullscreenOverride = prefs.getBoolean(PREF_FULLSCREEN_OVERRIDE,
                 res.getBoolean(R.bool.default_fullscreen_override));
         mForceKeyboardOn = prefs.getBoolean(PREF_FORCE_KEYBOARD_ON,
@@ -1260,6 +1282,20 @@ public class LatinIME extends InputMethodService implements
         }
 
         EmojiPickerView picker = new EmojiPickerView(ctx);
+        // The picker's own recent list, which keeps no picks made in incognito
+        final RecentEmojiProvider recent = new DefaultRecentEmojiProvider(ctx);
+        picker.setRecentEmojiProvider(new RecentEmojiProvider() {
+            @Override
+            public void recordSelection(String emoji) {
+                if (!isIncognito()) recent.recordSelection(emoji);
+            }
+
+            @Override
+            public Object getRecentEmojiList(
+                    kotlin.coroutines.Continuation<? super List<String>> continuation) {
+                return recent.getRecentEmojiList(continuation);
+            }
+        });
         picker.setOnEmojiPickedListener(item -> {
             // On the pick, not the touch: a touch may start scrolling the grid
             buttonFeedback(0);
@@ -1317,6 +1353,10 @@ public class LatinIME extends InputMethodService implements
         }
         LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
         if (keyboard == null || keyboard.getWindowToken() == null) return;
+        if (ClipboardHistory.isHiddenNow(this)) {
+            Toast.makeText(this, R.string.clipboard_locked, Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (mClipboardWindow == null) mClipboardWindow = new ClipboardWindow(this);
         View inputArea = mCandidateViewAndKeyboardView != null ? mCandidateViewAndKeyboardView : keyboard;
         mClipboardWindow.show(keyboard, inputArea, clipboardStyle());
@@ -1699,6 +1739,7 @@ public class LatinIME extends InputMethodService implements
             mRefreshKeyboardRequired = false;
             toggleLanguage(true, true,false);
         }
+        restoreAppLanguage(attribute.packageName);
 
         mKeyboardSwitcher.makeKeyboards(false);
 
@@ -2362,7 +2403,8 @@ public class LatinIME extends InputMethodService implements
 
     private void doubleSpace() {
         // if (!mAutoPunctuate) return;
-        if (mCorrectionMode == Suggest.CORRECTION_NONE)
+        if (mCorrectionMode == Suggest.CORRECTION_NONE
+                || !sKeyboardSettings.doubleSpacePeriod)
             return;
         final InputConnection ic = getCurrentInputConnection();
         if (ic == null)
@@ -3779,7 +3821,8 @@ public class LatinIME extends InputMethodService implements
         }
         TextEntryState.acceptedSuggestion(mComposing.toString(), suggestion);
         // Follow it with a space
-        if (mAutoSpace && !suppressAutospace && !correcting) {
+        if (mAutoSpace && sKeyboardSettings.spaceAfterSuggestion
+                && !suppressAutospace && !correcting) {
             sendSpace();
             mJustAddedAutoSpace = true;
         }
@@ -4012,6 +4055,8 @@ public class LatinIME extends InputMethodService implements
             int frequencyDelta, boolean addToBigramDictionary) {
         if (suggestion == null || suggestion.length() < 1)
             return;
+        if (!mLearnNewWords || isIncognito())
+            return;
         // Only auto-add to dictionary if auto-correct is ON. Otherwise we'll be
         // adding words in situations where the user or application really
         // didn't
@@ -4130,19 +4175,85 @@ public class LatinIME extends InputMethodService implements
             }
         }
         if(lang_changed) {
-            int currentKeyboardMode = mKeyboardSwitcher.getKeyboardMode();
-            reloadKeyboards();
-            mKeyboardSwitcher.makeKeyboards(true);
-            mKeyboardSwitcher.setKeyboardMode(currentKeyboardMode, 0,
-                    mEnableVoiceButton && mEnableVoice);
-            initSuggest(mLanguageSwitcher.getInputLanguage());
-            mLanguageSwitcher.persist();
-            mAutoCapActive = mAutoCapPref && mLanguageSwitcher.allowAutoCap();
-            mDeadKeysActive = mLanguageSwitcher.allowDeadKeys();
-            updateShiftKeyState(getCurrentInputEditorInfo());
-            setCandidatesViewShown(isCandidateStripVisible());
-            p_max_set_indicators();
+            onInputLanguageChanged();
+            // Only a switch the user made picks the language for the app
+            if (!reset && !force_en) rememberAppLanguage();
         }
+    }
+
+    private void onInputLanguageChanged() {
+        int currentKeyboardMode = mKeyboardSwitcher.getKeyboardMode();
+        reloadKeyboards();
+        mKeyboardSwitcher.makeKeyboards(true);
+        mKeyboardSwitcher.setKeyboardMode(currentKeyboardMode, 0,
+                mEnableVoiceButton && mEnableVoice);
+        initSuggest(mLanguageSwitcher.getInputLanguage());
+        mLanguageSwitcher.persist();
+        mAutoCapActive = mAutoCapPref && mLanguageSwitcher.allowAutoCap();
+        mDeadKeysActive = mLanguageSwitcher.allowDeadKeys();
+        updateShiftKeyState(getCurrentInputEditorInfo());
+        setCandidatesViewShown(isCandidateStripVisible());
+        p_max_set_indicators();
+    }
+
+    /** Package of the editor whose language is remembered, or null if none should be. */
+    private String appLanguageKey(String packageName) {
+        if (!mRememberLanguagePerApp || TextUtils.isEmpty(packageName)
+                || packageName.equals(getPackageName())) return null;
+        return packageName;
+    }
+
+    private void rememberAppLanguage() {
+        EditorInfo ei = getCurrentInputEditorInfo();
+        String pkg = appLanguageKey(ei != null ? ei.packageName : null);
+        if (pkg == null) return;
+        SharedPreferences.Editor editor =
+                getSharedPreferences(PREFS_APP_LANGUAGES, MODE_PRIVATE).edit();
+        editor.putString(pkg, mLanguageSwitcher.getInputLanguage());
+        SharedPreferencesCompat.apply(editor);
+    }
+
+    private void restoreAppLanguage(String packageName) {
+        String pkg = appLanguageKey(packageName);
+        if (pkg == null) return;
+        String language = getSharedPreferences(PREFS_APP_LANGUAGES, MODE_PRIVATE)
+                .getString(pkg, null);
+        if (language != null && mLanguageSwitcher.setInputLanguage(language)) {
+            onInputLanguageChanged();
+        }
+    }
+
+    /**
+     * Nothing typed, picked or copied is learned: "Always incognito" is on, or the editor
+     * asks for it (incognito tabs set IME_FLAG_NO_PERSONALIZED_LEARNING). The editor info
+     * outlives the field, so it only counts while input is started in it.
+     */
+    boolean isIncognito() {
+        if (mIncognitoAlways) return true;
+        if (!mIncognitoPrivateFields || Build.VERSION.SDK_INT < 26) return false;
+        if (!getCurrentInputStarted()) return false;
+        EditorInfo ei = getCurrentInputEditorInfo();
+        return ei != null && (ei.imeOptions & EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0;
+    }
+
+    /**
+     * Forgets the words and word pairs learned from typing, in the running keyboard and on
+     * disk. The Android user dictionary is kept: it also holds words the user added on purpose.
+     */
+    static void clearLearnedWords(Context context) {
+        LatinIME ime = sInstance;
+        if (ime != null) {
+            if (ime.mAutoDictionary != null) ime.mAutoDictionary.clearLearnedWords();
+            if (ime.mUserBigramDictionary != null) ime.mUserBigramDictionary.clearLearnedWords();
+        }
+        AutoDictionary.clearDatabase(context);
+        UserBigramDictionary.clearDatabase(context);
+    }
+
+    private void forgetAppLanguages() {
+        SharedPreferences sp = getSharedPreferences(PREFS_APP_LANGUAGES, MODE_PRIVATE);
+        if (sp.getAll().isEmpty()) return;
+        SharedPreferencesCompat.apply(sp.edit().clear());
     }
 
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
@@ -4191,6 +4302,23 @@ public class LatinIME extends InputMethodService implements
             mTabHack = sharedPreferences.getBoolean(
                     PREF_CONNECTBOT_TAB_HACK, res
                             .getBoolean(R.bool.default_connectbot_tab_hack));
+        } else if (PREF_REMEMBER_LANGUAGE_PER_APP.equals(key)) {
+            mRememberLanguagePerApp = sharedPreferences.getBoolean(
+                    PREF_REMEMBER_LANGUAGE_PER_APP, res
+                            .getBoolean(R.bool.default_remember_language_per_app));
+            if (!mRememberLanguagePerApp) forgetAppLanguages();
+        } else if (PREF_INCOGNITO_PRIVATE_FIELDS.equals(key)) {
+            mIncognitoPrivateFields = sharedPreferences.getBoolean(
+                    PREF_INCOGNITO_PRIVATE_FIELDS, res
+                            .getBoolean(R.bool.default_incognito_private_fields));
+        } else if (PREF_INCOGNITO_ALWAYS.equals(key)) {
+            mIncognitoAlways = sharedPreferences.getBoolean(
+                    PREF_INCOGNITO_ALWAYS, res
+                            .getBoolean(R.bool.default_incognito_always));
+        } else if (PREF_LEARN_NEW_WORDS.equals(key)) {
+            mLearnNewWords = sharedPreferences.getBoolean(
+                    PREF_LEARN_NEW_WORDS, res
+                            .getBoolean(R.bool.default_learn_new_words));
         } else if (PREF_FULLSCREEN_OVERRIDE.equals(key)) {
             mFullscreenOverride = sharedPreferences.getBoolean(
                     PREF_FULLSCREEN_OVERRIDE, res

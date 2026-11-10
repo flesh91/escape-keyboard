@@ -309,7 +309,8 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         mHistory.applySizeSetting();
         // A copy made while another keyboard was active isn't in the history yet
         mHistory.rememberPrimaryClip(
-                (ClipboardManager) mIme.getSystemService(Context.CLIPBOARD_SERVICE));
+                (ClipboardManager) mIme.getSystemService(Context.CLIPBOARD_SERVICE),
+                false, mIme.isIncognito());
         refresh();
     }
 

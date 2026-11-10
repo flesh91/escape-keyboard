@@ -288,6 +288,9 @@
 
     <!-- Inform the user that a particular language has an available dictionary -->
     <string name="has_dictionary">Доступен словарь</string>
+    <string name="cat_languages">Языки</string>
+    <string name="title_remember_language_per_app">Запоминать язык для каждого приложения</string>
+    <string name="summary_remember_language_per_app">Приложение открывается с языком, на который вы в нём переключились последним</string>
 
     <!-- Preferences item for enabling to send user statistics to Google -->
     <string name="prefs_enable_log">Отправлять статистику</string>
@@ -525,7 +528,7 @@
     <string name="summary_nav_bar_space_true">Клавиатура расположена над системными кнопками навигации</string>
     <string name="summary_nav_bar_space_false">Кнопки клавиатуры под ней скрыты (Android 16+). Место остаётся только под системную панель навигации, когда она показана</string>
     <string name="title_extension_row_portrait">Верхний дополнительный ряд, вертикально</string>
-    <string name="summary_extension_row_portrait_true">Показан: Esc, Home, End, Del в компактной раскладке, F1–F12 в полной</string>
+    <string name="summary_extension_row_portrait_true">Показан: цифры в 4-рядной раскладке (есть не для всех языков), Esc, символы и Del в компактной, F1–F12, Home и End в полной</string>
     <string name="summary_extension_row_portrait_false">Скрыт (жест свайпа вверх может показать его до закрытия клавиатуры)</string>
     <string name="layout_google_system">Google (по теме системы)</string>
     <string name="layout_google_light">Google светлая</string>
@@ -569,7 +572,7 @@
     <string name="screen_typing">Набор текста</string>
     <string name="screen_typing_summary">Заглавные буквы, Shift, долгое нажатие</string>
     <string name="screen_correction">Исправление текста</string>
-    <string name="screen_correction_summary">Подсказки слов, автодополнение, исправления</string>
+    <string name="screen_correction_summary">Подсказки слов, автодополнение, исправления, конфиденциальность</string>
     <string name="screen_terminal">Терминал и клавиши ПК</string>
     <string name="screen_terminal_summary">Коды Ctrl, Alt, Meta, Ctrl-A, ConnectBot</string>
     <string name="screen_advanced">Дополнительно</string>
@@ -598,6 +601,7 @@
     <string name="title_clipboard_history">Сохранять историю буфера обмена</string>
     <string name="summary_clipboard_history_true">Скопированный текст хранится только на этом устройстве, пароли — нет. Закреплённые записи остаются, пока вы их не удалите</string>
     <string name="summary_clipboard_history_false">Скопированный текст не сохраняется</string>
+    <string name="summary_clipboard_history_incognito">Пока включено «Всегда инкогнито», ничего нового не сохраняется (Исправление текста → Конфиденциальность)</string>
     <string name="title_clipboard_history_size">Размер истории (без закреплённых)</string>
     <string name="clipboard_title">Буфер обмена</string>
     <string name="clipboard_clear">Очистить</string>
@@ -624,6 +628,39 @@
     </string-array>
     <string name="clipboard_deleted">Запись удалена</string>
     <string name="clipboard_undo">Вернуть</string>
+    <string name="title_clipboard_history_expiry">Удалять незакреплённые записи через</string>
+    <string-array name="clipboard_history_expiry_entries">
+        <item>Никогда</item>
+        <item>1 час</item>
+        <item>1 день</item>
+        <item>7 дней</item>
+        <item>30 дней</item>
+    </string-array>
+    <string name="title_clipboard_hide_locked">Скрывать историю на экране блокировки</string>
+    <string name="summary_clipboard_hide_locked">История буфера обмена не открывается, пока устройство заблокировано</string>
+    <string name="clipboard_locked">Разблокируйте устройство, чтобы увидеть историю буфера обмена</string>
+    <string name="cat_privacy">Конфиденциальность</string>
+    <string name="title_incognito_private_fields">Не обучаться в приватных полях</string>
+    <string name="summary_incognito_private_fields">Вкладки инкогнито и другие поля, которые об этом просят: набранные слова, эмодзи и скопированный текст не запоминаются</string>
+    <string name="title_incognito_always">Всегда инкогнито</string>
+    <string name="summary_incognito_always">Новые слова, эмодзи и скопированный текст не запоминаются ни в одном приложении</string>
+    <string name="title_learn_new_words">Запоминать новые слова</string>
+    <string name="summary_learn_new_words">Запоминать новые слова и пары слов из набора, чтобы предлагать их в дальнейшем</string>
+    <string name="title_clear_learned_words">Очистить выученные слова</string>
+    <string name="summary_clear_learned_words">Забыть слова и пары слов, которые клавиатура запомнила при наборе</string>
+    <string name="confirm_clear_learned_words">Забыть все слова, которые клавиатура запомнила при наборе? Слова из личного словаря останутся.</string>
+    <string name="button_clear_learned_words">Очистить</string>
+    <string name="learned_words_cleared">Выученные слова удалены</string>
+    <string name="title_double_space_period">Двойной пробел ставит точку</string>
+    <string name="summary_double_space_period">Два пробела после слова превращаются в «. », когда включено автоисправление или быстрое исправление</string>
+    <string name="title_space_after_suggestion">Пробел после выбранного варианта</string>
+    <string name="summary_space_after_suggestion">После слова, выбранного в строке вариантов, ставится пробел</string>
+    <string name="title_auto_correct_strength">Сила автоисправления</string>
+    <string-array name="auto_correct_strength_entries">
+        <item>Умеренная: только слова с мелкой ошибкой</item>
+        <item>Обычная</item>
+        <item>Сильная: также слова с несколькими ошибками</item>
+    </string-array>
 
     <string name="title_space_swipe">Свайп по пробелу</string>
     <string-array name="space_swipe_entries">

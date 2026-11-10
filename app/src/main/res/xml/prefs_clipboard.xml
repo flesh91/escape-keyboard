@@ -17,5 +17,19 @@
         android:defaultValue="20"
         android:entries="@array/clipboard_history_size_entries"
         android:entryValues="@array/clipboard_history_size_values" />
+    <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
+        android:key="clipboard_history_expiry"
+        android:title="@string/title_clipboard_history_expiry"
+        android:persistent="true"
+        android:dependency="clipboard_history"
+        android:defaultValue="0"
+        android:entries="@array/clipboard_history_expiry_entries"
+        android:entryValues="@array/clipboard_history_expiry_values" />
+    <SwitchPreferenceCompat
+        android:key="clipboard_hide_locked"
+        android:title="@string/title_clipboard_hide_locked"
+        android:summary="@string/summary_clipboard_hide_locked"
+        android:persistent="true"
+        android:defaultValue="true" />
 
 </PreferenceScreen>

@@ -30,6 +30,7 @@ import android.util.Log;
 
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
@@ -45,6 +46,7 @@ public class LatinIMESettings extends SettingsActivity
     /* package */ static final String PREF_SETTINGS_KEY = "pref_settings_key";
     static final String INPUT_CONNECTION_INFO = "input_connection_info";    
     private static final String DEBUGGING_KEY = "debugging";
+    private static final String CLEAR_LEARNED_WORDS_KEY = "clear_learned_words";
     private static final String PREF_DEBUG_UNLOCKED = "debug_settings_unlocked";
     private static final int DEBUG_TAPS = 5;
 
@@ -110,6 +112,21 @@ public class LatinIMESettings extends SettingsActivity
             mInputConnectionInfo = findPreference(INPUT_CONNECTION_INFO);
             mLabelVersion = findPreference("label_version");
             if (mLabelVersion != null) setupDebugging();
+            Preference clearLearnedWords = findPreference(CLEAR_LEARNED_WORDS_KEY);
+            if (clearLearnedWords != null) {
+                clearLearnedWords.setOnPreferenceClickListener(p -> {
+                    confirmClearLearnedWords();
+                    return true;
+                });
+            }
+            // "Always incognito" lives on another screen: say here why nothing new is kept
+            androidx.preference.SwitchPreferenceCompat clipboardHistory =
+                    findPreference(ClipboardHistory.PREF_ENABLED);
+            if (clipboardHistory != null && getPreferenceManager().getSharedPreferences()
+                    .getBoolean(LatinIME.PREF_INCOGNITO_ALWAYS,
+                            getResources().getBoolean(R.bool.default_incognito_always))) {
+                clipboardHistory.setSummaryOn(R.string.summary_clipboard_history_incognito);
+            }
             Preference licenses = findPreference("licenses");
             if (licenses != null) {
                 licenses.setIntent(new android.content.Intent(requireContext(), LicensesActivity.class));
@@ -152,6 +169,18 @@ public class LatinIMESettings extends SettingsActivity
                 toast(getString(R.string.debug_hidden));
                 return true;
             });
+        }
+
+        private void confirmClearLearnedWords() {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.title_clear_learned_words)
+                    .setMessage(R.string.confirm_clear_learned_words)
+                    .setPositiveButton(R.string.button_clear_learned_words, (dialog, which) -> {
+                        LatinIME.clearLearnedWords(requireContext());
+                        toast(getString(R.string.learned_words_cleared));
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
         }
 
         private void toast(String text) {

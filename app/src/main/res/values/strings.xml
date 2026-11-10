@@ -333,6 +333,9 @@
     
     <!-- Inform the user that a particular language has an available dictionary -->
     <string name="has_dictionary">Dictionary available</string>
+    <string name="cat_languages">Languages</string>
+    <string name="title_remember_language_per_app">Remember the language for each app</string>
+    <string name="summary_remember_language_per_app">Each app opens with the language you last switched to in it</string>
 
     <!-- Preferences item for enabling to send user statistics to Google -->
     <string name="prefs_enable_log">Enable user feedback</string>
@@ -697,7 +700,7 @@
     <string name="summary_nav_bar_space_true">The keyboard sits above the system navigation buttons</string>
     <string name="summary_nav_bar_space_false">The keyboard\'s own buttons below it are hidden (Android 16+). Space stays only for the system navigation bar, when it is shown</string>
     <string name="title_extension_row_portrait">Top extra row, portrait</string>
-    <string name="summary_extension_row_portrait_true">Shown: Esc, Home, End, Del in the compact layout, F1–F12 in the full one</string>
+    <string name="summary_extension_row_portrait_true">Shown: digits in the 4-row layout (not every language has them), Esc, symbols and Del in the compact one, F1–F12, Home and End in the full one</string>
     <string name="summary_extension_row_portrait_false">Hidden (the swipe-up gesture can still show it until the keyboard closes)</string>
     <string name="layout_google_system">Google (follows system theme)</string>
     <string name="layout_google_light">Google Light</string>
@@ -737,7 +740,7 @@
     <string name="screen_typing">Typing</string>
     <string name="screen_typing_summary">Capital letters, Shift, long press</string>
     <string name="screen_correction">Text correction</string>
-    <string name="screen_correction_summary">Word suggestions, auto-completion, corrections</string>
+    <string name="screen_correction_summary">Word suggestions, auto-completion, corrections, privacy</string>
     <string name="screen_terminal">Terminal and PC keys</string>
     <string name="screen_terminal_summary">Ctrl, Alt and Meta codes, Ctrl-A, ConnectBot</string>
     <string name="screen_advanced">Advanced</string>
@@ -776,6 +779,7 @@
     <string name="title_clipboard_history">Keep clipboard history</string>
     <string name="summary_clipboard_history_true">Copied text is kept on this device only, passwords are not. Pinned items stay until you delete them</string>
     <string name="summary_clipboard_history_false">Copied text is not kept</string>
+    <string name="summary_clipboard_history_incognito">Nothing new is kept while \"Always incognito\" is on (Text correction → Privacy)</string>
     <string name="title_clipboard_history_size">History size (pinned items not counted)</string>
     <string name="clipboard_title">Clipboard</string>
     <string name="clipboard_clear">Clear</string>
@@ -813,6 +817,53 @@
     </string-array>
     <string name="clipboard_deleted">Entry deleted</string>
     <string name="clipboard_undo">Undo</string>
+    <string name="title_clipboard_history_expiry">Delete unpinned items after</string>
+    <string-array name="clipboard_history_expiry_entries">
+        <item>Never</item>
+        <item>1 hour</item>
+        <item>1 day</item>
+        <item>7 days</item>
+        <item>30 days</item>
+    </string-array>
+    <string-array name="clipboard_history_expiry_values" translatable="false">
+        <item>0</item>
+        <item>1</item>
+        <item>24</item>
+        <item>168</item>
+        <item>720</item>
+    </string-array>
+    <string name="title_clipboard_hide_locked">Hide history on the lock screen</string>
+    <string name="summary_clipboard_hide_locked">Clipboard history doesn\'t open while the device is locked</string>
+    <string name="clipboard_locked">Unlock the device to see clipboard history</string>
+    <string name="cat_privacy">Privacy</string>
+    <string name="title_incognito_private_fields">Don\'t learn in private fields</string>
+    <string name="summary_incognito_private_fields">Incognito tabs and other fields that ask for it: typed words, emoji and copied text are not remembered</string>
+    <string name="title_incognito_always">Always incognito</string>
+    <string name="summary_incognito_always">New words, emoji and copied text are not remembered in any app</string>
+    <string name="title_learn_new_words">Learn new words</string>
+    <string name="summary_learn_new_words">Remember new words and word pairs from your typing to suggest them later</string>
+    <string name="title_clear_learned_words">Clear learned words</string>
+    <string name="summary_clear_learned_words">Forget the words and word pairs learned from your typing</string>
+    <string name="confirm_clear_learned_words">Forget all the words the keyboard learned from your typing? Words in your personal dictionary are kept.</string>
+    <string name="button_clear_learned_words">Clear</string>
+    <string name="learned_words_cleared">Learned words cleared</string>
+
+    <!-- Typing behaviour -->
+    <string name="title_double_space_period">Double space types a period</string>
+    <string name="summary_double_space_period">Two spaces after a word become \". \" while auto-correction or quick fixes are on</string>
+    <string name="title_space_after_suggestion">Space after a picked suggestion</string>
+    <string name="summary_space_after_suggestion">A word tapped in the suggestion strip is followed by a space</string>
+    <string name="title_auto_correct_strength">Auto-correction strength</string>
+    <string-array name="auto_correct_strength_values" translatable="false">
+        <item>modest</item>
+        <item>normal</item>
+        <item>aggressive</item>
+    </string-array>
+    <string-array name="auto_correct_strength_entries">
+        <item>Modest: only words that are almost right</item>
+        <item>Normal</item>
+        <item>Aggressive: also words with more typos</item>
+    </string-array>
 
     <!-- Space bar swipe -->
     <string name="title_space_swipe">Swipe along the space bar</string>

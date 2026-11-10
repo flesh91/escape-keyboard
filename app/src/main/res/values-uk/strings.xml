@@ -130,6 +130,9 @@
     <string name="language_selection_summary" msgid="187110938289512256">Проведіть пальцем по пробілу, щоб змінити мову</string>
     <string name="hint_add_to_dictionary" msgid="9006292060636342317">← Торкніться ще раз, щоб зберегти</string>
     <string name="has_dictionary" msgid="6071847973466625007">"Словник доступний"</string>
+    <string name="cat_languages">Мови</string>
+    <string name="title_remember_language_per_app">Запам\'ятовувати мову для кожного застосунку</string>
+    <string name="summary_remember_language_per_app">Застосунок відкривається з мовою, на яку ви в ньому востаннє перемкнулися</string>
     <string name="prefs_enable_log" msgid="6620424505072963557">Надсилати відгуки</string>
     <string name="prefs_description_log" msgid="5827825607258246003">Допоможіть покращити цей метод введення, автоматично надсилаючи в Google статистику використання та звіти про збої.</string>
     <string name="prefs_enable_recorrection" msgid="4588408906649533582">Виправлення слів дотиком</string>
@@ -345,7 +348,7 @@
     <string name="summary_nav_bar_space_true">Клавіатура розташована над системними кнопками навігації</string>
     <string name="summary_nav_bar_space_false">Кнопки клавіатури під нею приховано (Android 16+). Місце лишається лише під системну панель навігації, коли вона показана</string>
     <string name="title_extension_row_portrait">Верхній додатковий ряд, вертикально</string>
-    <string name="summary_extension_row_portrait_true">Показано: Esc, Home, End, Del у компактній розкладці, F1–F12 у повній</string>
+    <string name="summary_extension_row_portrait_true">Показано: цифри в 4-рядній розкладці (є не для всіх мов), Esc, символи й Del у компактній, F1–F12, Home і End у повній</string>
     <string name="summary_extension_row_portrait_false">Приховано (жест проведення вгору може показати його до закриття клавіатури)</string>
     <string name="layout_google_system">Google (за темою системи)</string>
     <string name="layout_google_light">Google світла</string>
@@ -389,7 +392,7 @@
     <string name="screen_typing">Набір тексту</string>
     <string name="screen_typing_summary">Великі літери, Shift, довге натискання</string>
     <string name="screen_correction">Виправлення тексту</string>
-    <string name="screen_correction_summary">Пропозиції слів, автодоповнення, виправлення</string>
+    <string name="screen_correction_summary">Пропозиції слів, автодоповнення, виправлення, приватність</string>
     <string name="screen_terminal">Термінал і клавіші ПК</string>
     <string name="screen_terminal_summary">Коди Ctrl, Alt, Meta, Ctrl-A, ConnectBot</string>
     <string name="screen_advanced">Додатково</string>
@@ -418,6 +421,7 @@
     <string name="title_clipboard_history">Зберігати історію буфера обміну</string>
     <string name="summary_clipboard_history_true">Скопійований текст зберігається лише на цьому пристрої, паролі — ні. Закріплені записи лишаються, доки ви їх не видалите</string>
     <string name="summary_clipboard_history_false">Скопійований текст не зберігається</string>
+    <string name="summary_clipboard_history_incognito">Поки ввімкнено «Завжди інкогніто», нічого нового не зберігається (Виправлення тексту → Приватність)</string>
     <string name="title_clipboard_history_size">Розмір історії (без закріплених)</string>
     <string name="clipboard_title">Буфер обміну</string>
     <string name="clipboard_clear">Очистити</string>
@@ -444,6 +448,39 @@
     </string-array>
     <string name="clipboard_deleted">Запис видалено</string>
     <string name="clipboard_undo">Повернути</string>
+    <string name="title_clipboard_history_expiry">Видаляти незакріплені записи через</string>
+    <string-array name="clipboard_history_expiry_entries">
+        <item>Ніколи</item>
+        <item>1 годину</item>
+        <item>1 день</item>
+        <item>7 днів</item>
+        <item>30 днів</item>
+    </string-array>
+    <string name="title_clipboard_hide_locked">Ховати історію на екрані блокування</string>
+    <string name="summary_clipboard_hide_locked">Історія буфера обміну не відкривається, поки пристрій заблоковано</string>
+    <string name="clipboard_locked">Розблокуйте пристрій, щоб побачити історію буфера обміну</string>
+    <string name="cat_privacy">Приватність</string>
+    <string name="title_incognito_private_fields">Не вчитися в приватних полях</string>
+    <string name="summary_incognito_private_fields">Вкладки інкогніто та інші поля, які про це просять: набрані слова, емодзі й скопійований текст не запам\'ятовуються</string>
+    <string name="title_incognito_always">Завжди інкогніто</string>
+    <string name="summary_incognito_always">Нові слова, емодзі й скопійований текст не запам\'ятовуються в жодному застосунку</string>
+    <string name="title_learn_new_words">Вивчати нові слова</string>
+    <string name="summary_learn_new_words">Запам\'ятовувати нові слова й пари слів із набору, щоб підказувати їх надалі</string>
+    <string name="title_clear_learned_words">Очистити вивчені слова</string>
+    <string name="summary_clear_learned_words">Забути слова й пари слів, яких клавіатура навчилася під час набору</string>
+    <string name="confirm_clear_learned_words">Забути всі слова, яких клавіатура навчилася під час набору? Слова з особистого словника залишаться.</string>
+    <string name="button_clear_learned_words">Очистити</string>
+    <string name="learned_words_cleared">Вивчені слова очищено</string>
+    <string name="title_double_space_period">Подвійний пробіл ставить крапку</string>
+    <string name="summary_double_space_period">Два пробіли після слова стають «. », коли ввімкнено автовиправлення або швидкі виправлення</string>
+    <string name="title_space_after_suggestion">Пробіл після вибраної пропозиції</string>
+    <string name="summary_space_after_suggestion">Після слова, вибраного в рядку пропозицій, ставиться пробіл</string>
+    <string name="title_auto_correct_strength">Сила автовиправлення</string>
+    <string-array name="auto_correct_strength_entries">
+        <item>Помірна: лише слова з дрібною помилкою</item>
+        <item>Звичайна</item>
+        <item>Сильна: також слова з кількома помилками</item>
+    </string-array>
 
     <string name="title_space_swipe">Свайп по пробілу</string>
     <string-array name="space_swipe_entries">

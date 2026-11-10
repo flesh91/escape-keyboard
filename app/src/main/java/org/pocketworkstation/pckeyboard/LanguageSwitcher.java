@@ -223,6 +223,23 @@ public class LanguageSwitcher {
         mCurrentIndex--;
         if (mCurrentIndex < 0) mCurrentIndex = mLocales.length - 1; // Wrap around
     }
+
+    /**
+     * Switches to the given language code if it is one of the enabled languages.
+     * @return true if language changed, false if not
+     */
+    public boolean setInputLanguage(String language) {
+        if (getLocaleCount() == 0) return false;
+        for (int i = 0; i < mSelectedLanguageArray.length; i++) {
+            if (mSelectedLanguageArray[i].equals(language)) {
+                if (i == mCurrentIndex) return false;
+                mLangChangedByUser = true;
+                mCurrentIndex = i;
+                return true;
+            }
+        }
+        return false;
+    }
     //*// Added by Pulya Max
 
     /**

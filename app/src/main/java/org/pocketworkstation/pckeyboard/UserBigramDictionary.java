@@ -198,6 +198,28 @@ public class UserBigramDictionary extends ExpandableDictionary {
         }
     }
 
+    /**
+     * Forgets the learned word pairs held in memory, including the ones not written yet.
+     * The database is emptied by {@link #clearDatabase}.
+     */
+    public void clearLearnedWords() {
+        synchronized (mPendingWritesLock) {
+            mPendingWrites = new HashSet<Bigram>();
+        }
+        clearDictionary();
+    }
+
+    /**
+     * Schedules a background thread to delete the learned word pairs of every locale.
+     * AsyncTasks run one at a time, so writes scheduled before it can't bring them back.
+     */
+    static void clearDatabase(Context context) {
+        if (sOpenHelper == null) {
+            sOpenHelper = new DatabaseHelper(context.getApplicationContext());
+        }
+        new ClearDbTask(sOpenHelper).execute();
+    }
+
     /** Used for testing purpose **/
     void waitUntilUpdateDBDone() {
         synchronized (mPendingWritesLock) {
@@ -292,6 +314,23 @@ public class UserBigramDictionary extends ExpandableDictionary {
             db.execSQL("DROP TABLE IF EXISTS " + MAIN_TABLE_NAME);
             db.execSQL("DROP TABLE IF EXISTS " + FREQ_TABLE_NAME);
             onCreate(db);
+        }
+    }
+
+    /** Async task to delete all the word pairs and their frequencies from the database. */
+    private static class ClearDbTask extends AsyncTask<Void, Void, Void> {
+        private final DatabaseHelper mDbHelper;
+
+        public ClearDbTask(DatabaseHelper openHelper) {
+            mDbHelper = openHelper;
+        }
+
+        @Override
+        protected Void doInBackground(Void... v) {
+            SQLiteDatabase db = mDbHelper.getWritableDatabase();
+            db.delete(FREQ_TABLE_NAME, null, null);
+            db.delete(MAIN_TABLE_NAME, null, null);
+            return null;
         }
     }
 

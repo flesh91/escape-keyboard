@@ -60,6 +60,15 @@ public final class GlobalKeyboardSettings {
     public int keyClickMethod = 0;
     public boolean capsLock = true;
     public boolean shiftLockModifiers = false;
+    // Two spaces after a word type ". " (only while auto-correction or quick fixes are on)
+    public boolean doubleSpacePeriod = true;
+    // A word picked from the suggestion strip is followed by a space
+    public boolean spaceAfterSuggestion = true;
+    //
+    // Read by Suggest
+    // How different a dictionary word may be from the typed one to replace it:
+    // "modest", "normal" or "aggressive"
+    public String autoCorrectStrength = "normal";
     //
     // Read by LatinKeyboardBaseView
     public float labelScalePref = 1.0f;
@@ -284,6 +293,24 @@ public final class GlobalKeyboardSettings {
         addBooleanPref("pref_shift_lock_modifiers", new BooleanPref() {
             public void set(boolean val) { shiftLockModifiers = val; }
             public boolean getDefault() { return res.getBoolean(R.bool.default_shift_lock_modifiers); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_double_space_period", new BooleanPref() {
+            public void set(boolean val) { doubleSpacePeriod = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_double_space_period); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_space_after_suggestion", new BooleanPref() {
+            public void set(boolean val) { spaceAfterSuggestion = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_space_after_suggestion); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addStringPref("pref_auto_correct_strength", new StringPref() {
+            public void set(String val) { autoCorrectStrength = val; }
+            public String getDefault() { return "normal"; }
             public int getFlags() { return FLAG_PREF_NONE; }
         });
 

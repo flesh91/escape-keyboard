@@ -26,6 +26,15 @@
         android:persistent="true"
         android:defaultValue="@bool/enable_autocorrect"
         />
+        <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
+        android:key="pref_auto_correct_strength"
+        android:dependency="auto_complete"
+        android:title="@string/title_auto_correct_strength"
+        android:persistent="true"
+        android:entries="@array/auto_correct_strength_entries"
+        android:entryValues="@array/auto_correct_strength_values"
+        android:defaultValue="normal"
+        />
         <SwitchPreferenceCompat
         android:key="quick_fixes"
         android:title="@string/quick_fixes"
@@ -34,11 +43,26 @@
         android:defaultValue="@bool/default_quick_fixes"
         />
         <SwitchPreferenceCompat
+        android:key="pref_double_space_period"
+        android:title="@string/title_double_space_period"
+        android:summary="@string/summary_double_space_period"
+        android:persistent="true"
+        android:defaultValue="@bool/default_double_space_period"
+        />
+        <SwitchPreferenceCompat
         android:key="show_suggestions"
         android:title="@string/show_suggestions"
         android:summary="@string/show_suggestions_summary"
         android:persistent="true"
         android:defaultValue="@bool/default_suggestions"
+        />
+        <SwitchPreferenceCompat
+        android:key="pref_space_after_suggestion"
+        android:dependency="show_suggestions"
+        android:title="@string/title_space_after_suggestion"
+        android:summary="@string/summary_space_after_suggestion"
+        android:persistent="true"
+        android:defaultValue="@bool/default_space_after_suggestion"
         />
         <org.pocketworkstation.pckeyboard.SeekBarPreferenceString
         android:defaultValue="1.0"
@@ -72,6 +96,40 @@
         android:dependency="show_suggestions"
         android:title="@string/title_suggested_punctuation"
         android:defaultValue="@string/suggested_punctuations"
+        />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="privacy_settings"
+        android:title="@string/cat_privacy">
+        <SwitchPreferenceCompat
+        android:key="incognito_always"
+        android:title="@string/title_incognito_always"
+        android:summary="@string/summary_incognito_always"
+        android:persistent="true"
+        android:defaultValue="@bool/default_incognito_always"
+        android:disableDependentsState="true"
+        />
+        <SwitchPreferenceCompat
+        android:key="incognito_private_fields"
+        android:title="@string/title_incognito_private_fields"
+        android:summary="@string/summary_incognito_private_fields"
+        android:persistent="true"
+        android:defaultValue="@bool/default_incognito_private_fields"
+        />
+        <SwitchPreferenceCompat
+        android:key="learn_new_words"
+        android:dependency="incognito_always"
+        android:title="@string/title_learn_new_words"
+        android:summary="@string/summary_learn_new_words"
+        android:persistent="true"
+        android:defaultValue="@bool/default_learn_new_words"
+        />
+        <Preference
+        android:key="clear_learned_words"
+        android:title="@string/title_clear_learned_words"
+        android:summary="@string/summary_clear_learned_words"
+        android:persistent="false"
         />
     </PreferenceCategory>
 
