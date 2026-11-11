@@ -1,25 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Retro terminal theme: bubble above a pressed key, a big letter cap on its shadow -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:paddingMode="stack">
-    <!-- no paint: content padding, the letter centres on the face (2.1dp above the middle) -->
+<!-- Retro terminal theme: the bubble above a pressed key, the same shape as every other theme's
+     (key_preview_keycap): a shadow, the cap's skirt, the top face with its highlight and dish -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
-        <shape android:shape="rectangle"><solid android:color="@android:color/transparent" /><padding android:bottom="4.25dp" /></shape>
+        <shape android:shape="rectangle"><corners android:radius="12dp" /><solid android:color="@color/retro_preview_shadow" /></shape>
     </item>
-    <item>
-        <shape android:shape="rectangle"><corners android:radius="9dp" /><solid android:color="@color/retro_preview_shadow" /></shape>
+    <item android:left="1dp" android:right="1dp" android:bottom="1dp">
+        <shape android:shape="rectangle"><corners android:radius="11dp" /><gradient android:angle="270" android:startColor="@color/retro_letter_side_top" android:endColor="@color/retro_letter_side" /></shape>
     </item>
-    <!-- skirt -->
-    <item android:left="0.75dp" android:right="0.75dp" android:bottom="1.25dp">
-        <shape android:shape="rectangle"><corners android:radius="8.25dp" /><gradient android:angle="270" android:startColor="@color/retro_letter_side_top" android:endColor="@color/retro_letter_side" /></shape>
+    <item android:left="2dp" android:top="1dp" android:right="2dp" android:bottom="4dp">
+        <shape android:shape="rectangle"><corners android:radius="10dp" /><solid android:color="@color/retro_letter_hi" /></shape>
     </item>
-    <!-- highlight along the top edge, the face, the dish -->
-    <item android:left="2.75dp" android:top="0.75dp" android:right="2.75dp" android:bottom="5dp">
-        <shape android:shape="rectangle"><corners android:radius="6.5dp" /><solid android:color="@color/retro_letter_hi" /></shape>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="4dp">
+        <shape android:shape="rectangle"><corners android:radius="10dp" /><solid android:color="@color/retro_letter" /></shape>
     </item>
-    <item android:left="2.75dp" android:top="1.75dp" android:right="2.75dp" android:bottom="5dp">
-        <shape android:shape="rectangle"><corners android:radius="6.5dp" /><solid android:color="@color/retro_letter" /></shape>
-    </item>
-    <item android:left="2.75dp" android:top="0.75dp" android:right="2.75dp" android:bottom="5dp">
-        <shape android:shape="rectangle"><corners android:radius="6.5dp" /><gradient android:angle="270" android:startColor="@color/retro_dish_top" android:centerColor="@color/retro_dish_mid" android:endColor="@color/retro_dish_bottom" /></shape>
+    <item android:left="2dp" android:top="1dp" android:right="2dp" android:bottom="4dp">
+        <shape android:shape="rectangle"><corners android:radius="10dp" /><gradient android:angle="270" android:startColor="@color/retro_dish_top" android:centerColor="@color/retro_dish_mid" android:endColor="@color/retro_dish_bottom" /></shape>
     </item>
 </layer-list>
