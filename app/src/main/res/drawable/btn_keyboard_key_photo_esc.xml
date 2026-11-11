@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Real keycaps theme: the Esc cap, a blue-grey modifier cap as on the photographed keyboard -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true" android:drawable="@drawable/key_photo_func_pressed" />
+    <item android:drawable="@drawable/key_photo_func" />
+</selector>

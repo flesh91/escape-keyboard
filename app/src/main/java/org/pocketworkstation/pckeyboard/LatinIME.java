@@ -41,12 +41,15 @@ import android.content.res.XmlResourceParser;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
 import android.inputmethodservice.InputMethodService;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.SystemClock;
+import android.os.VibrationAttributes;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
@@ -127,6 +130,7 @@ public class LatinIME extends InputMethodService implements
 
     private static final String PREF_VIBRATE_ON = "vibrate_on";
     static final String PREF_VIBRATE_LEN = "vibrate_len";
+    private static final String PREF_VIBRATE_IN_DND = "vibrate_in_dnd";
     private static final String PREF_SOUND_ON = "sound_on";
     private static final String PREF_POPUP_ON = "popup_on";
     private static final String PREF_AUTO_CAP = "auto_cap";
@@ -186,6 +190,8 @@ public class LatinIME extends InputMethodService implements
     static final int ASCII_ENTER = '\n';
     static final int ASCII_SPACE = ' ';
     static final int ASCII_PERIOD = '.';
+    // Punctuation that may sit inside a web address, an email or a path (pref_keep_addresses)
+    private static final String ADDRESS_PUNCTUATION = "./:@_";
 
     // Contextual menu positions
     private static final int POS_METHOD = 0;
@@ -251,6 +257,7 @@ public class LatinIME extends InputMethodService implements
     private boolean mPasswordText;
     private boolean mVibrateOn;
     private int mVibrateLen;
+    private boolean mVibrateInDnd;
     private boolean mSoundOn;
     private boolean mPopupOn;
     private boolean mAutoCapPref;
@@ -426,8 +433,10 @@ public class LatinIME extends InputMethodService implements
         // Clipboard history: Android lets the active keyboard read what gets copied
         final ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         if (clipboard != null) {
-            mClipListener = () -> ClipboardHistory.get(this)
-                    .rememberPrimaryClip(clipboard, true, isIncognito());
+            mClipListener = () -> {
+                ClipboardHistory.get(this).rememberPrimaryClip(clipboard, true, isIncognito());
+                onClipCopied(clipboard);
+            };
             clipboard.addPrimaryClipChangedListener(mClipListener);
         }
         final SharedPreferences prefs = PreferenceManager
@@ -648,6 +657,7 @@ public class LatinIME extends InputMethodService implements
         if (clipboard != null && mClipListener != null) {
             clipboard.removePrimaryClipChangedListener(mClipListener);
         }
+        dropClipOffer();
         dismissClipboardWindow();
         if (mUserDictionary != null) {
             mUserDictionary.close();
@@ -931,19 +941,40 @@ public class LatinIME extends InputMethodService implements
         mAutofillBar.setPadding(Math.max(left, corner) + edge, 0, Math.max(right, corner) + edge, 0);
     }
 
-    // ---- One-handed mode (portrait): the keys narrower, against one side ----
+    // ---- One-handed mode (portrait, landscape too by pref): the keys narrower, against one side ----
 
     private int mSideInsetLeft, mSideInsetRight; // camera cutout or side navigation bar
 
+    private boolean isLandscapeNow() {
+        return getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT;
+    }
+
+    /** Portrait, or landscape when the mode is turned on for it too. */
+    private boolean canBeOneHanded() {
+        return !isLandscapeNow() || sKeyboardSettings.oneHandLandscape;
+    }
+
     private boolean isOneHanded() {
-        return !"off".equals(sKeyboardSettings.oneHandMode)
-                && getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+        return !"off".equals(sKeyboardSettings.oneHandMode) && canBeOneHanded();
+    }
+
+    /**
+     * What the one-handed width is a percentage of: the window's width in portrait. In
+     * landscape the screen's short side (the width in portrait), so the keys stay as wide as
+     * in portrait: 80% of the long side is wider than a thumb reaches.
+     */
+    int getOneHandFullWidth() {
+        int width = getMaxWidth();
+        if (!isLandscapeNow()) return width;
+        float d = getResources().getDisplayMetrics().density;
+        return Math.min(width, Math.round(getResources().getConfiguration().smallestScreenWidthDp * d));
     }
 
     /** The width the keys are laid out in: the window's, or a part of it in one-handed mode. */
     int getKeyboardWidth() {
-        int width = getMaxWidth();
-        return isOneHanded() ? Math.round(width * sKeyboardSettings.oneHandWidth / 100f) : width;
+        return isOneHanded()
+                ? Math.round(getOneHandFullWidth() * sKeyboardSettings.oneHandWidth / 100f)
+                : getMaxWidth();
     }
 
     /** Keeps the keys out of the cutout and, in one-handed mode, leaves the other side empty. */
@@ -953,7 +984,7 @@ public class LatinIME extends InputMethodService implements
         keyboard.setPadding(mSideInsetLeft + (keysRight ? gap : 0), keyboard.getPaddingTop(),
                 mSideInsetRight + (keysRight ? 0 : gap), keyboard.getPaddingBottom());
         if (keyboard instanceof LatinKeyboardView) {
-            ((LatinKeyboardView) keyboard).setOneHandGap(gap, keysRight);
+            ((LatinKeyboardView) keyboard).setOneHandGap(gap, keysRight, getOneHandFullWidth());
         }
     }
 
@@ -961,6 +992,18 @@ public class LatinIME extends InputMethodService implements
     private void setOneHandMode(final String mode) {
         mHandler.post(() -> PreferenceManager.getDefaultSharedPreferences(this).edit()
                 .putString("pref_one_hand_mode", mode).apply());
+    }
+
+    /** The one-hand key and the OneHand macro: on (keys right) or back to the full width. */
+    private void toggleOneHandMode() {
+        if (canBeOneHanded()) setOneHandMode(isOneHanded() ? "off" : "right");
+    }
+
+    /** The width the handle was dragged to; saved once, when the finger lifts, like the mode. */
+    void setOneHandWidth(final int percent) {
+        if (percent == Math.round(sKeyboardSettings.oneHandWidth)) return;
+        mHandler.post(() -> PreferenceManager.getDefaultSharedPreferences(this).edit()
+                .putString("pref_one_hand_width", Float.toString(percent)).apply());
     }
 
     // ---- Space bar swipe moving the cursor ----
@@ -977,6 +1020,78 @@ public class LatinIME extends InputMethodService implements
         }
     }
 
+    // ---- Sliding left from Backspace selecting text to delete (pref, off by default) ----
+
+    // How far back a swipe can reach; the finger runs out of keyboard long before
+    private static final int DELETE_SWIPE_MAX_CHARS = 2000;
+    private int mDeleteSwipeEnd = -1; // the cursor when the swipe started, -1: no swipe
+    private int mDeleteSwipeStart;
+    private CharSequence mDeleteSwipeText; // the text before mDeleteSwipeEnd
+    private boolean mDeleteSwipeWords;
+
+    /**
+     * The finger left Backspace sideways (the key has already deleted as on any press).
+     * False where text can't be selected: terminals, editors that don't report the cursor,
+     * and with Alt or Meta on, which make Backspace a shortcut there.
+     */
+    boolean startDeleteSwipe() {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null || isTerminalEditor() || mModAlt || mModMeta) return false;
+        if (mPredicting) commitTyped(ic, true);
+        ExtractedText et = ic.getExtractedText(new ExtractedTextRequest(), 0);
+        CharSequence before = ic.getTextBeforeCursor(DELETE_SWIPE_MAX_CHARS, 0);
+        if (et == null || et.selectionStart < 0 || before == null) return false;
+        mDeleteSwipeEnd = et.startOffset + Math.min(et.selectionStart, et.selectionEnd);
+        mDeleteSwipeStart = mDeleteSwipeEnd;
+        mDeleteSwipeText = before;
+        // Ctrl+Backspace deletes a word, so with Ctrl the swipe goes by words too
+        mDeleteSwipeWords = mModCtrl || "words".equals(sKeyboardSettings.deleteSwipe);
+        return true;
+    }
+
+    /** Selects steps characters or words before the cursor; 0 puts the cursor back. */
+    void updateDeleteSwipe(int steps) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null || mDeleteSwipeEnd < 0) return;
+        CharSequence text = mDeleteSwipeText;
+        int pos = text.length();
+        for (int i = 0; i < steps && pos > 0; i++) {
+            if (!mDeleteSwipeWords) {
+                pos -= Character.charCount(Character.codePointBefore(text, pos));
+                continue;
+            }
+            // A word: the spaces before it, then a run of letters and digits or of other signs
+            while (pos > 0 && Character.isWhitespace(text.charAt(pos - 1))) pos--;
+            if (pos == 0) break;
+            boolean letters = Character.isLetterOrDigit(Character.codePointBefore(text, pos));
+            while (pos > 0) {
+                int c = Character.codePointBefore(text, pos);
+                if (Character.isWhitespace(c) || Character.isLetterOrDigit(c) != letters) break;
+                pos -= Character.charCount(c);
+            }
+        }
+        int start = mDeleteSwipeEnd - (text.length() - pos);
+        if (start == mDeleteSwipeStart) return;
+        mDeleteSwipeStart = start;
+        ic.setSelection(start, mDeleteSwipeEnd);
+    }
+
+    /** The finger is lifted: deletes the selected text, or just leaves the cursor where it was. */
+    void finishDeleteSwipe(boolean delete) {
+        InputConnection ic = getCurrentInputConnection();
+        int start = mDeleteSwipeStart, end = mDeleteSwipeEnd;
+        mDeleteSwipeEnd = -1;
+        mDeleteSwipeText = null;
+        if (ic == null || end < 0) return;
+        ic.beginBatchEdit();
+        ic.setSelection(end, end);
+        if (delete && start < end) {
+            ic.deleteSurroundingText(end - start, 0);
+            TextEntryState.reset();
+        }
+        ic.endBatchEdit();
+    }
+
     // ---- Row of the user's own keys and text macros (pref, off by default) ----
 
     private LinearLayout mMacroRow;
@@ -986,6 +1101,28 @@ public class LatinIME extends InputMethodService implements
     private static final int MACRO_CTRL = 1;
     private static final int MACRO_ALT = 2;
 
+    // Named keys that run an editor or keyboard command instead of sending a key code
+    private static final int MACRO_COPY = 1;
+    private static final int MACRO_CUT = 2;
+    private static final int MACRO_PASTE = 3;
+    private static final int MACRO_SELECT_ALL = 4;
+    private static final int MACRO_SELECT_WORD = 5;
+    private static final int MACRO_UNDO = 6;
+    private static final int MACRO_REDO = 7;
+    private static final int MACRO_CLIPBOARD = 8;
+    private static final int MACRO_EMOJI = 9;
+    private static final int MACRO_VOICE = 10;
+    private static final int MACRO_ONE_HAND = 11;
+    private static final int MACRO_DATE = 12;
+    private static final int MACRO_TIME = 13;
+    private static final int MACRO_DATE_TIME = 14;
+    private static final int MACRO_PLAY = 15;
+    private static final int MACRO_NEXT = 16;
+    private static final int MACRO_PREV = 17;
+    private static final int MACRO_VOL_UP = 18;
+    private static final int MACRO_VOL_DOWN = 19;
+    private static final int MACRO_MUTE = 20;
+
     /** One key of the row: a key code, a modifier (alone or with a key), or text to type. */
     static final class MacroKey {
         String label;
@@ -993,13 +1130,19 @@ public class LatinIME extends InputMethodService implements
         int modifier;   // MACRO_CTRL or MACRO_ALT: toggled alone, or held for the code
         String text;    // typed as is
         boolean repeat; // repeats while held: arrows and deleting
+        int action;     // MACRO_COPY...: a command, 0 for none
+        String format;  // Date, Time, DateTime: the user's SimpleDateFormat pattern, or null
+        int icon;       // drawn in place of the label, like the same key on the keyboard
     }
 
-    private static final Pattern MACRO_TOKEN = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"|(\\S+)");
+    // "quoted text", Date:"d MMMM yyyy" (a format with spaces), or a word
+    private static final Pattern MACRO_TOKEN = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\""
+            + "|((?i:date|time|datetime):\"(?:[^\"\\\\]|\\\\.)*\")(?=\\s|$)|(\\S+)");
 
     /**
-     * Parses the row's definition: keys by name (Esc, Tab, Ctrl, Alt, Up, F5...), Ctrl+C or
-     * Alt+F style combinations, single characters, and "quoted text" typed as is.
+     * Parses the row's definition: keys by name (Esc, Tab, Ctrl, Alt, Up, F5, Copy, Emoji,
+     * Date:yyyy-MM-dd...), Ctrl+C or Alt+F style combinations, single characters, and
+     * "quoted text" typed as is.
      */
     static List<MacroKey> parseMacroKeys(String spec) {
         List<MacroKey> keys = new ArrayList<>();
@@ -1015,7 +1158,7 @@ public class LatinIME extends InputMethodService implements
                 keys.add(k);
                 continue;
             }
-            String token = m.group(2);
+            String token = m.group(2) != null ? m.group(2) : m.group(3);
             String lower = token.toLowerCase(Locale.ROOT);
             if (lower.length() > 2 && (lower.startsWith("ctrl+") || lower.startsWith("alt+"))) {
                 int plus = lower.indexOf('+');
@@ -1052,6 +1195,17 @@ public class LatinIME extends InputMethodService implements
     private static MacroKey namedMacroKey(String name) {
         MacroKey k = new MacroKey();
         String n = name.toLowerCase(Locale.ROOT);
+        int colon = n.indexOf(':');
+        if (colon > 0) {
+            // Only the date and time keys take something after a colon: their format
+            n = n.substring(0, colon);
+            if (!n.equals("date") && !n.equals("time") && !n.equals("datetime")) return null;
+            String format = name.substring(colon + 1);
+            if (format.length() >= 2 && format.startsWith("\"") && format.endsWith("\"")) {
+                format = unescapeMacro(format.substring(1, format.length() - 1));
+            }
+            if (!format.isEmpty()) k.format = format;
+        }
         switch (n) {
         case "esc": k.code = LatinKeyboardView.KEYCODE_ESCAPE; k.label = "Esc"; break;
         case "tab": k.code = 9; k.label = "Tab"; break;
@@ -1071,6 +1225,32 @@ public class LatinIME extends InputMethodService implements
         case "right": k.code = LatinKeyboardView.KEYCODE_DPAD_RIGHT; k.label = "→"; k.repeat = true; break;
         case "ctrl": k.modifier = MACRO_CTRL; k.label = "Ctrl"; break;
         case "alt": k.modifier = MACRO_ALT; k.label = "Alt"; break;
+        case "delword": // Ctrl+Backspace
+            k.modifier = MACRO_CTRL; k.code = Keyboard.KEYCODE_DELETE; k.label = "⌫ word"; break;
+        case "copy": k.action = MACRO_COPY; k.label = "Copy"; break;
+        case "cut": k.action = MACRO_CUT; k.label = "Cut"; break;
+        case "paste": k.action = MACRO_PASTE; k.label = "Paste"; break;
+        case "selectall": k.action = MACRO_SELECT_ALL; k.label = "Sel all"; break;
+        case "selectword": k.action = MACRO_SELECT_WORD; k.label = "Sel word"; break;
+        case "undo": k.action = MACRO_UNDO; k.label = "Undo"; break;
+        case "redo": k.action = MACRO_REDO; k.label = "Redo"; break;
+        case "clipboard":
+            k.action = MACRO_CLIPBOARD; k.label = "Clipboard"; k.icon = R.drawable.sym_keyboard_clipboard;
+            break;
+        case "emoji":
+            k.action = MACRO_EMOJI; k.label = "Emoji"; k.icon = R.drawable.sym_keyboard_emoji; break;
+        case "voice":
+            k.action = MACRO_VOICE; k.label = "Voice"; k.icon = R.drawable.sym_keyboard_mic; break;
+        case "onehand": k.action = MACRO_ONE_HAND; k.label = "One hand"; break;
+        case "date": k.action = MACRO_DATE; k.label = "Date"; break;
+        case "time": k.action = MACRO_TIME; k.label = "Time"; break;
+        case "datetime": k.action = MACRO_DATE_TIME; k.label = "Date time"; break;
+        case "play": k.action = MACRO_PLAY; k.label = "Play"; break;
+        case "next": k.action = MACRO_NEXT; k.label = "Next"; break;
+        case "prev": k.action = MACRO_PREV; k.label = "Prev"; break;
+        case "volup": k.action = MACRO_VOL_UP; k.label = "Vol+"; break;
+        case "voldown": k.action = MACRO_VOL_DOWN; k.label = "Vol−"; break;
+        case "mute": k.action = MACRO_MUTE; k.label = "Mute"; break;
         default:
             if (n.matches("f([1-9]|1[0-2])")) {
                 int f = Integer.parseInt(n.substring(1));
@@ -1135,6 +1315,16 @@ public class LatinIME extends InputMethodService implements
             v.setBackground(new android.graphics.drawable.RippleDrawable(
                     android.content.res.ColorStateList.valueOf((textColor & 0x00FFFFFF) | 0x33000000),
                     lit, new android.graphics.drawable.ColorDrawable(0xFFFFFFFF)));
+            if (k.icon != 0) {
+                // Alone on the key: the padding either side centres it in the minimum width
+                android.graphics.drawable.Drawable icon = getDrawable(k.icon).mutate();
+                icon.setTint(textColor);
+                int size = Math.round(24 * d);
+                icon.setBounds(0, 0, size, size);
+                v.setText("");
+                v.setCompoundDrawables(icon, null, null, null);
+                v.setContentDescription(k.label);
+            }
             v.setOnTouchListener(macroTouch(k));
             if (k.modifier != 0 && k.code == 0) {
                 (k.modifier == MACRO_CTRL ? mMacroCtrlViews : mMacroAltViews).add(v);
@@ -1195,6 +1385,10 @@ public class LatinIME extends InputMethodService implements
             onText(k.text);
             return;
         }
+        if (k.action != 0) {
+            onMacroAction(k);
+            return;
+        }
         if (k.modifier != 0 && k.code == 0) {
             if (k.modifier == MACRO_CTRL) setModCtrl(!mModCtrl);
             else setModAlt(!mModAlt);
@@ -1213,6 +1407,146 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         onKey(k.code, new int[] { k.code }, 0, 0);
+    }
+
+    private void onMacroAction(MacroKey k) {
+        InputConnection ic = getCurrentInputConnection();
+        switch (k.action) {
+        case MACRO_CLIPBOARD: toggleClipboardWindow(); return;
+        case MACRO_EMOJI: showEmojiPanel(); return;
+        case MACRO_VOICE: startVoiceInput(); return;
+        case MACRO_ONE_HAND:
+            // Like the swipe: not in landscape unless turned on there, and the same key
+            // brings the full width back
+            toggleOneHandMode();
+            return;
+        case MACRO_DATE: onText(formatNow(k.format, "yyyy-MM-dd")); return;
+        case MACRO_TIME: onText(formatNow(k.format, "HH:mm")); return;
+        case MACRO_DATE_TIME: onText(formatNow(k.format, "yyyy-MM-dd HH:mm")); return;
+        case MACRO_PLAY: sendMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE); return;
+        case MACRO_NEXT: sendMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT); return;
+        case MACRO_PREV: sendMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS); return;
+        case MACRO_VOL_UP: adjustMusicVolume(AudioManager.ADJUST_RAISE); return;
+        case MACRO_VOL_DOWN: adjustMusicVolume(AudioManager.ADJUST_LOWER); return;
+        case MACRO_MUTE:
+            if (Build.VERSION.SDK_INT >= 23) adjustMusicVolume(AudioManager.ADJUST_TOGGLE_MUTE);
+            return;
+        }
+        // The rest edit the text: the word being typed goes in first
+        if (ic == null) return;
+        commitTyped(ic, true);
+        switch (k.action) {
+        case MACRO_COPY:
+            // Editors that ignore the command get the Copy key, never Ctrl+C (an interrupt
+            // in a terminal)
+            if (!ic.performContextMenuAction(android.R.id.copy)) {
+                sendDownUpKeyEvents(KeyEvent.KEYCODE_COPY);
+            }
+            break;
+        case MACRO_CUT:
+            if (!ic.performContextMenuAction(android.R.id.cut)) {
+                sendDownUpKeyEvents(KeyEvent.KEYCODE_CUT);
+            }
+            break;
+        case MACRO_PASTE:
+            if (!ic.performContextMenuAction(android.R.id.paste)) pasteClipboardText(ic);
+            break;
+        case MACRO_SELECT_ALL:
+            if (!ic.performContextMenuAction(android.R.id.selectAll) && !isTerminalEditor()) {
+                sendCtrlShortcut(ic, KeyEvent.KEYCODE_A, false);
+            }
+            break;
+        case MACRO_SELECT_WORD:
+            EditingUtil.Range range = new EditingUtil.Range();
+            if (mLastSelectionStart >= 0
+                    && !TextUtils.isEmpty(EditingUtil.getWordAtCursor(ic, mWordSeparators, range))) {
+                ic.setSelection(mLastSelectionStart - range.charsBefore,
+                        mLastSelectionEnd + range.charsAfter);
+            }
+            break;
+        case MACRO_UNDO:
+        case MACRO_REDO:
+            // Text fields undo from Android 6; web pages and older fields take Ctrl+Z, terminals
+            // don't get it at all (it suspends the program there)
+            boolean undo = k.action == MACRO_UNDO;
+            boolean done = Build.VERSION.SDK_INT >= 23
+                    && ic.performContextMenuAction(undo ? android.R.id.undo : android.R.id.redo);
+            if (!done && !isTerminalEditor()) sendCtrlShortcut(ic, KeyEvent.KEYCODE_Z, !undo);
+            break;
+        }
+    }
+
+    /** The date or time now in the user's pattern, or the default one when it isn't valid. */
+    private static String formatNow(String format, String fallback) {
+        java.util.Date now = new java.util.Date();
+        if (format != null) {
+            try {
+                return new java.text.SimpleDateFormat(format, Locale.getDefault()).format(now);
+            } catch (IllegalArgumentException e) {
+                // not a pattern: the default below
+            }
+        }
+        return new java.text.SimpleDateFormat(fallback, Locale.ROOT).format(now);
+    }
+
+    /** Paste in editors without the paste command (terminals): the clip typed as text. */
+    private void pasteClipboardText(InputConnection ic) {
+        ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        CharSequence text = null;
+        try {
+            android.content.ClipData clip = cm != null ? cm.getPrimaryClip() : null;
+            if (clip != null && clip.getItemCount() > 0) text = clip.getItemAt(0).coerceToText(this);
+        } catch (SecurityException e) {
+            // not the active keyboard
+        }
+        if (!TextUtils.isEmpty(text)) {
+            ic.commitText(text, 1);
+        } else {
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_PASTE);
+        }
+    }
+
+    /** Terminals and SSH clients: Ctrl+A and Ctrl+Z mean something else there. */
+    private boolean isTerminalEditor() {
+        EditorInfo ei = getCurrentInputEditorInfo();
+        // Termux's terminal view (also in Termux:Float, AndroidIDE) may set no-suggestions
+        // flags on the null class: only the class tells a terminal
+        if (ei == null || (ei.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_NULL
+                || isConnectbot()) {
+            return true;
+        }
+        String pkg = getEditorPackageName();
+        return pkg.equals("com.termux") || pkg.equals("org.connectbot")
+                || pkg.equals("com.sonelli.juicessh") || pkg.equals("jackpal.androidterm")
+                || pkg.equals("com.termux.window") || pkg.equals("com.itsaky.androidide");
+    }
+
+    private void sendCtrlShortcut(InputConnection ic, int key, boolean shifted) {
+        int meta = KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
+        if (shifted) meta |= KeyEvent.META_SHIFT_ON | KeyEvent.META_SHIFT_LEFT_ON;
+        sendKeyDown(ic, KeyEvent.KEYCODE_CTRL_LEFT, meta);
+        sendKeyDown(ic, key, meta);
+        sendKeyUp(ic, key, meta);
+        sendKeyUp(ic, KeyEvent.KEYCODE_CTRL_LEFT, 0);
+    }
+
+    /** Play/pause, next and previous for whatever is playing, as headset buttons do. */
+    private void sendMediaKey(int key) {
+        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) return;
+        long now = SystemClock.uptimeMillis();
+        am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0));
+        am.dispatchMediaKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, key, 0));
+    }
+
+    private void adjustMusicVolume(int direction) {
+        AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) return;
+        try {
+            am.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI);
+        } catch (SecurityException e) {
+            // Do Not Disturb may refuse it
+        }
     }
 
     /** Ctrl and Alt in the row light up while the modifier is on, like the keys. */
@@ -1301,6 +1635,7 @@ public class LatinIME extends InputMethodService implements
             buttonFeedback(0);
             InputConnection ic = getCurrentInputConnection();
             if (ic != null) ic.commitText(item.getEmoji(), 1);
+            if (sKeyboardSettings.emojiCloseAfterPick) hideEmojiPanel();
         });
         panel.addView(picker, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -1344,6 +1679,131 @@ public class LatinIME extends InputMethodService implements
 
     private ClipboardManager.OnPrimaryClipChangedListener mClipListener;
     private ClipboardWindow mClipboardWindow;
+
+    /** How long after the copy a text is offered in the suggestion strip. */
+    private static final long CLIP_OFFER_MS = 60000;
+    /** Longest part of the offered text shown in the strip. */
+    private static final int CLIP_OFFER_LABEL_LENGTH = 20;
+    /** The text last copied while our listener was on, and when. */
+    private int mClipCopiedHash;
+    private long mClipCopiedAt;
+    /** The text offered in the strip now (null for none), its strip item and its clip. */
+    private String mClipOfferText;
+    private String mClipOfferLabel;
+    private long mClipOfferKey;
+    /** The clip last shown in the strip: each clip is offered once. */
+    private long mClipOfferedKey;
+    private final Runnable mClipOfferExpiry = () -> {
+        boolean shown = isClipOfferInStrip();
+        dropClipOffer();
+        if (shown) setNextSuggestions();
+    };
+
+    /** Something was copied: notes when, and offers it right away if nothing is being typed. */
+    private void onClipCopied(ClipboardManager cm) {
+        if (!sKeyboardSettings.clipboardOffer) return;
+        CharSequence text = clipText(primaryClip(cm));
+        if (text == null) return;
+        mClipCopiedHash = text.toString().hashCode();
+        mClipCopiedAt = System.currentTimeMillis();
+        LatinKeyboardView inputView = mKeyboardSwitcher.getInputView();
+        if (!getCurrentInputStarted() || inputView == null || !inputView.isShown()) return;
+        checkClipOffer();
+        if (mClipOfferText != null && !mPredicting && !TextEntryState.isCorrecting()
+                && mCandidateView != null && !mCandidateView.isShowingAddToDictionaryHint()) {
+            setNextSuggestions();
+        }
+    }
+
+    /** What is on the clipboard, or null when there is nothing or it is marked sensitive. */
+    private static android.content.ClipData primaryClip(ClipboardManager cm) {
+        android.content.ClipData clip;
+        try {
+            clip = cm != null ? cm.getPrimaryClip() : null;
+        } catch (SecurityException e) {
+            return null; // not the active keyboard
+        }
+        if (clip == null || clip.getItemCount() == 0
+                || ClipboardHistory.isSensitive(clip.getDescription())) return null;
+        return clip;
+    }
+
+    /** The clip's text, or null when it has none (a picture, a file) or it is blank. */
+    private static CharSequence clipText(android.content.ClipData clip) {
+        CharSequence text = clip != null ? clip.getItemAt(0).getText() : null;
+        return text == null || TextUtils.getTrimmedLength(text) == 0 ? null : text;
+    }
+
+    /**
+     * Looks for a text to offer in the suggestion strip: copied less than a minute ago, not
+     * offered yet, and not into a password field, in incognito or on the lock screen.
+     */
+    private void checkClipOffer() {
+        if (!sKeyboardSettings.clipboardOffer || mPasswordText || isIncognito()
+                || ClipboardHistory.isDeviceLocked(this)) {
+            dropClipOffer();
+            return;
+        }
+        android.content.ClipData clip = primaryClip(
+                (ClipboardManager) getSystemService(CLIPBOARD_SERVICE));
+        CharSequence text = clipText(clip);
+        if (text == null) {
+            dropClipOffer();
+            return;
+        }
+        int hash = text.toString().hashCode();
+        long copiedAt = 0;
+        if (mClipCopiedAt > 0 && mClipCopiedHash == hash) {
+            copiedAt = mClipCopiedAt; // our listener saw it copied
+        } else if (Build.VERSION.SDK_INT >= 26 && clip.getDescription() != null) {
+            // ClipDescription.getTimestamp() (API 26): when it was really copied
+            copiedAt = clip.getDescription().getTimestamp();
+        }
+        long age = System.currentTimeMillis() - copiedAt;
+        if (copiedAt <= 0 || age < 0 || age >= CLIP_OFFER_MS) {
+            dropClipOffer();
+            return;
+        }
+        long key = hash * 31L + copiedAt;
+        if (key == mClipOfferedKey || (key == mClipOfferKey && mClipOfferText != null)) return;
+        dropClipOffer();
+        mClipOfferText = text.toString();
+        mClipOfferLabel = clipOfferLabel(mClipOfferText);
+        mClipOfferKey = key;
+        mHandler.postDelayed(mClipOfferExpiry, CLIP_OFFER_MS - age);
+    }
+
+    /** The strip item: a clipboard sign and the start of the text on one line. */
+    private static String clipOfferLabel(String text) {
+        String line = text.replaceAll("\\s+", " ").trim();
+        if (line.codePointCount(0, line.length()) > CLIP_OFFER_LABEL_LENGTH) {
+            line = line.substring(0, line.offsetByCodePoints(0, CLIP_OFFER_LABEL_LENGTH)).trim()
+                    + "\u2026";
+        }
+        return "\uD83D\uDCCB " + line; // U+1F4CB clipboard
+    }
+
+    private void dropClipOffer() {
+        mHandler.removeCallbacks(mClipOfferExpiry);
+        mClipOfferText = null;
+        mClipOfferLabel = null;
+    }
+
+    /** Whether the offer is the first item of the strip now. */
+    private boolean isClipOfferInStrip() {
+        if (mClipOfferLabel == null || mCandidateView == null) return false;
+        List<CharSequence> shown = mCandidateView.getSuggestions();
+        return !shown.isEmpty() && shown.get(0) == mClipOfferLabel;
+    }
+
+    /** The offered text was tapped: pastes it, and it isn't offered again. */
+    private void pasteClipOffer() {
+        String text = mClipOfferText;
+        dropClipOffer();
+        pasteFromClipboardHistory(text);
+        setNextSuggestions();
+        updateShiftKeyState(getCurrentInputEditorInfo());
+    }
 
     /** The floating clipboard history window: opens it, or closes it when it is open. */
     private void toggleClipboardWindow() {
@@ -1625,7 +2085,7 @@ public class LatinIME extends InputMethodService implements
                 || theme == R.layout.input_keycap;
     }
 
-    // Themes with all their colours in their own values/colors_P.xml (P = mech or retro),
+    // Themes with all their colours in their own values/colors_P.xml (P = mech, retro or photo),
     // a row per layout, light and dark. The columns are names every such file defines,
     // listed at its top; drawable/candidate_P_background.xml paints P_strip_bg
     private static final int OWN_LAYOUT = 0, OWN_IS_LIGHT = 1, OWN_STRIP = 2, OWN_STRIP_TEXT = 3,
@@ -1657,6 +2117,11 @@ public class LatinIME extends InputMethodService implements
             R.color.retro_dark_clip_text, R.color.retro_dark_clip_secondary,
             R.color.retro_dark_clip_accent, R.color.retro_dark_clip_outline,
             R.color.retro_dark_clip_divider, R.integer.retro_dark_clip_radius },
+        { R.layout.input_photo, R.bool.photo_is_light, R.drawable.candidate_photo_background,
+            R.color.photo_strip_text, R.color.photo_strip_recommended, R.color.photo_strip_other,
+            R.color.photo_clip_bar, R.color.photo_clip_surface, R.color.photo_clip_text,
+            R.color.photo_clip_secondary, R.color.photo_clip_accent, R.color.photo_clip_outline,
+            R.color.photo_clip_divider, R.integer.photo_clip_radius },
     };
 
     /** The OWN_COLOR_THEMES row of a theme layout, null for the other themes. */
@@ -1926,6 +2391,7 @@ public class LatinIME extends InputMethodService implements
         updateShiftKeyState(attribute);
 
         mPredictionOnPref = (mCorrectionMode > 0 || mShowSuggestions);
+        checkClipOffer();
         setCandidatesViewShownInternal(isCandidateStripVisible()
                 || mCompletionOn, false /* needsInputViewShown */);
         updateSuggestions();
@@ -1981,6 +2447,8 @@ public class LatinIME extends InputMethodService implements
     public void onFinishInput() {
         super.onFinishInput();
         mSelecting = mSelectingCtrl = false;
+        mDeleteSwipeEnd = -1; // a swipe going on belongs to the old editor
+        mDeleteSwipeText = null;
 
         onAutoCompletionStateChanged(false);
 
@@ -2000,6 +2468,7 @@ public class LatinIME extends InputMethodService implements
         super.onFinishInputView(finishingInput);
         hideEmojiPanel();
         dismissClipboardWindow();
+        dropClipOffer(); // not shown yet: looked at again in the next field
         mAutofillGeneration++;
         hideAutofill();
         // Remove penging messages related to update suggestions
@@ -2312,6 +2781,21 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void commitTyped(InputConnection inputConnection, boolean manual) {
+        // Punctuation the word only kept at its end ("tomorow." when the app takes the text):
+        // the word is corrected as that punctuation would have done without keepAddresses,
+        // then the punctuation follows it as typed
+        String held = null;
+        if (mPredicting && sKeyboardSettings.keepAddresses) {
+            held = takeTrailingAddressChars();
+            if (held != null && inputConnection != null
+                    && mKeyboardSwitcher.getInputView() != null
+                    && mAutoCorrectOn && !isAddressWord()
+                    && (mJustRevertedSeparator == null
+                            || mJustRevertedSeparator.length() == 0
+                            || mJustRevertedSeparator.charAt(0) != held.charAt(0))) {
+                pickDefaultSuggestion(); // sets mPredicting=false when it picks a word
+            }
+        }
         if (mPredicting) {
             mPredicting = false;
             if (mComposing.length() > 0) {
@@ -2324,10 +2808,19 @@ public class LatinIME extends InputMethodService implements
                 } else {
                     TextEntryState.acceptedTyped(mComposing);
                 }
-                addToDictionaries(mComposing,
-                        AutoDictionary.FREQUENCY_FOR_TYPED);
+                // An address or a path kept whole (keepsAddressChar) is not a word to learn
+                if (!hasAddressChar(mComposing,
+                        mComposing.length() - addressCharsAtEnd(mComposing))) {
+                    addToDictionaries(mComposing,
+                            AutoDictionary.FREQUENCY_FOR_TYPED);
+                }
             }
             updateSuggestions();
+        }
+        if (held != null && inputConnection != null) {
+            inputConnection.commitText(held, 1);
+            // as handleSeparator does: a backspace now deletes the punctuation, not the correction
+            for (int i = 0; i < held.length(); ++i) TextEntryState.typedCharacter(held.charAt(i), true);
         }
     }
 
@@ -2509,6 +3002,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     public boolean addWordToDictionary(String word) {
+        if (word.equals(mClipOfferLabel)) return false; // long press on the copied text
         mUserDictionary.addWord(word, 128);
         // Suggestion strip should be updated after the operation of adding word
         // to the
@@ -2771,6 +3265,71 @@ public class LatinIME extends InputMethodService implements
         handleModifierKeysUp(false, true); // Ctrl/Alt/Meta up, but not Shift
         sendShiftKey(ic, false);
         if (ctrl && !mModCtrl) setModCtrl(true);
+    }
+
+    /**
+     * A tapped Shift over text selected in the editor (not with Shift + arrows) turns it to
+     * UPPER CASE, then lower case, then Capitalised Words, and keeps it selected, when
+     * "Shift changes the case of selected text" is on. Returns false, for Shift to work as
+     * usual, when there's nothing selected or the editor (a terminal) doesn't give the text.
+     */
+    private boolean changeSelectionCase() {
+        if (!sKeyboardSettings.shiftChangesCase || mSelecting || mPredicting
+                || !mKeyboardSwitcher.isAlphabetMode()
+                || mLastSelectionStart == mLastSelectionEnd) return false;
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return false;
+        CharSequence selected = ic.getSelectedText(0);
+        int start = Math.min(mLastSelectionStart, mLastSelectionEnd);
+        int end = Math.max(mLastSelectionStart, mLastSelectionEnd);
+        // A length that doesn't match means our idea of the selection is out of date
+        if (TextUtils.isEmpty(selected) || selected.length() != end - start) return false;
+        String text = selected.toString();
+        Locale locale = mLanguageSwitcher.getInputLocale();
+        if (locale == null) locale = Locale.getDefault();
+        String upper = text.toUpperCase(locale);
+        String lower = text.toLowerCase(locale);
+        if (upper.equals(lower)) return false; // no letters that have a case
+        String next;
+        if (text.equals(upper)) {
+            next = lower;
+        } else if (text.equals(lower)) {
+            next = capitalizeWords(lower, locale);
+            if (next.equals(text)) next = upper; // no word starts with a letter
+        } else {
+            next = upper;
+        }
+        // The length may change (German ß -> SS), the selection follows the new text
+        ic.beginBatchEdit();
+        ic.finishComposingText();
+        ic.commitText(next, 1);
+        ic.setSelection(start, start + next.length());
+        ic.endBatchEdit();
+        return true;
+    }
+
+    // The first letter of each word in upper case. A letter after an apostrophe in a word
+    // (don't, м'ята) or after a digit (3d) doesn't start a new one.
+    private static String capitalizeWords(String text, Locale locale) {
+        StringBuilder sb = new StringBuilder(text.length());
+        boolean inWord = false;
+        for (int i = 0; i < text.length(); ) {
+            int c = text.codePointAt(i);
+            int n = Character.charCount(c);
+            if (Character.isLetter(c) && !inWord) {
+                sb.append(text.substring(i, i + n).toUpperCase(locale));
+            } else {
+                sb.appendCodePoint(c);
+            }
+            // An apostrophe or accent mark goes on with the word it's in ('quoted' still starts one)
+            int type = Character.getType(c);
+            inWord = Character.isLetterOrDigit(c)
+                    || (inWord && (type == Character.NON_SPACING_MARK
+                            || type == Character.COMBINING_SPACING_MARK
+                            || c == '\'' || c == '\u2019' || c == '\u02BC'));
+            i += n;
+        }
+        return sb.toString();
     }
 
     private void endSelecting() {
@@ -3103,13 +3662,15 @@ public class LatinIME extends InputMethodService implements
         case Keyboard.KEYCODE_SHIFT:
             // Shift key is handled in onPress() when device has distinct
             // multi-touch panel.
-            if (!distinctMultiTouch)
+            if (!distinctMultiTouch && !changeSelectionCase())
                 handleShift();
             break;
         case Keyboard.KEYCODE_MODE_CHANGE:
             //OLD: Symbol key is handled in onPress() when device has distinct
             // multi-touch panel.
-            changeKeyboardMode(); //*//Pulya max: Fix of changing keyboard mode if extension is enabled
+            // With the momentary symbols key it still is: onPress() has switched already.
+            if (!distinctMultiTouch || !sKeyboardSettings.momentarySymbols)
+                changeKeyboardMode(); //*//Pulya max: Fix of changing keyboard mode if extension is enabled
             break;
         case LatinKeyboardView.KEYCODE_CTRL_LEFT:
             // Ctrl key is handled in onPress() when device has distinct
@@ -3179,6 +3740,9 @@ public class LatinIME extends InputMethodService implements
             buttonFeedback(0);
             setOneHandMode("off");
             break;
+        case LatinKeyboardView.KEYCODE_ONE_HAND:
+            toggleOneHandMode();
+            break;
         case 9 /* Tab */:
             if (processMultiKey(primaryCode)) {
                 break;
@@ -3245,7 +3809,7 @@ public class LatinIME extends InputMethodService implements
                 mJustAddedAutoSpace = false;
             }
             RingCharBuffer.getInstance().push((char) primaryCode, x, y);
-            if (isWordSeparator(primaryCode)) {
+            if (isWordSeparator(primaryCode) && !keepsAddressChar(primaryCode)) {
                 handleSeparator(primaryCode);
             } else {
                 handleCharacter(primaryCode, keyCodes);
@@ -3539,6 +4103,9 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void handleSeparator(int primaryCode) {
+        if (mPredicting && sKeyboardSettings.keepAddresses) {
+            releaseAddressChars();
+        }
 
         // Should dismiss the "Touch again to save" message when handling
         // separator
@@ -3563,6 +4130,7 @@ public class LatinIME extends InputMethodService implements
             // requires the last vowel to be removed.
             if (mAutoCorrectOn
                     && primaryCode != '\''
+                    && !isAddressWord()
                     && (mJustRevertedSeparator == null
                             || mJustRevertedSeparator.length() == 0
                             || mJustRevertedSeparator.charAt(0) != primaryCode)) {
@@ -3753,6 +4321,8 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void showSuggestions(WordComposer word) {
+        // A word is being typed instead: the offer is gone
+        if (mClipOfferText != null && mClipOfferKey == mClipOfferedKey) dropClipOffer();
         // long startTime = System.currentTimeMillis(); // TIME MEASUREMENT!
         // TODO Maybe need better way of retrieving previous word
         CharSequence prevWord = EditingUtil.getPreviousWord(
@@ -3781,6 +4351,7 @@ public class LatinIME extends InputMethodService implements
         }
         // Don't auto-correct words with multiple capital letter
         correctionAvailable &= !word.isMostlyCaps();
+        correctionAvailable &= !isAddressWord();
         correctionAvailable &= !TextEntryState.isCorrecting();
 
         showSuggestions(stringList, typedWord, typedWordValid,
@@ -3823,6 +4394,10 @@ public class LatinIME extends InputMethodService implements
 
 
     public void pickSuggestionManually(int index) {
+        if (index == 0 && isClipOfferInStrip()) {
+            pasteClipOffer();
+            return;
+        }
         boolean suppressAutospace;
         List<CharSequence> suggestions = mCandidateView.getSuggestions();
         List<CharSequence> suggestions_FullText = mCandidateView.getSuggestions_fullText();
@@ -4088,6 +4663,12 @@ public class LatinIME extends InputMethodService implements
 
                 suggestions = mSuggestPuncList;
         }
+        // Text just copied goes first, until it is pasted or a word is typed
+        if (mClipOfferText != null && sKeyboardSettings.clipboardOffer && !isIncognito()) {
+            suggestions = new ArrayList<CharSequence>(suggestions);
+            suggestions.add(0, mClipOfferLabel);
+            if (mCandidateView != null) mClipOfferedKey = mClipOfferKey;
+        }
         if (suggestions_fullText!=null) setSuggestions(suggestions, suggestions_fullText,
                 false, false, false);
         else setSuggestions(suggestions, false, false, false);
@@ -4195,6 +4776,86 @@ public class LatinIME extends InputMethodService implements
     public boolean isWordSeparator(int code) {
         String separators = getWordSeparators();
         return separators.contains(String.valueOf((char) code));
+    }
+
+    /**
+     * With pref_keep_addresses on, . / : @ _ typed right after a letter or a digit of the word
+     * being typed stay in it instead of ending it, so that github.com, me@mail.ua, src/app or
+     * https://... is one word. If nothing follows them (a period at the end of a sentence),
+     * the next separator lets them split the word as usual, see releaseAddressChars().
+     */
+    private boolean keepsAddressChar(int primaryCode) {
+        if (!sKeyboardSettings.keepAddresses || !mPredicting || mComposing.length() == 0
+                || mModCtrl || mModAlt || mModMeta
+                || ADDRESS_PUNCTUATION.indexOf(primaryCode) < 0) {
+            return false;
+        }
+        char last = mComposing.charAt(mComposing.length() - 1);
+        // "https://": the slashes follow the colon
+        return Character.isLetterOrDigit(last)
+                || (primaryCode == '/' && (last == ':' || last == '/'));
+    }
+
+    // Number of . / : @ _ at the end of the word, kept by keepsAddressChar()
+    private int addressCharsAtEnd(CharSequence word) {
+        int end = word.length();
+        while (end > 0 && ADDRESS_PUNCTUATION.indexOf(word.charAt(end - 1)) >= 0) end--;
+        return word.length() - end;
+    }
+
+    private boolean hasAddressChar(CharSequence word, int end) {
+        for (int i = 0; i < end; ++i) {
+            if (ADDRESS_PUNCTUATION.indexOf(word.charAt(i)) >= 0) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The word being typed is ending. If the punctuation it kept is all at its end ("word."
+     * before a space, "user@" before a comma), it wasn't an address: the punctuation is
+     * typed again as separators, which corrects the word as if it had never been kept.
+     */
+    private void releaseAddressChars() {
+        String chars = takeTrailingAddressChars();
+        if (chars == null) return;
+        for (int i = 0; i < chars.length(); ++i) handleSeparator(chars.charAt(i));
+    }
+
+    /**
+     * When the punctuation the word kept is all at its end, takes it off the word being typed
+     * and returns it; otherwise (none, or an address) returns null and leaves the word.
+     */
+    private String takeTrailingAddressChars() {
+        int held = addressCharsAtEnd(mComposing);
+        int end = mComposing.length() - held;
+        if (held == 0 || end == 0 || hasAddressChar(mComposing, end)) return null;
+        String chars = mComposing.substring(end);
+        mComposing.setLength(end);
+        for (int i = 0; i < held; ++i) mWord.deleteLast();
+        InputConnection ic = getCurrentInputConnection();
+        if (ic != null) ic.setComposingText(mComposing, 1);
+        // The suggestions were for the word with its punctuation: picking the default
+        // suggestion runs this pending update first
+        postUpdateSuggestions();
+        return chars;
+    }
+
+    /**
+     * The word being typed is (part of) a web address, an email or a path, so it is left as
+     * typed: it has . / : @ _ inside it (github.com, me@mail.ua, https://..., src/app), or it
+     * follows one of them (~/src, /etc/hosts).
+     */
+    private boolean isAddressWord() {
+        if (!sKeyboardSettings.keepAddresses || !mPredicting) return false;
+        if (hasAddressChar(mComposing, mComposing.length() - addressCharsAtEnd(mComposing))) {
+            return true;
+        }
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return false;
+        int length = mComposing.length() + 1;
+        CharSequence before = ic.getTextBeforeCursor(length, 0);
+        return before != null && before.length() == length
+                && ADDRESS_PUNCTUATION.indexOf(before.charAt(0)) >= 0;
     }
 
     private boolean isSentenceSeparator(int code) {
@@ -4444,6 +5105,8 @@ public class LatinIME extends InputMethodService implements
             mVolDownAction = sharedPreferences.getString(PREF_VOL_DOWN, res.getString(R.string.default_vol_down));
         } else if (PREF_VIBRATE_LEN.equals(key)) {
             mVibrateLen = getPrefInt(sharedPreferences, PREF_VIBRATE_LEN, getResources().getString(R.string.vibrate_duration_ms));
+        } else if (PREF_VIBRATE_IN_DND.equals(key)) {
+            mVibrateInDnd = sharedPreferences.getBoolean(PREF_VIBRATE_IN_DND, false);
         }
 
         updateKeyboardOptions();
@@ -4479,7 +5142,7 @@ public class LatinIME extends InputMethodService implements
             toggleLanguage(false, true,false);
         } else if (action.equals("one_hand_left") || action.equals("one_hand_right")) {
             // A second swipe the same way brings the full width back
-            if (!isPortrait()) return false;
+            if (!canBeOneHanded()) return false;
             String side = action.equals("one_hand_left") ? "left" : "right";
             setOneHandMode(side.equals(sKeyboardSettings.oneHandMode) ? "off" : side);
         } else if (action.equals("full_mode")) {
@@ -4551,6 +5214,11 @@ public class LatinIME extends InputMethodService implements
         } else if (distinctMultiTouch
                 && primaryCode == Keyboard.KEYCODE_MODE_CHANGE) {
             //*//changeKeyboardMode();    Pulya max: Fix of changing keyboard mode if extension is enabled
+            // Switching under the finger moved the keys when the letters have the extension
+            // row and the symbols don't; the keyboard view now follows the finger on the
+            // screen through such a switch, so the momentary symbols key can switch here.
+            if (sKeyboardSettings.momentarySymbols)
+                changeKeyboardMode();
             mSymbolKeyState.onPress();
             mKeyboardSwitcher.setAutoModeSwitchStateMomentary();
         } else if (distinctMultiTouch
@@ -4597,6 +5265,11 @@ public class LatinIME extends InputMethodService implements
         } else if (distinctMultiTouch && primaryCode == Keyboard.KEYCODE_SHIFT) {
             if (mShiftKeyState.isChording()) {
                 resetMultitouchShift();
+            } else if (!mKeyboardSwitcher.getInputView().isInSlidingKeyInput()
+                    && changeSelectionCase()) {
+                // the tap went to the selected text, Shift stays as it was before the press
+                // (not when the finger slid off Shift onto a letter: that's one capital)
+                handleShiftInternal(true, mSavedShiftState);
             } else {
                 commitMultitouchShift();
             }
@@ -4609,6 +5282,9 @@ public class LatinIME extends InputMethodService implements
 
             //if (mKeyboardSwitcher.isInChordingAutoModeSwitchState())
                 //*//changeKeyboardMode();    Pulya max: Fix of changing keyboard mode if extension is enabled
+            if (sKeyboardSettings.momentarySymbols
+                    && mKeyboardSwitcher.isInChordingAutoModeSwitchState())
+                changeKeyboardMode();
             mSymbolKeyState.onRelease();
         } else if (distinctMultiTouch
                 && primaryCode == LatinKeyboardView.KEYCODE_CTRL_LEFT) {
@@ -4751,7 +5427,11 @@ public class LatinIME extends InputMethodService implements
     void vibrate(int len) {
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (v != null) {
-            v.vibrate(len);
+            if (mVibrateInDnd) {
+                vibrateUnmuted(v, len);
+            } else {
+                v.vibrate(len);
+            }
             return;
         }
 
@@ -4762,6 +5442,26 @@ public class LatinIME extends InputMethodService implements
         }
     }
     
+    /**
+     * A vibration with the accessibility usage (pref_vibrate_in_dnd). Do Not Disturb never mutes
+     * it (AudioAttributes.SUPPRESSIBLE_NEVER), while a plain vibrate() counts as media there and
+     * is silenced in "Alarms only" and "Total silence". Newer Android versions also don't turn
+     * it off with the system touch feedback switch. No permission needed, unlike the flag that
+     * bypasses the interruption policy. Battery saver still stops it.
+     */
+    @SuppressWarnings("deprecation")
+    private static void vibrateUnmuted(Vibrator v, int len) {
+        if (Build.VERSION.SDK_INT >= 33) {
+            v.vibrate(VibrationEffect.createOneShot(len, VibrationEffect.DEFAULT_AMPLITUDE),
+                    VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ACCESSIBILITY));
+        } else {
+            v.vibrate(len, new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build());
+        }
+    }
+
     /* package */void promoteToUserDictionary(String word, int frequency) {
         if (mUserDictionary.isValidWord(word))
             return;
@@ -4822,6 +5522,7 @@ public class LatinIME extends InputMethodService implements
                 .getDefaultSharedPreferences(this);
         mVibrateOn = sp.getBoolean(PREF_VIBRATE_ON, false);
         mVibrateLen = getPrefInt(sp, PREF_VIBRATE_LEN, getResources().getString(R.string.vibrate_duration_ms));
+        mVibrateInDnd = sp.getBoolean(PREF_VIBRATE_IN_DND, false);
         mSoundOn = sp.getBoolean(PREF_SOUND_ON, false);
         mPopupOn = sp.getBoolean(PREF_POPUP_ON, mResources
                 .getBoolean(R.bool.default_popup_preview));
@@ -4950,6 +5651,7 @@ public class LatinIME extends InputMethodService implements
         p.println("  TextEntryState.state=" + TextEntryState.getState());
         p.println("  mSoundOn=" + mSoundOn);
         p.println("  mVibrateOn=" + mVibrateOn);
+        p.println("  mVibrateInDnd=" + mVibrateInDnd);
         p.println("  mPopupOn=" + mPopupOn);
     }
 

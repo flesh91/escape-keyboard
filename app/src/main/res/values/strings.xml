@@ -374,6 +374,7 @@
         <item>@string/layout_keycap</item>
         <item>@string/layout_mech</item>
         <item>@string/layout_retro</item>
+        <item>@string/layout_photo</item>
         <item>@string/layout_ics</item>
 		<item>@string/layout_material_black</item>
         <item>@string/layout_material_dark</item>
@@ -398,6 +399,7 @@
         <item>14</item>
         <item>15</item>
         <item>18</item>
+        <item>19</item>
         <item>0</item>
         <item>7</item>
         <item>4</item>
@@ -504,6 +506,9 @@
     <string name="title_shift_lock_modifiers">Apply Shift Lock to modifier keys?</string>
     <string name="summary_shift_lock_modifiers_true">Yes, including arrow keys</string>
     <string name="summary_shift_lock_modifiers_false">No, normal keys only</string>
+    <string name="title_shift_changes_case">Shift changes the case of selected text</string>
+    <string name="summary_shift_changes_case_true">A tap on Shift turns selected text into UPPER CASE, then lower case, then Capitalised Words</string>
+    <string name="summary_shift_changes_case_false">Shift works as usual when text is selected</string>
     
     <string name="title_hint_mode">Labeled alternate keys</string>
     <string-array name="hint_modes">
@@ -523,6 +528,9 @@
     <string name="summary_touch_pos_true">Show feedback for touch screen location</string>
     <string name="summary_touch_pos_false">Off</string>
 
+    <string name="title_momentary_symbols">Slide from ?123</string>
+    <string name="summary_momentary_symbols_true">\?123 switches when pressed: slide to a symbol and let go to type it and return to the letters</string>
+    <string name="summary_momentary_symbols_false">\?123 switches when you let go</string>
     <string name="title_slide_keys">Sliding key events</string>
     <!-- Values are a bitmap, see use in PointerTracker -->
     <string-array name="slide_keys_entries">
@@ -549,6 +557,8 @@
     <string name="title_candidate_scale">Suggestion text size</string>
 
     <string name="title_vibrate_len">Vibrate duration</string>
+    <string name="title_vibrate_in_dnd">Vibrate in Do Not Disturb</string>
+    <string name="summary_vibrate_in_dnd">Vibrate on keypress even in Do Not Disturb</string>
 
     <string name="title_click_volume">Key click volume</string>
     <string name="default_click_volume">0.2</string>
@@ -761,6 +771,9 @@
     <string name="cat_modifiers">Modifier keys</string>
     <string name="cat_apps">Apps</string>
     <string name="title_settings_key">Extra key</string>
+    <string name="title_emoji_close_after_pick">Close emoji after picking</string>
+    <string name="summary_emoji_close_after_pick_true">The emoji panel closes after an emoji is picked</string>
+    <string name="summary_emoji_close_after_pick_false">The emoji panel stays open for more emoji</string>
     <string-array name="settings_key_values" translatable="false">
         <item>settings</item>
         <item>emoji</item>
@@ -779,6 +792,7 @@
     <string name="layout_keycap">Keycap (follows system theme)</string>
     <string name="layout_mech">Mechanical (follows system theme)</string>
     <string name="layout_retro">Retro terminal (follows system theme)</string>
+    <string name="layout_photo">Real keycaps</string>
     <string name="layout_ios_system">Cupertino (follows system theme)</string>
     <string name="screen_clipboard">Clipboard</string>
     <string name="screen_clipboard_summary">History of copied text, pinned items</string>
@@ -841,6 +855,8 @@
     <string name="title_clipboard_hide_locked">Hide history on the lock screen</string>
     <string name="summary_clipboard_hide_locked">Clipboard history doesn\'t open while the device is locked</string>
     <string name="clipboard_locked">Unlock the device to see clipboard history</string>
+    <string name="title_clipboard_offer">Offer the last copied text</string>
+    <string name="summary_clipboard_offer">Text copied less than a minute ago appears first in the suggestion strip: tap it to paste. Never offered for passwords, in incognito or on the lock screen</string>
     <string name="cat_privacy">Privacy</string>
     <string name="title_incognito_private_fields">Don\'t learn in private fields</string>
     <string name="summary_incognito_private_fields">Incognito tabs and other fields that ask for it: typed words, emoji and copied text are not remembered</string>
@@ -859,6 +875,12 @@
     <string name="summary_double_space_period">Two spaces after a word become \". \" while auto-correction or quick fixes are on</string>
     <string name="title_space_after_suggestion">Space after a picked suggestion</string>
     <string name="summary_space_after_suggestion">A word tapped in the suggestion strip is followed by a space</string>
+    <string name="title_keep_addresses">Don\'t autocorrect addresses and paths</string>
+    <string name="summary_keep_addresses">Web addresses, emails and paths such as github.com, me@mail.ua or ~/src stay as typed: . / : \@ _ inside them don\'t end the word. A word ending in a full stop is corrected only after the keyboard\'s space or Enter</string>
+    <string name="title_domain_popup">Domain endings on the dot key</string>
+    <string name="summary_domain_popup">In web address and email fields, a long press on \".\" offers .com, .ua, .net, .org and more</string>
+    <string name="title_space_zwnj">ZWNJ on space (Persian)</string>
+    <string name="summary_space_zwnj">In the Persian layouts, a long press on space offers the zero-width non-joiner (half space)</string>
     <string name="title_auto_correct_strength">Auto-correction strength</string>
     <string-array name="auto_correct_strength_values" translatable="false">
         <item>modest</item>
@@ -882,10 +904,28 @@
         <item>Moves the cursor (switch the language with the extra key set to the globe)</item>
     </string-array>
 
+    <!-- Sliding left from Backspace -->
+    <string name="title_delete_swipe">Swipe left from Backspace</string>
+    <string-array name="delete_swipe_values" translatable="false">
+        <item>off</item>
+        <item>chars</item>
+        <item>words</item>
+    </string-array>
+    <string-array name="delete_swipe_entries">
+        <item>Off</item>
+        <item>Selects characters to delete; lift to delete, slide back to cancel</item>
+        <item>Selects words to delete; lift to delete, slide back to cancel</item>
+    </string-array>
+
     <!-- One-handed mode -->
     <string name="cat_one_hand">One-handed mode</string>
     <string name="title_one_hand_mode">One-handed mode</string>
-    <string name="summary_one_hand_mode">In portrait. Buttons in the empty side move the keys or bring back the full width</string>
+    <string name="summary_one_hand_mode">Buttons in the empty side move the keys or bring back the full width. Drag the handle between them to change the width</string>
+    <string name="title_one_hand_landscape">In landscape too</string>
+    <string name="summary_one_hand_landscape_true">The keys are as wide as in portrait, the rest of the screen stays empty</string>
+    <string name="summary_one_hand_landscape_false">Portrait only</string>
+    <string name="title_one_hand_popup_key">Key in the comma and settings popups</string>
+    <string name="summary_one_hand_popup_key">A long press on the comma, or on the extra key that replaces the gear (emoji, clipboard, globe or microphone), offers a key that turns one-handed mode on and off</string>
     <string-array name="one_hand_mode_values" translatable="false">
         <item>off</item>
         <item>left</item>
@@ -904,6 +944,6 @@
     <string name="summary_macro_row_true">Above the keys</string>
     <string name="summary_macro_row_false">Off</string>
     <string name="title_macro_keys">Keys in the row</string>
-    <string name="message_macro_keys">Separate keys with spaces.\n\nNames: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nCombinations: Ctrl+C, Alt+F.\nAny single character: | ~ /\nText in quotes is typed as is: \"sudo \", \"| grep \", \"\\n\" for a new line.</string>
+    <string name="message_macro_keys">Separate keys with spaces.\n\nNames: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nCombinations: Ctrl+C, Alt+F.\nEditing: Copy, Cut, Paste, SelectAll, SelectWord, Undo, Redo, DelWord.\nPanels: Clipboard, Emoji, Voice, OneHand.\nDate, Time, DateTime; a format after a colon: Date:dd.MM.yyyy, DateTime:\"d MMM HH:mm\".\nMedia: Play, Next, Prev, VolUp, VolDown, Mute.\nAny single character: | ~ /\nText in quotes is typed as is: \"sudo \", \"| grep \", \"\\n\" for a new line.</string>
     <string name="default_macro_keys" translatable="false">Esc Tab Ctrl Alt | ~ / - \"sudo \" \"| grep \"</string>
 </resources>

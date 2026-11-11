@@ -19,6 +19,7 @@ package org.pocketworkstation.pckeyboard;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -199,6 +200,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     private boolean mInvertSymbols;
     private boolean mRecolorSymbols;
     private Typeface mKeyTextStyle = Typeface.DEFAULT;
+    private boolean mFunctionLabelPlain; // function labels like the letters, see attrs.xml
+    private int mKeyboardPlateColor; // fill of the keys' area under the keys, see attrs.xml
     // Word labels of function keys (Esc, Ctrl, Fn): semi-bold strokes match the icons' lines
     private static final Typeface FUNCTION_LABEL_TYPEFACE = Build.VERSION.SDK_INT >= 28
             ? Typeface.create(Typeface.DEFAULT, 600, false) : Typeface.DEFAULT_BOLD;
@@ -257,6 +260,11 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     protected final WeakHashMap<Key, Keyboard> mMiniKeyboardCacheMain = new WeakHashMap<Key, Keyboard>();
     protected final WeakHashMap<Key, Keyboard> mMiniKeyboardCacheShift = new WeakHashMap<Key, Keyboard>();
     protected final WeakHashMap<Key, Keyboard> mMiniKeyboardCacheCaps = new WeakHashMap<Key, Keyboard>();
+    // Long-press popup of "." in address fields, shared by all the "." keys
+    private Keyboard mDomainsKeyboard;
+    // The comma or settings key popup with the one-hand key (pref), and which of the two it is
+    private Keyboard mOneHandPopupKeyboard;
+    private int mOneHandPopupRes;
     protected int mMiniKeyboardOriginX;
     protected int mMiniKeyboardOriginY;
     protected long mMiniKeyboardPopupTime;
@@ -269,6 +277,17 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
 
     private final ArrayList<PointerTracker> mPointerTrackers = new ArrayList<PointerTracker>();
     private boolean mIgnoreMove = false;
+
+    // Momentary symbols key: the keyboard is swapped while the finger is still down, and
+    // the letters can be taller than the symbols (the extension row). The window is
+    // anchored at the bottom of the screen, so its top edge moves under the finger. From
+    // the swap to the end of the touch, touches are measured from the keyboard's bottom
+    // edge on the screen (mSwapBottomOnScreen, -1 when there was no swap), and
+    // mSwapShiftY moves the touch being handled onto the new keyboard (see getTouchY).
+    private boolean mTouchDown;
+    private int mSwapBottomOnScreen = -1;
+    private int mSwapShiftY;
+    private final int[] mSwapLocation = new int[2];
 
     // TODO: Let the PointerTracker class manage this pointer queue
     private final PointerQueue mPointerQueue = new PointerQueue();
@@ -559,6 +578,10 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 mKeyAccentTextColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyEscapeTextColor)
                 mKeyEscapeTextColor = a.getColor(attr, 0);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyFunctionLabelPlain)
+                mFunctionLabelPlain = a.getBoolean(attr, false);
+            else if(attr== R.styleable.LatinKeyboardBaseView_keyboardPlateColor)
+                mKeyboardPlateColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keySpaceTextColor)
                 mKeySpaceTextColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyHysteresisDistance)
@@ -732,6 +755,18 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         // Remove any pending messages, except dismissing preview
         mHandler.cancelKeyTimers();
         mHandler.cancelPopupPreview();
+        if (LatinIME.sKeyboardSettings.momentarySymbols && mTouchDown && mKeyboard != null) {
+            // Screen y of the top of the keys the current touch was measured from
+            int oldTop;
+            if (mSwapBottomOnScreen < 0) {
+                getLocationOnScreen(mSwapLocation);
+                mSwapBottomOnScreen = mSwapLocation[1] + getHeight() - getPaddingBottom();
+                oldTop = mSwapLocation[1] + getPaddingTop();
+            } else {
+                oldTop = mSwapBottomOnScreen - mKeyboard.getHeight();
+            }
+            mSwapShiftY += oldTop - (mSwapBottomOnScreen - keyboard.getHeight());
+        }
         mKeyboard = keyboard;
         // Disable correctionX and correctionY, it doesn't seem to work as intended.
         // mKeys = mKeyDetector.setKeyboard(keyboard, -getPaddingLeft(),-getPaddingTop() + mVerticalCorrection);
@@ -750,6 +785,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         mMiniKeyboardCacheMain.clear();
         mMiniKeyboardCacheShift.clear();
         mMiniKeyboardCacheCaps.clear();
+        mDomainsKeyboard = null;
+        mOneHandPopupKeyboard = null;
         setRenderModeIfPossible(LatinIME.sKeyboardSettings.renderMode);
         mIgnoreMove = true;
     }
@@ -769,6 +806,32 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
      */
     public boolean hasDistinctMultitouch() {
         return mHasDistinctMultitouch;
+    }
+
+    /**
+     * How far the touch being handled moved on the keys when the keyboard was swapped under
+     * it (momentary symbols key), 0 without a swap.
+     */
+    public int getSwapShiftY() {
+        return mSwapShiftY;
+    }
+
+    /** The keyboard was swapped during the current touch (momentary symbols key). */
+    protected boolean isInKeyboardSwap() {
+        return mTouchDown && mSwapBottomOnScreen >= 0;
+    }
+
+    /**
+     * Touch y on the keys. After a swap the view may not be laid out for the new keyboard
+     * yet, so its own coordinates can't be trusted: the keyboard's bottom edge stays where
+     * it was on the screen, take the finger's screen position from there.
+     */
+    private int getTouchY(MotionEvent me, int index) {
+        if (mSwapBottomOnScreen < 0 || mKeyboard == null) {
+            return (int)me.getY(index) - getPaddingTop();
+        }
+        final float rawY = me.getY(index) + me.getRawY() - me.getY();
+        return (int)rawY - mSwapBottomOnScreen + mKeyboard.getHeight();
     }
 
     /**
@@ -1234,6 +1297,14 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
 
         if (mKeyboard == null) return;
 
+        if (mKeyboardPlateColor != 0) {
+            // The plate the keys sit in: between and beside the keys (a staggered row's
+            // margins) it is this colour; the view's background shows only in its padding
+            mActivePaint.setColor(mKeyboardPlateColor);
+            canvas.drawRect(getPaddingLeft(), getPaddingTop(), getWidth() - getPaddingRight(),
+                    getHeight() - getPaddingBottom(), mActivePaint);
+        }
+
         final Paint paint = mPaint;
         final Paint paintHint = mPaintHint;
         paintHint.setColor(mKeyHintColor);
@@ -1351,13 +1422,13 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 if (label.length() > 1 && key.codes.length < 2) {
                     //Log.i(TAG, "mLabelTextSize=" + mLabelTextSize + " LatinIME.sKeyboardSettings.labelScale=" + LatinIME.sKeyboardSettings.labelScale);
                     labelSize = (int)(mLabelTextSize * mLabelScale);
-                    paint.setTypeface(FUNCTION_LABEL_TYPEFACE);
+                    paint.setTypeface(mFunctionLabelPlain ? mKeyTextStyle : FUNCTION_LABEL_TYPEFACE);
                 } else {
                     // arrow glyphs (cursor keys) are small in the font, bring them up to the icons
                     labelSize = (int)(mKeyTextSize * mLabelScale * (key.isCursor ? 1.15f : 1f));
                     paint.setTypeface(mKeyTextStyle);
                 }
-                paint.setFakeBoldText(key.isCursor);
+                paint.setFakeBoldText(key.isCursor && !mFunctionLabelPlain);
                 paint.setTextSize(labelSize);
 
                 final int labelHeight = getLabelHeight(paint, labelSize);
@@ -1769,6 +1840,28 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     }
 
     private Keyboard getLongPressKeyboard(Key popupKey) {
+        if (isDomainsKey(popupKey)) {
+            // Not in the per-key caches: the same key has its usual popup in other fields
+            if (mDomainsKeyboard == null) {
+                mDomainsKeyboard = new Keyboard(getContext(), mKeyboard.getKeyHeight(),
+                        R.xml.popup_domains);
+            }
+            return mDomainsKeyboard;
+        }
+        // ZWNJ on space (Persian layouts) only when it's wanted
+        if (popupKey.popupResId == R.xml.popup_zwnj && !LatinIME.sKeyboardSettings.spaceZwnj) {
+            return null;
+        }
+        final int oneHandRes = getOneHandPopupRes(popupKey);
+        if (oneHandRes != 0) {
+            // Not in the per-key caches either: the key comes and goes with its setting
+            if (mOneHandPopupKeyboard == null || mOneHandPopupRes != oneHandRes) {
+                mOneHandPopupKeyboard = new Keyboard(getContext(), mKeyboard.getKeyHeight(),
+                        oneHandRes);
+                mOneHandPopupRes = oneHandRes;
+            }
+            return mOneHandPopupKeyboard;
+        }
         final WeakHashMap<Key, Keyboard> cache;
         if (popupKey.isDistinctCaps()) {
             cache = mMiniKeyboardCacheCaps;
@@ -1784,6 +1877,28 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         }
         //Log.i(TAG, "getLongPressKeyboard returns " + kbd + " for " + popupKey);
         return kbd;
+    }
+
+    // The "." key in a URI or email field, when domain endings are wanted on it. Only the
+    // popup changes, the key's label and hint stay as they are
+    private boolean isDomainsKey(Key key) {
+        return LatinIME.sKeyboardSettings.domainPopup && LatinIME.sKeyboardSettings.addressField
+                && mKeyboard != null && key.codes != null && key.codes.length > 0
+                && key.codes[0] == LatinIME.ASCII_PERIOD;
+    }
+
+    // The comma or settings key popup with the one-hand key added: when that key is wanted
+    // and the mode works in this orientation (as LatinIME.canBeOneHanded), 0 otherwise
+    private int getOneHandPopupRes(Key key) {
+        final GlobalKeyboardSettings settings = LatinIME.sKeyboardSettings;
+        if (!settings.oneHandPopupKey || mKeyboard == null) return 0;
+        if (!settings.oneHandLandscape && getResources().getConfiguration().orientation
+                != Configuration.ORIENTATION_PORTRAIT) {
+            return 0;
+        }
+        if (key.popupResId == R.xml.popup_comma) return R.xml.popup_comma_onehand;
+        if (key.popupResId == R.xml.popup_mic) return R.xml.popup_mic_onehand;
+        return 0;
     }
 
     /**
@@ -1975,6 +2090,10 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         final int pointerCount = me.getPointerCount();
         final int oldPointerCount = mOldPointerCount;
         mOldPointerCount = pointerCount;
+        // A new touch starts on the keyboard the view is laid out for (see getTouchY)
+        if (action == MotionEvent.ACTION_DOWN) mSwapBottomOnScreen = -1;
+        mTouchDown = action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_CANCEL;
+        mSwapShiftY = 0;
         
         // TODO: cleanup this code into a multi-touch to single-touch event converter class?
         // If the device does not have distinct multi-touch support panel, ignore all multi-touch
@@ -2000,9 +2119,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         // Keys are drawn shifted by the view's padding (the camera cutout in landscape),
         // while key coordinates start at 0: take the padding off before finding the key
         final int padLeft = getPaddingLeft();
-        final int padTop = getPaddingTop();
         final int x = (int)me.getX(index) - padLeft;
-        final int y = (int)me.getY(index) - padTop;
+        final int y = getTouchY(me, index);
 
         // Needs to be called after the gesture detector gets a turn, as it may have
         // displayed the mini keyboard
@@ -2062,7 +2180,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             if (!mIgnoreMove) {
                 for (int i = 0; i < pointerCount; i++) {
                     PointerTracker tracker = getPointerTracker(me.getPointerId(i));
-                    tracker.onMoveEvent((int)me.getX(i) - padLeft, (int)me.getY(i) - padTop, eventTime);
+                    tracker.onMoveEvent((int)me.getX(i) - padLeft, getTouchY(me, i), eventTime);
                 }
             }
         } else {
@@ -2157,6 +2275,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         mMiniKeyboardCacheMain.clear();
         mMiniKeyboardCacheShift.clear();
         mMiniKeyboardCacheCaps.clear();
+        mDomainsKeyboard = null;
     }
 
     @Override

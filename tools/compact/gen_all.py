@@ -14,6 +14,9 @@ CHECK_ONLY = "--check" in sys.argv
 SKIP = {"en", "en-rGB", "en-rRU", "ru-rEN"}
 EXTRA_TARGET = {"ae11": "ad11", "ae12": "ad12", "bksl": "ac11", "lsgt": "ab01"}
 NUM_POPUPS = ["`", "@~", "#-", "$_", "=", "^+", "&{", "}", "[", "]"]  # English symbols on 1..0
+# Long-press popup of space: Persian has the zero-width non-joiner there (Shift+Space in the
+# full layout, which the compact one doesn't have); it only opens with pref_space_zwnj on
+SPACE_POPUP = {"fa": "@xml/popup_zwnj"}
 
 english = (res / "xml/kbd_compact.xml").read_text()
 header = english[:english.index("<Keyboard")]
@@ -87,6 +90,11 @@ def needed(km):
 
 def build(qual):
     km = K.keymap(res, qual)
+    bottom = bottom_row
+    if qual in SPACE_POPUP:
+        bottom = bottom.replace('android:iconPreview="@drawable/sym_keyboard_feedback_space"\n',
+                                'android:iconPreview="@drawable/sym_keyboard_feedback_space"\n'
+                                f'            android:popupKeyboard="{SPACE_POPUP[qual]}"\n', 1)
     extras = {}
     for src, dst in EXTRA_TARGET.items():
         for kind in ("main", "shift"):
@@ -136,7 +144,7 @@ def build(qual):
  >
 ''' + ext_row + '\n    <Row android:keyWidth="8.5%p">\n' + num + delete_key + "    </Row>\n" \
         + "    <Row>\n" + r2 + "    </Row>\n" + "    <Row>\n" + r3 + "    </Row>\n" \
-        + "    <Row>\n" + r4 + "    </Row>\n" + bottom_row + "</Keyboard>\n"
+        + "    <Row>\n" + r4 + "    </Row>\n" + bottom + "</Keyboard>\n"
     return xml, extras, missing
 
 

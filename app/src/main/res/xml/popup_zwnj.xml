@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Long-press popup of space in the Persian layouts: the zero-width non-joiner (U+200C,
+     "half space"), which the full layout types with Shift+Space. The character itself is
+     invisible, so the key shows its name. Only opens with pref_space_zwnj on, see
+     LatinKeyboardBaseView.getLongPressKeyboard -->
+<Keyboard
+    xmlns:android="http://schemas.android.com/apk/res-auto"
+    android:keyWidth="15%p"
+    android:horizontalGap="0px"
+    android:verticalGap="0px"
+    android:keyHeight="@dimen/popup_key_height"
+>
+    <Row
+        android:rowEdgeFlags="top|bottom"
+    >
+        <Key
+            android:codes="8204"
+            android:keyLabel="ZWNJ"
+            android:keyEdgeFlags="left|right" />
+    </Row>
+</Keyboard>

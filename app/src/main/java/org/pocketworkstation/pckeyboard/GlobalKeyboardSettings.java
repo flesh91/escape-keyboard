@@ -60,10 +60,21 @@ public final class GlobalKeyboardSettings {
     public int keyClickMethod = 0;
     public boolean capsLock = true;
     public boolean shiftLockModifiers = false;
+    // A tap on Shift while text is selected changes its case: UPPER, lower, Capitalised
+    public boolean shiftChangesCase = false;
     // Two spaces after a word type ". " (only while auto-correction or quick fixes are on)
     public boolean doubleSpacePeriod = true;
     // A word picked from the suggestion strip is followed by a space
     public boolean spaceAfterSuggestion = true;
+    // Web addresses, emails and paths are left as typed: their . / : @ _ don't end the word
+    public boolean keepAddresses = false;
+    // ?123 switches as soon as it's pressed: slide to a symbol and let go to type it and
+    // come back to the letters (also read by KeyboardSwitcher and LatinKeyboardBaseView)
+    public boolean momentarySymbols = false;
+    // The emoji panel closes after an emoji is picked, back to the keys it covered
+    public boolean emojiCloseAfterPick = false;
+    // Text copied in the last minute is offered once as the first item of the suggestion strip
+    public boolean clipboardOffer = false;
     //
     // Read by Suggest
     // How different a dictionary word may be from the typed one to replace it:
@@ -76,9 +87,19 @@ public final class GlobalKeyboardSettings {
     public float topCornerRadius = 20f;
     // Space bar swipe: "language" switches it, "cursor" moves the cursor
     public boolean spaceSwipeCursor = false;
+    // Sliding left from Backspace selects text to delete: "off", "chars" or "words"
+    public String deleteSwipe = "off";
+    // Long-press on "." offers .com, .ua... in URI and email fields
+    public boolean domainPopup = false;
+    // Long-press on space offers ZWNJ in the Persian layouts (popup_zwnj in their XML)
+    public boolean spaceZwnj = false;
     // One-handed mode (portrait): "off", "left" or "right", keys taking oneHandWidth % of the width
     public String oneHandMode = "off";
     public float oneHandWidth = 80f;
+    // One-handed mode in landscape too
+    public boolean oneHandLandscape = false;
+    // The one-hand key in the comma and settings key popups
+    public boolean oneHandPopupKey = false;
     // Row of custom keys and text macros above the keys
     public boolean macroRow = false;
     public String macroKeys = "";
@@ -115,6 +136,8 @@ public final class GlobalKeyboardSettings {
     /* Updated by KeyboardSwitcher */
     //
     // Used by LatinKeyboardBaseView and LatinIME
+    // The field takes a web address or an email (its keyboard mode is URL or EMAIL)
+    public boolean addressField = false;
 
     /* Updated by LanguageSwitcher */
     //
@@ -212,6 +235,12 @@ public final class GlobalKeyboardSettings {
             public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; } // the space bar's arrows
         });
 
+        addStringPref("pref_delete_swipe", new StringPref() {
+            public void set(String val) { deleteSwipe = val; }
+            public String getDefault() { return "off"; }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
         addStringPref("pref_one_hand_mode", new StringPref() {
             public void set(String val) { oneHandMode = val; }
             public String getDefault() { return "off"; }
@@ -222,6 +251,18 @@ public final class GlobalKeyboardSettings {
             public void set(String val) { oneHandWidth = Float.valueOf(val); }
             public String getDefault() { return "80"; }
             public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW | FLAG_PREF_RESET_KEYBOARDS; }
+        });
+
+        addBooleanPref("pref_one_hand_landscape", new BooleanPref() {
+            public void set(boolean val) { oneHandLandscape = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_one_hand_landscape); }
+            public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW | FLAG_PREF_RESET_KEYBOARDS; }
+        });
+
+        addBooleanPref("pref_one_hand_popup_key", new BooleanPref() {
+            public void set(boolean val) { oneHandPopupKey = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_one_hand_popup_key); }
+            public int getFlags() { return FLAG_PREF_NONE; }
         });
 
         addBooleanPref("pref_macro_row", new BooleanPref() {
@@ -296,6 +337,12 @@ public final class GlobalKeyboardSettings {
             public int getFlags() { return FLAG_PREF_NONE; }
         });
 
+        addBooleanPref("pref_shift_changes_case", new BooleanPref() {
+            public void set(boolean val) { shiftChangesCase = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_shift_changes_case); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
         addBooleanPref("pref_double_space_period", new BooleanPref() {
             public void set(boolean val) { doubleSpacePeriod = val; }
             public boolean getDefault() { return res.getBoolean(R.bool.default_double_space_period); }
@@ -305,6 +352,42 @@ public final class GlobalKeyboardSettings {
         addBooleanPref("pref_space_after_suggestion", new BooleanPref() {
             public void set(boolean val) { spaceAfterSuggestion = val; }
             public boolean getDefault() { return res.getBoolean(R.bool.default_space_after_suggestion); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_keep_addresses", new BooleanPref() {
+            public void set(boolean val) { keepAddresses = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_keep_addresses); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_domain_popup", new BooleanPref() {
+            public void set(boolean val) { domainPopup = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_domain_popup); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_space_zwnj", new BooleanPref() {
+            public void set(boolean val) { spaceZwnj = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_space_zwnj); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_momentary_symbols", new BooleanPref() {
+            public void set(boolean val) { momentarySymbols = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_momentary_symbols); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_emoji_close_after_pick", new BooleanPref() {
+            public void set(boolean val) { emojiCloseAfterPick = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_emoji_close_after_pick); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_clipboard_offer", new BooleanPref() {
+            public void set(boolean val) { clipboardOffer = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_clipboard_offer); }
             public int getFlags() { return FLAG_PREF_NONE; }
         });
 

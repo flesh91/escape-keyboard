@@ -108,8 +108,20 @@ final class ClipboardHistory {
     static boolean isHiddenNow(Context context) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         if (!sp.getBoolean(PREF_HIDE_LOCKED, true)) return false;
+        return isDeviceLocked(context);
+    }
+
+    /** Whether the lock screen is up. */
+    static boolean isDeviceLocked(Context context) {
         KeyguardManager km = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
         return km != null && km.isKeyguardLocked();
+    }
+
+    /** Whether the app that copied the clip marked it as sensitive (passwords). */
+    static boolean isSensitive(ClipDescription desc) {
+        PersistableBundle extras = desc != null && Build.VERSION.SDK_INT >= 24 ? desc.getExtras() : null;
+        // ClipDescription.EXTRA_IS_SENSITIVE (API 33), set by password managers and the like
+        return extras != null && extras.getBoolean("android.content.extra.IS_SENSITIVE", false);
     }
 
     /**
@@ -128,9 +140,7 @@ final class ClipboardHistory {
         }
         if (clip == null || clip.getItemCount() == 0) return;
         ClipDescription desc = clip.getDescription();
-        PersistableBundle extras = desc != null && Build.VERSION.SDK_INT >= 24 ? desc.getExtras() : null;
-        // ClipDescription.EXTRA_IS_SENSITIVE (API 33), set by password managers and the like
-        if (extras != null && extras.getBoolean("android.content.extra.IS_SENSITIVE", false)) return;
+        if (isSensitive(desc)) return;
         CharSequence text = clip.getItemAt(0).getText();
         if (text == null) return;
         int hash = text.toString().hashCode();

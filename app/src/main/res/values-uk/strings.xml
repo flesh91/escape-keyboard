@@ -219,6 +219,9 @@
     <string name="title_shift_lock_modifiers">Застосовувати Shift Lock до клавіш-модифікаторів?</string>
     <string name="summary_shift_lock_modifiers_true">Так, зокрема до стрілок</string>
     <string name="summary_shift_lock_modifiers_false">Ні, лише до звичайних клавіш</string>
+    <string name="title_shift_changes_case">Shift змінює регістр виділеного тексту</string>
+    <string name="summary_shift_changes_case_true">Натискання Shift робить виділений текст ВЕЛИКИМИ літерами, потім малими, потім Кожне Слово З Великої</string>
+    <string name="summary_shift_changes_case_false">Shift працює як завжди, коли текст виділено</string>
 
     <string name="title_hint_mode">Підписи альтернативних символів</string>
     <string-array name="hint_modes">
@@ -231,6 +234,9 @@
     <string name="summary_touch_pos_true">Показувати місце дотику на екрані</string>
     <string name="summary_touch_pos_false">Вимкнено</string>
 
+    <string name="title_momentary_symbols">Ковзання з ?123</string>
+    <string name="summary_momentary_symbols_true">\?123 перемикає одразу після натискання: проведіть до символу й відпустіть — символ введеться, і повернуться літери</string>
+    <string name="summary_momentary_symbols_false">\?123 перемикає, коли відпускаєте палець</string>
     <string name="title_slide_keys">Клавіші під час ковзання</string>
     <string-array name="slide_keys_entries">
         <item>Ігнорувати клавіші під час ковзання (рекомендовано)</item>
@@ -246,6 +252,8 @@
     <string name="title_top_corner_radius">Заокруглення верхніх кутів</string>
     <string name="title_candidate_scale">Розмір тексту пропозицій</string>
     <string name="title_vibrate_len">Тривалість вібрації</string>
+    <string name="title_vibrate_in_dnd">Вібрація в режимі «Не турбувати»</string>
+    <string name="summary_vibrate_in_dnd">Вібрувати під час натискання навіть у режимі «Не турбувати»</string>
     <string name="title_click_volume">Гучність клацання клавіш</string>
     <string name="title_click_method">Спосіб керування гучністю клацання</string>
     <string-array name="click_method_entries">
@@ -374,6 +382,7 @@
     <string name="layout_keycap">Keycap (за темою системи)</string>
     <string name="layout_mech">Механічна (за темою системи)</string>
     <string name="layout_retro">Ретро-термінал (за темою системи)</string>
+    <string name="layout_photo">Справжні клавіші</string>
     <string name="title_debug_hide">Сховати налагодження</string>
     <string name="summary_debug_hide">Показати знову: 5 разів натисніть «Версія»</string>
     <string name="debug_shown">Пункти налагодження показано</string>
@@ -411,6 +420,9 @@
     <string name="cat_modifiers">Клавіші-модифікатори</string>
     <string name="cat_apps">Застосунки</string>
     <string name="title_settings_key">Додаткова клавіша</string>
+    <string name="title_emoji_close_after_pick">Закривати емодзі після вибору</string>
+    <string name="summary_emoji_close_after_pick_true">Панель емодзі закривається, щойно ви обрали емодзі</string>
+    <string name="summary_emoji_close_after_pick_false">Панель емодзі лишається відкритою для наступних</string>
     <string-array name="settings_key_entries">
         <item>Стандартна: Tab у компактній, шестерня (налаштування) в інших</item>
         <item>Емодзі (налаштування — довгим натисканням)</item>
@@ -461,6 +473,8 @@
     <string name="title_clipboard_hide_locked">Ховати історію на екрані блокування</string>
     <string name="summary_clipboard_hide_locked">Історія буфера обміну не відкривається, поки пристрій заблоковано</string>
     <string name="clipboard_locked">Розблокуйте пристрій, щоб побачити історію буфера обміну</string>
+    <string name="title_clipboard_offer">Пропонувати щойно скопійований текст</string>
+    <string name="summary_clipboard_offer">Текст, скопійований менш ніж хвилину тому, з\'являється першим у рядку підказок: торкніться, щоб вставити. Не пропонується для паролів, у режимі інкогніто та на екрані блокування</string>
     <string name="cat_privacy">Приватність</string>
     <string name="title_incognito_private_fields">Не вчитися в приватних полях</string>
     <string name="summary_incognito_private_fields">Вкладки інкогніто та інші поля, які про це просять: набрані слова, емодзі й скопійований текст не запам\'ятовуються</string>
@@ -477,6 +491,12 @@
     <string name="summary_double_space_period">Два пробіли після слова стають «. », коли ввімкнено автовиправлення або швидкі виправлення</string>
     <string name="title_space_after_suggestion">Пробіл після вибраної пропозиції</string>
     <string name="summary_space_after_suggestion">Після слова, вибраного в рядку пропозицій, ставиться пробіл</string>
+    <string name="title_keep_addresses">Не виправляти адреси й шляхи</string>
+    <string name="summary_keep_addresses">Вебадреси, пошта й шляхи на кшталт github.com, me@mail.ua чи ~/src лишаються такими, як набрані: . / : \@ _ усередині не розривають слово. Слово з крапкою в кінці виправляється лише після пробілу чи Enter на клавіатурі</string>
+    <string name="title_domain_popup">Доменні закінчення на клавіші крапки</string>
+    <string name="summary_domain_popup">У полях вебадреси й пошти довге натискання «.» пропонує .com, .ua, .net, .org та інші</string>
+    <string name="title_space_zwnj">ZWNJ на пробілі (перська)</string>
+    <string name="summary_space_zwnj">У перських розкладках довге натискання пробілу пропонує роз\'єднувач нульової ширини (півпробіл)</string>
     <string name="title_auto_correct_strength">Сила автовиправлення</string>
     <string-array name="auto_correct_strength_entries">
         <item>Помірна: лише слова з дрібною помилкою</item>
@@ -489,9 +509,20 @@
         <item>Перемикає мову</item>
         <item>Рухає курсор (мову — додатковою клавішею з глобусом, див. «Розкладка»)</item>
     </string-array>
+    <string name="title_delete_swipe">Свайп ліворуч від Backspace</string>
+    <string-array name="delete_swipe_entries">
+        <item>Вимкнено</item>
+        <item>Виділяє символи; відпустіть палець, щоб стерти, поверніть назад, щоб скасувати</item>
+        <item>Виділяє слова; відпустіть палець, щоб стерти, поверніть назад, щоб скасувати</item>
+    </string-array>
     <string name="cat_one_hand">Режим для однієї руки</string>
     <string name="title_one_hand_mode">Режим для однієї руки</string>
-    <string name="summary_one_hand_mode">У вертикальній орієнтації. Кнопки на вільному боці переносять клавіші або повертають повну ширину</string>
+    <string name="summary_one_hand_mode">Кнопки на вільному боці переносять клавіші або повертають повну ширину. Щоб змінити ширину, потягніть смужку між ними</string>
+    <string name="title_one_hand_landscape">Також у горизонтальній орієнтації</string>
+    <string name="summary_one_hand_landscape_true">Клавіші такої ж ширини, як у вертикальній, решта екрана лишається вільною</string>
+    <string name="summary_one_hand_landscape_false">Лише у вертикальній орієнтації</string>
+    <string name="title_one_hand_popup_key">Клавіша в меню коми й налаштувань</string>
+    <string name="summary_one_hand_popup_key">Довге натискання коми або додаткової клавіші на місці шестерні (емодзі, буфер, глобус чи мікрофон) пропонує клавішу, що вмикає й вимикає режим для однієї руки</string>
     <string-array name="one_hand_mode_entries">
         <item>Вимкнено</item>
         <item>Клавіші ліворуч</item>
@@ -503,5 +534,5 @@
     <string name="summary_macro_row_true">Над клавішами</string>
     <string name="summary_macro_row_false">Вимкнено</string>
     <string name="title_macro_keys">Клавіші ряду</string>
-    <string name="message_macro_keys">Клавіші через пробіл.\n\nНазви: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбінації: Ctrl+C, Alt+F.\nБудь-який окремий символ: | ~ /\nТекст у лапках вводиться як є: \"sudo \", \"| grep \", \"\\n\" — новий рядок.</string>
+    <string name="message_macro_keys">Клавіші через пробіл.\n\nНазви: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбінації: Ctrl+C, Alt+F.\nРедагування: Copy, Cut, Paste, SelectAll, SelectWord, Undo, Redo, DelWord.\nПанелі: Clipboard, Emoji, Voice, OneHand.\nDate, Time, DateTime; формат — після двокрапки: Date:dd.MM.yyyy, DateTime:\"d MMM HH:mm\".\nМедіа: Play, Next, Prev, VolUp, VolDown, Mute.\nБудь-який окремий символ: | ~ /\nТекст у лапках вводиться як є: \"sudo \", \"| grep \", \"\\n\" — новий рядок.</string>
 </resources>

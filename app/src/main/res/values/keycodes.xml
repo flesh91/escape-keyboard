@@ -30,6 +30,7 @@
     <integer name="key_voice">-102</integer>
     <integer name="key_emoji">-144</integer>
     <integer name="key_clipboard">-145</integer>
+    <integer name="key_one_hand">-151</integer>
     <integer name="key_f1">-103</integer>
     <!--  Keycodes for special keys, using negative KeyEvent keycode numbers -->
     <integer name="key_dpad_up">-19</integer>    

@@ -41,6 +41,14 @@
         android:summaryOn="@string/summary_shift_lock_modifiers_true"
         android:summaryOff="@string/summary_shift_lock_modifiers_false"
         />
+        <SwitchPreferenceCompat
+        android:key="pref_shift_changes_case"
+        android:title="@string/title_shift_changes_case"
+        android:persistent="true"
+        android:defaultValue="@bool/default_shift_changes_case"
+        android:summaryOn="@string/summary_shift_changes_case_true"
+        android:summaryOff="@string/summary_shift_changes_case_false"
+        />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -52,6 +60,20 @@
         android:entryValues="@array/popup_content_values"
         android:entries="@array/popup_content_entries"
         android:defaultValue="@string/default_popup_content"
+        />
+        <SwitchPreferenceCompat
+        android:key="pref_domain_popup"
+        android:title="@string/title_domain_popup"
+        android:summary="@string/summary_domain_popup"
+        android:persistent="true"
+        android:defaultValue="@bool/default_domain_popup"
+        />
+        <SwitchPreferenceCompat
+        android:key="pref_space_zwnj"
+        android:title="@string/title_space_zwnj"
+        android:summary="@string/summary_space_zwnj"
+        android:persistent="true"
+        android:defaultValue="@bool/default_space_zwnj"
         />
         <org.pocketworkstation.pckeyboard.SeekBarPreferenceString
         android:defaultValue="@string/default_long_press_duration"
@@ -74,6 +96,14 @@
         android:entries="@array/slide_keys_entries"
         android:entryValues="@array/slide_keys_values"
         android:defaultValue="0"
+        />
+        <SwitchPreferenceCompat
+        android:key="pref_momentary_symbols"
+        android:title="@string/title_momentary_symbols"
+        android:persistent="true"
+        android:defaultValue="@bool/default_momentary_symbols"
+        android:summaryOn="@string/summary_momentary_symbols_true"
+        android:summaryOff="@string/summary_momentary_symbols_false"
         />
     </PreferenceCategory>
 

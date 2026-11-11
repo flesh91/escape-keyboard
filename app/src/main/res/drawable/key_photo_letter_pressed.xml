@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Real keycaps theme: a light-grey alpha cap, pressed: it sinks 2dp (the face 5dp below the cell top, 4dp above its bottom) and is a touch darker.
+     The cell is dark plate; the cap (drawable-xxhdpi/photo_cap_letter_pressed.9.png, cut from the photo,
+     its body only) sits 2dp from the cell sides and 2.5dp from its top and bottom, the
+     Keycap theme's inset, which is also the key's padding: labels and hints sit as in every
+     other theme, and keyActiveColor (an inset drawable: the padding rectangle, keyActiveRadius)
+     covers exactly the cap body. The image's own padding is 0. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="0dp" android:insetRight="0dp" android:insetTop="0dp" android:insetBottom="0dp">
+    <layer-list>
+        <item>
+            <shape android:shape="rectangle"><solid android:color="@color/photo_plate" /></shape>
+        </item>
+        <item>
+            <inset android:drawable="@drawable/photo_cap_letter_pressed"
+                android:insetLeft="2dp" android:insetRight="2dp"
+                android:insetTop="2.5dp" android:insetBottom="2.5dp" />
+        </item>
+    </layer-list>
+</inset>

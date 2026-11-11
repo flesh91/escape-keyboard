@@ -49,4 +49,13 @@
     <bool name="default_add_shift_to_popup">false</bool>
     <bool name="default_caps_lock">true</bool>
     <bool name="default_shift_lock_modifiers">true</bool>
+    <bool name="default_shift_changes_case">false</bool>
+    <bool name="default_momentary_symbols">false</bool>
+    <bool name="default_keep_addresses">false</bool>
+    <bool name="default_domain_popup">false</bool>
+    <bool name="default_space_zwnj">false</bool>
+    <bool name="default_emoji_close_after_pick">false</bool>
+    <bool name="default_clipboard_offer">false</bool>
+    <bool name="default_one_hand_landscape">false</bool>
+    <bool name="default_one_hand_popup_key">false</bool>
 </resources>

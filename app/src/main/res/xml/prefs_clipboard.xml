@@ -31,5 +31,11 @@
         android:summary="@string/summary_clipboard_hide_locked"
         android:persistent="true"
         android:defaultValue="true" />
+    <SwitchPreferenceCompat
+        android:key="pref_clipboard_offer"
+        android:title="@string/title_clipboard_offer"
+        android:summary="@string/summary_clipboard_offer"
+        android:persistent="true"
+        android:defaultValue="@bool/default_clipboard_offer" />
 
 </PreferenceScreen>

@@ -18,29 +18,49 @@
 */
 -->
 
+<!-- Long-press popup of "." in URI and email fields (pref_domain_popup). The same endings
+     whatever the language: in an address they don't depend on it -->
 <Keyboard
     xmlns:android="http://schemas.android.com/apk/res-auto"
-    android:keyWidth="15%p"
+    android:keyWidth="18%p"
     android:horizontalGap="0px"
     android:verticalGap="0px"
     android:keyHeight="@dimen/popup_key_height"
 >
     <Row
-        android:rowEdgeFlags="top|bottom"
+        android:rowEdgeFlags="top"
     >
         <Key
-            android:keyLabel="@string/popular_domain_1"
-            android:keyOutputText="@string/popular_domain_1"
+            android:keyLabel=".com"
+            android:keyOutputText=".com"
             android:keyEdgeFlags="left" />
         <Key
-            android:keyLabel="@string/popular_domain_2"
-            android:keyOutputText="@string/popular_domain_2" />
+            android:keyLabel=".ua"
+            android:keyOutputText=".ua" />
         <Key
-            android:keyLabel="@string/popular_domain_3"
-            android:keyOutputText="@string/popular_domain_3" />
+            android:keyLabel=".net"
+            android:keyOutputText=".net" />
         <Key
-            android:keyLabel="@string/popular_domain_4"
-            android:keyOutputText="@string/popular_domain_4"
+            android:keyLabel=".org"
+            android:keyOutputText=".org"
+            android:keyEdgeFlags="right" />
+    </Row>
+    <Row
+        android:rowEdgeFlags="bottom"
+    >
+        <Key
+            android:keyLabel=".com.ua"
+            android:keyOutputText=".com.ua"
+            android:keyEdgeFlags="left" />
+        <Key
+            android:keyLabel=".org.ua"
+            android:keyOutputText=".org.ua" />
+        <Key
+            android:keyLabel=".io"
+            android:keyOutputText=".io" />
+        <Key
+            android:keyLabel=".dev"
+            android:keyOutputText=".dev"
             android:keyEdgeFlags="right" />
     </Row>
 </Keyboard>

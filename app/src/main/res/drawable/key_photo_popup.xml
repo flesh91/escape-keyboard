@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Real keycaps theme: a long-press panel key, a light-grey alpha cap; the panel's tray is
+     the plate (keyboard_popup_photo_background), so the cell has no plate of its own -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/photo_cap_letter"
+    android:insetLeft="2dp" android:insetRight="2dp"
+    android:insetTop="2.5dp" android:insetBottom="2.5dp" />

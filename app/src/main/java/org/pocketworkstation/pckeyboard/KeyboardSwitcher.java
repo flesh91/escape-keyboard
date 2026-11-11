@@ -83,6 +83,7 @@ public class KeyboardSwitcher implements
         R.layout.input_keycap, // 16: theme dropped before release, fall back to Keycap
         R.layout.input_keycap, // 17: theme dropped before release, fall back to Keycap
         R.layout.input_retro,
+        R.layout.input_photo, // 19: Real keycaps, light only (not paired, no night variant)
     };
 
     // Google keyboard style, light or dark following the system theme
@@ -154,6 +155,9 @@ public class KeyboardSwitcher implements
     private static final int AUTO_MODE_SWITCH_STATE_MOMENTARY = 3;
     private static final int AUTO_MODE_SWITCH_STATE_CHORDING = 4;
     private int mAutoModeSwitchState = AUTO_MODE_SWITCH_STATE_ALPHA;
+    // The last switch to the letters came from the shifted symbols: a momentary
+    // symbols key snaps back there, not to the first symbols page
+    private boolean mLeftShiftedSymbols;
 
     private int mLastDisplayWidth;
     private LanguageSwitcher mLanguageSwitcher;
@@ -320,6 +324,7 @@ public class KeyboardSwitcher implements
             return;
         mMode = mode;
         mImeOptions = imeOptions;
+        LatinIME.sKeyboardSettings.addressField = (mode == MODE_URL || mode == MODE_EMAIL);
         if (enableVoice != mHasVoice) {
             // TODO clean up this unnecessary recursive call.
             setVoiceMode(enableVoice, mVoiceOnPrimary);
@@ -532,7 +537,14 @@ public class KeyboardSwitcher implements
     }
 
     public void toggleSymbols() {
+        boolean backToShiftedSymbols = LatinIME.sKeyboardSettings.momentarySymbols
+                && !mIsSymbols && mLeftShiftedSymbols
+                && (mAutoModeSwitchState == AUTO_MODE_SWITCH_STATE_MOMENTARY
+                        || mAutoModeSwitchState == AUTO_MODE_SWITCH_STATE_CHORDING);
+        mLeftShiftedSymbols = mIsSymbols && mSymbolsShiftedId != null
+                && mSymbolsShiftedId.equals(mCurrentId);
         setKeyboardMode(mMode, mImeOptions, mHasVoice, !mIsSymbols);
+        if (backToShiftedSymbols) toggleShift();
         if (mIsSymbols && !mPreferSymbols) {
             mAutoModeSwitchState = AUTO_MODE_SWITCH_STATE_SYMBOL_BEGIN;
         } else {
@@ -586,7 +598,7 @@ public class KeyboardSwitcher implements
             if (key == LatinKeyboard.KEYCODE_MODE_CHANGE) {
                 // Detected only the mode change key has been pressed, and then
                 // released.
-                if (mIsSymbols) {
+                if (mIsSymbols && !mPreferSymbols) {
                     mAutoModeSwitchState = AUTO_MODE_SWITCH_STATE_SYMBOL_BEGIN;
                 } else {
                     mAutoModeSwitchState = AUTO_MODE_SWITCH_STATE_ALPHA;

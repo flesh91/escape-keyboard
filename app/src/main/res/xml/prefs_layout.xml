@@ -88,6 +88,14 @@
         android:entries="@array/settings_key_entries"
         android:defaultValue="settings"
         />
+        <SwitchPreferenceCompat
+        android:key="pref_emoji_close_after_pick"
+        android:title="@string/title_emoji_close_after_pick"
+        android:persistent="true"
+        android:defaultValue="@bool/default_emoji_close_after_pick"
+        android:summaryOn="@string/summary_emoji_close_after_pick_true"
+        android:summaryOff="@string/summary_emoji_close_after_pick_false"
+        />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -99,6 +107,21 @@
         android:entries="@array/one_hand_mode_entries"
         android:entryValues="@array/one_hand_mode_values"
         android:defaultValue="off"
+        />
+        <SwitchPreferenceCompat
+        android:key="pref_one_hand_landscape"
+        android:title="@string/title_one_hand_landscape"
+        android:persistent="true"
+        android:defaultValue="@bool/default_one_hand_landscape"
+        android:summaryOn="@string/summary_one_hand_landscape_true"
+        android:summaryOff="@string/summary_one_hand_landscape_false"
+        />
+        <SwitchPreferenceCompat
+        android:key="pref_one_hand_popup_key"
+        android:title="@string/title_one_hand_popup_key"
+        android:summary="@string/summary_one_hand_popup_key"
+        android:persistent="true"
+        android:defaultValue="@bool/default_one_hand_popup_key"
         />
         <org.pocketworkstation.pckeyboard.SeekBarPreferenceString
         android:key="pref_one_hand_width"

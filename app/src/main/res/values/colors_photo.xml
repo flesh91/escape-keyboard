@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Real keycaps theme ("Photo keys", light only): every colour of the theme, as photo_*.
+    The theme's own files all carry "photo" in their name: layout/input_photo.xml,
+    layout/input_popup_photo.xml, drawable/*photo*.xml, the keycap images
+    drawable-xxhdpi/photo_cap_*.9.png and this file.
+
+    The look is a photo of a real keyboard: light-grey matte alpha caps with sculpted concave
+    tops, blue-grey modifier caps, a blank light-grey space bar, a dark plate between the keys
+    and an aluminium case around them. The caps are cut out of the photo (photo_cap_*.9.png,
+    the cap body only: the drawables key_photo_*.xml set it 2dp from the cell sides and 2.5dp
+    from its top and bottom, the Keycap theme's inset and so the key's padding, over a cell of
+    dark plate). The colours below are sampled from the same photo, after the light lift the
+    cap images got (the photo was shot dark on black).
+
+    Names LatinIME reads (see colors_mech.xml for what each does); renaming or removing one
+    breaks the build: is_light (bool), strip_bg, strip_text, strip_recommended, strip_other,
+    clip_bar, clip_surface, clip_text, clip_secondary, clip_accent, clip_outline, clip_divider,
+    clip_radius (integer, dp). The theme has no dark variant: it does not follow night mode.
+
+    The other names below are only used by this theme's own layouts and drawables.
+-->
+<resources>
+    <bool name="photo_is_light">true</bool>
+    <integer name="photo_clip_radius">6</integer>
+
+    <!-- Aluminium case (keyboard_photo_background): where the keyboard shows past the plate,
+         below the bottom row and under the navigation bar; a vertical gradient and a faint
+         sheen across the middle, like brushed metal. A shade darker than the caps, like the
+         photo's case edge, yet light enough for the dark navigation buttons (is_light) -->
+    <color name="photo_case_top">#A0A3A8</color>
+    <color name="photo_case_bottom">#8A8D92</color>
+    <color name="photo_sheen">#1FFFFFFF</color>
+    <color name="photo_sheen_clear">#00FFFFFF</color>
+    <!-- Dark plate between the caps: the keys' whole area (keyboardPlateColor) and every key
+         cell (under its cap, for the long-press panel) -->
+    <color name="photo_plate">#1C1D1F</color>
+
+    <!-- Cap colours, sampled from the cap images; used where the theme draws a cap with
+         shapes instead of an image (key preview) -->
+    <color name="photo_letter">#C0C1C0</color>
+    <color name="photo_letter_top">#DCDCDB</color>
+    <color name="photo_letter_low">#BBBCBB</color>
+    <color name="photo_letter_side_top">#939392</color>
+    <color name="photo_letter_side">#7B7B7A</color>
+    <color name="photo_func">#9CA0A6</color>
+
+    <!-- Bubble above a pressed key (key_preview_photo): a letter cap over a soft shadow, its
+         face the cap's grey (photo_letter, a touch darker to the bottom: photo_letter_low)
+         under the photo's bright rim (photo_letter_top) -->
+    <color name="photo_preview_shadow">#33000000</color>
+
+    <!-- Long-press panel (keyboard_popup_photo_background): a small tray, aluminium rim
+         around dark plate; the key under the finger is a pressed blue-grey modifier cap -->
+    <color name="photo_popup_shadow">#40000000</color>
+    <color name="photo_popup_rim">@color/photo_case_top</color>
+    <color name="photo_popup_rim_bottom">@color/photo_case_bottom</color>
+
+    <!-- Legends, sampled from the photo: near black on the light caps, a little bluer on the
+         blue-grey ones, the grey of the small secondary legends ("FnLock", "Enter") for the
+         hints. active is drawn over the whole cap body of a sticky modifier while it is on:
+         a light warm tint, like a lit cap, thin enough (30%) that the blue-grey cap, its grain
+         and its shading stay visible; a locked one also gets a bar in on_active -->
+    <color name="photo_text">#1E1F20</color>
+    <color name="photo_func_text">@color/photo_text</color>
+    <color name="photo_accent_text">@color/photo_func_text</color>
+    <color name="photo_esc_text">@color/photo_func_text</color>
+    <color name="photo_space_text">@color/photo_text</color>
+    <color name="photo_hint">#454C53</color>
+    <color name="photo_cursor">@color/photo_func_text</color>
+    <color name="photo_active">#4DF5A33A</color>
+    <color name="photo_on_active">#2A1A04</color>
+    <color name="photo_preview_text">@color/photo_text</color>
+    <!-- Labels of the long-press panel (layout/input_popup_photo.xml) -->
+    <color name="photo_popup_text">@color/photo_text</color>
+    <color name="photo_popup_hint">@color/photo_hint</color>
+    <color name="photo_popup_cursor">@color/photo_text</color>
+
+    <!-- Read by LatinIME: the suggestion strip is the aluminium case, the clipboard window a
+         light cap face in an aluminium frame -->
+    <color name="photo_strip_bg">@color/photo_case_top</color>
+    <color name="photo_strip_text">#1E2024</color>
+    <color name="photo_strip_recommended">#22344D</color>
+    <color name="photo_strip_other">#3C4148</color>
+    <color name="photo_clip_bar">@color/photo_case_top</color>
+    <color name="photo_clip_surface">#D3D4D3</color>
+    <color name="photo_clip_text">#1E2024</color>
+    <color name="photo_clip_secondary">#50565D</color>
+    <color name="photo_clip_accent">@color/photo_strip_recommended</color>
+    <color name="photo_clip_outline">#8E9196</color>
+    <color name="photo_clip_divider">#B9BBBE</color>
+</resources>

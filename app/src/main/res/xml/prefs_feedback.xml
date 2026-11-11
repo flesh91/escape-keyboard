@@ -34,6 +34,14 @@
         android:title="@string/title_vibrate_len"
         android:persistent="true"
         />
+        <SwitchPreferenceCompat
+        android:key="vibrate_in_dnd"
+        android:title="@string/title_vibrate_in_dnd"
+        android:summary="@string/summary_vibrate_in_dnd"
+        android:defaultValue="false"
+        android:dependency="vibrate_on"
+        android:persistent="true"
+        />
     </PreferenceCategory>
 
     <PreferenceCategory

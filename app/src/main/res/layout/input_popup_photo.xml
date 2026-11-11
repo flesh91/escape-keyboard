@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press mini keyboard of the Real keycaps theme: light-grey caps on dark plate in a small aluminium tray.
+     Padded like the Keycap theme (left and right only), so the panel sits and sizes the same. -->
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/keyboard_popup_photo_background"
+        android:paddingLeft="8dip"
+        android:paddingRight="8dip"
+        >
+    <org.pocketworkstation.pckeyboard.LatinKeyboardBaseView
+            xmlns:latin="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/LatinKeyboardBaseView"
+            android:layout_alignParentBottom="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/latinkeyboard_transparent"
+            latin:keyTextStyle="normal"
+            latin:keyTextColor="@color/photo_popup_text"
+            latin:recolorSymbols="true"
+            latin:keyHintColor="@color/photo_popup_hint"
+            latin:keyCursorColor="@color/photo_popup_cursor"
+            latin:shadowRadius="0"
+            latin:keyBackground="@drawable/btn_keyboard_key_popup_photo"
+            latin:keyHysteresisDistance="0dip"
+            latin:verticalCorrection="@dimen/mini_keyboard_vertical_correction"
+            latin:keyPreviewLayout="@layout/null_layout"
+            latin:popupLayout="@layout/null_layout"
+            />
+</LinearLayout>

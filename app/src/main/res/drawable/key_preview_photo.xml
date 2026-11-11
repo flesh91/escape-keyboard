@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Real keycaps theme: the bubble above a pressed key, the same shape as every other theme's
+     (key_preview_keycap): a shadow, the cap's skirt, the light-grey top face with the
+     photo's bright rim along its top edge, a touch darker to the bottom like a lit cap -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle"><corners android:radius="12dp" /><solid android:color="@color/photo_preview_shadow" /></shape>
+    </item>
+    <item android:left="1dp" android:right="1dp" android:bottom="1dp">
+        <shape android:shape="rectangle"><corners android:radius="11dp" /><gradient android:angle="270" android:startColor="@color/photo_letter_side_top" android:endColor="@color/photo_letter_side" /></shape>
+    </item>
+    <item android:left="2dp" android:top="1dp" android:right="2dp" android:bottom="4dp">
+        <shape android:shape="rectangle"><corners android:radius="10dp" /><solid android:color="@color/photo_letter_top" /></shape>
+    </item>
+    <item android:left="2dp" android:top="1.5dp" android:right="2dp" android:bottom="4dp">
+        <shape android:shape="rectangle"><corners android:radius="10dp" /><gradient android:angle="270" android:startColor="@color/photo_letter" android:endColor="@color/photo_letter_low" /></shape>
+    </item>
+</layer-list>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press panel of the Real keycaps theme: a small tray over its shadow, an aluminium rim
+     (1.5dp at the bottom) around dark plate; its keys are light-grey caps
+     (btn_keyboard_key_popup_photo). Same corners as every theme's panel -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="1.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="@color/photo_popup_shadow" />
+        </shape>
+    </item>
+    <item android:left="1dp" android:right="1dp" android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="11dp" />
+            <gradient android:angle="270" android:startColor="@color/photo_popup_rim" android:endColor="@color/photo_popup_rim_bottom" />
+        </shape>
+    </item>
+    <item android:left="2.5dp" android:top="1.5dp" android:right="2.5dp" android:bottom="2.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="9.5dp" />
+            <solid android:color="@color/photo_plate" />
+        </shape>
+    </item>
+</layer-list>

@@ -391,6 +391,9 @@
     <string name="title_shift_lock_modifiers">ShiftLock на все клавиши</string>
     <string name="summary_shift_lock_modifiers_true">Да, включая стрелки</string>
     <string name="summary_shift_lock_modifiers_false">Нет, только обычные клавиши</string>
+    <string name="title_shift_changes_case">Shift меняет регистр выделенного текста</string>
+    <string name="summary_shift_changes_case_true">Нажатие Shift делает выделенный текст ПРОПИСНЫМИ буквами, затем строчными, затем Каждое Слово С Заглавной</string>
+    <string name="summary_shift_changes_case_false">Shift работает как обычно, когда текст выделен</string>
 
     <string name="title_hint_mode">Подсказки на клавишах</string>
     <string-array name="hint_modes">
@@ -403,6 +406,9 @@
     <string name="summary_touch_pos_true">Показывать точки нажатий и жесты</string>
     <string name="summary_touch_pos_false">Выключено</string>
 
+    <string name="title_momentary_symbols">Скольжение с ?123</string>
+    <string name="summary_momentary_symbols_true">\?123 переключает сразу при нажатии: проведите к символу и отпустите — символ введётся, и вернутся буквы</string>
+    <string name="summary_momentary_symbols_false">\?123 переключает, когда отпускаете палец</string>
     <string name="title_slide_keys">Действие при скольжении</string>
     <!-- Values are a bitmap, see use in PointerTracker -->
     <string-array name="slide_keys_entries">
@@ -422,6 +428,8 @@
     <string name="title_candidate_scale">Размер текста вариантов</string>
 
     <string name="title_vibrate_len">Длительность вибрации</string>
+    <string name="title_vibrate_in_dnd">Вибрация в режиме «Не беспокоить»</string>
+    <string name="summary_vibrate_in_dnd">Вибрировать при нажатии даже в режиме «Не беспокоить»</string>
 
     <string name="title_click_volume">Громкость звука</string>
 
@@ -554,6 +562,7 @@
     <string name="layout_keycap">Keycap (по теме системы)</string>
     <string name="layout_mech">Механическая (по теме системы)</string>
     <string name="layout_retro">Ретро-терминал (по теме системы)</string>
+    <string name="layout_photo">Настоящие клавиши</string>
     <string name="title_debug_hide">Скрыть отладку</string>
     <string name="summary_debug_hide">Показать снова: 5 раз нажмите «Версия»</string>
     <string name="debug_shown">Пункты отладки показаны</string>
@@ -591,6 +600,9 @@
     <string name="cat_modifiers">Клавиши-модификаторы</string>
     <string name="cat_apps">Приложения</string>
     <string name="title_settings_key">Дополнительная клавиша</string>
+    <string name="title_emoji_close_after_pick">Закрывать эмодзи после выбора</string>
+    <string name="summary_emoji_close_after_pick_true">Панель эмодзи закрывается, как только вы выбрали эмодзи</string>
+    <string name="summary_emoji_close_after_pick_false">Панель эмодзи остаётся открытой для следующих</string>
     <string-array name="settings_key_entries">
         <item>Стандартная: Tab в компактной, шестерёнка (настройки) в остальных</item>
         <item>Эмодзи (настройки — долгим нажатием)</item>
@@ -641,6 +653,8 @@
     <string name="title_clipboard_hide_locked">Скрывать историю на экране блокировки</string>
     <string name="summary_clipboard_hide_locked">История буфера обмена не открывается, пока устройство заблокировано</string>
     <string name="clipboard_locked">Разблокируйте устройство, чтобы увидеть историю буфера обмена</string>
+    <string name="title_clipboard_offer">Предлагать только что скопированный текст</string>
+    <string name="summary_clipboard_offer">Текст, скопированный меньше минуты назад, появляется первым в строке подсказок: нажмите, чтобы вставить. Не предлагается для паролей, в режиме инкогнито и на экране блокировки</string>
     <string name="cat_privacy">Конфиденциальность</string>
     <string name="title_incognito_private_fields">Не обучаться в приватных полях</string>
     <string name="summary_incognito_private_fields">Вкладки инкогнито и другие поля, которые об этом просят: набранные слова, эмодзи и скопированный текст не запоминаются</string>
@@ -657,6 +671,12 @@
     <string name="summary_double_space_period">Два пробела после слова превращаются в «. », когда включено автоисправление или быстрое исправление</string>
     <string name="title_space_after_suggestion">Пробел после выбранного варианта</string>
     <string name="summary_space_after_suggestion">После слова, выбранного в строке вариантов, ставится пробел</string>
+    <string name="title_keep_addresses">Не исправлять адреса и пути</string>
+    <string name="summary_keep_addresses">Веб-адреса, почта и пути вроде github.com, me@mail.ua или ~/src остаются такими, как набраны: . / : \@ _ внутри не разрывают слово. Слово с точкой в конце исправляется только после пробела или Enter на клавиатуре</string>
+    <string name="title_domain_popup">Доменные окончания на клавише точки</string>
+    <string name="summary_domain_popup">В полях веб-адреса и почты долгое нажатие «.» предлагает .com, .ua, .net, .org и другие</string>
+    <string name="title_space_zwnj">ZWNJ на пробеле (персидский)</string>
+    <string name="summary_space_zwnj">В персидских раскладках долгое нажатие пробела предлагает разъединитель нулевой ширины (полупробел)</string>
     <string name="title_auto_correct_strength">Сила автоисправления</string>
     <string-array name="auto_correct_strength_entries">
         <item>Умеренная: только слова с мелкой ошибкой</item>
@@ -669,9 +689,20 @@
         <item>Переключает язык</item>
         <item>Двигает курсор (язык — дополнительной клавишей с глобусом, см. «Раскладка»)</item>
     </string-array>
+    <string name="title_delete_swipe">Свайп влево от Backspace</string>
+    <string-array name="delete_swipe_entries">
+        <item>Выключен</item>
+        <item>Выделяет символы; отпустите палец, чтобы стереть, верните назад, чтобы отменить</item>
+        <item>Выделяет слова; отпустите палец, чтобы стереть, верните назад, чтобы отменить</item>
+    </string-array>
     <string name="cat_one_hand">Режим для одной руки</string>
     <string name="title_one_hand_mode">Режим для одной руки</string>
-    <string name="summary_one_hand_mode">В вертикальной ориентации. Кнопки на свободной стороне переносят клавиши или возвращают полную ширину</string>
+    <string name="summary_one_hand_mode">Кнопки на свободной стороне переносят клавиши или возвращают полную ширину. Чтобы изменить ширину, потяните полоску между ними</string>
+    <string name="title_one_hand_landscape">Также в горизонтальной ориентации</string>
+    <string name="summary_one_hand_landscape_true">Клавиши такой же ширины, как в вертикальной, остальная часть экрана остаётся свободной</string>
+    <string name="summary_one_hand_landscape_false">Только в вертикальной ориентации</string>
+    <string name="title_one_hand_popup_key">Клавиша в меню запятой и настроек</string>
+    <string name="summary_one_hand_popup_key">Долгое нажатие запятой или дополнительной клавиши на месте шестерёнки (эмодзи, буфер, глобус или микрофон) предлагает клавишу, которая включает и выключает режим для одной руки</string>
     <string-array name="one_hand_mode_entries">
         <item>Выключен</item>
         <item>Клавиши слева</item>
@@ -683,5 +714,5 @@
     <string name="summary_macro_row_true">Над клавишами</string>
     <string name="summary_macro_row_false">Выключено</string>
     <string name="title_macro_keys">Клавиши ряда</string>
-    <string name="message_macro_keys">Клавиши через пробел.\n\nНазвания: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбинации: Ctrl+C, Alt+F.\nЛюбой отдельный символ: | ~ /\nТекст в кавычках вводится как есть: \"sudo \", \"| grep \", \"\\n\" — новая строка.</string>
+    <string name="message_macro_keys">Клавиши через пробел.\n\nНазвания: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбинации: Ctrl+C, Alt+F.\nРедактирование: Copy, Cut, Paste, SelectAll, SelectWord, Undo, Redo, DelWord.\nПанели: Clipboard, Emoji, Voice, OneHand.\nDate, Time, DateTime; формат — после двоеточия: Date:dd.MM.yyyy, DateTime:\"d MMM HH:mm\".\nМедиа: Play, Next, Prev, VolUp, VolDown, Mute.\nЛюбой отдельный символ: | ~ /\nТекст в кавычках вводится как есть: \"sudo \", \"| grep \", \"\\n\" — новая строка.</string>
 </resources>

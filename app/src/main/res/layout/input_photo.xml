@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Real keycaps theme ("Photo keys", light only, it does not follow night mode): the caps are
+     cut out of a photo of a real keyboard (drawable-xxhdpi/photo_cap_*.9.png): light-grey
+     alpha caps, blue-grey modifiers (Esc and Enter too), a blank light-grey space bar, dark
+     plate between and beside them (keyboardPlateColor: the whole keys' area, a staggered
+     row's margins too), an aluminium case around (the background, showing in the padding:
+     below the keys and under the navigation bar). Colours: values/colors_photo.xml (photo_*).
+     The caps have the Keycap theme's padding and top face, so labels and hints sit as in every
+     other theme; keyActiveColor glows over the cap body (keyActiveRadius = its corners) while
+     a sticky modifier is on. -->
+<org.pocketworkstation.pckeyboard.LatinKeyboardView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:latin="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/LatinkeyboardBaseView"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/keyboard_bottom_padding"
+        android:background="@drawable/keyboard_photo_background"
+        latin:keyboardPlateColor="@color/photo_plate"
+        latin:shadowRadius="0"
+        latin:keyTextStyle="normal"
+        latin:keyFunctionLabelPlain="true"
+        latin:keyTextColor="@color/photo_text"
+        latin:keyFunctionTextColor="@color/photo_func_text"
+        latin:keyAccentTextColor="@color/photo_accent_text"
+        latin:keyEscapeTextColor="@color/photo_esc_text"
+        latin:keySpaceTextColor="@color/photo_space_text"
+        latin:keyPreviewBackground="@drawable/key_preview_photo"
+        latin:keyPreviewTextColor="@color/photo_preview_text"
+        latin:recolorSymbols="true"
+        latin:keyHintColor="@color/photo_hint"
+        latin:keyCursorColor="@color/photo_cursor"
+        latin:keyActiveColor="@color/photo_active"
+        latin:keyActiveRadius="2dp"
+        latin:keyActiveTextColor="@color/photo_on_active"
+
+        latin:keyBackground="@drawable/btn_keyboard_key_photo"
+        latin:keyEscapeBackground="@drawable/btn_keyboard_key_photo_esc"
+        latin:keyEnterBackground="@drawable/btn_keyboard_key_photo_enter"
+        latin:keySpaceBackground="@drawable/btn_keyboard_key_photo_space"
+        latin:popupLayout="@layout/input_popup_photo"
+        />

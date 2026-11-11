@@ -36,6 +36,7 @@ public class PointerTracker {
         public void invalidateKey(Key key);
         public void showPreview(int keyIndex, PointerTracker tracker);
         public boolean hasDistinctMultitouch();
+        public int getSwapShiftY();
     }
 
     public final int mPointerId;
@@ -302,6 +303,8 @@ public class PointerTracker {
                 // new keyboard layout.
                 if (mKeyboardLayoutHasBeenChanged) {
                     mKeyboardLayoutHasBeenChanged = false;
+                    // A keyboard of another height moves the keys under the finger
+                    y += mProxy.getSwapShiftY();
                     keyIndex = mKeyState.onDownKey(x, y, eventTime);
                 }
             }
@@ -376,6 +379,7 @@ public class PointerTracker {
                     // to the new keyboard layout.
                     if (mKeyboardLayoutHasBeenChanged) {
                         mKeyboardLayoutHasBeenChanged = false;
+                        y += mProxy.getSwapShiftY();
                         keyIndex = keyState.onMoveKey(x, y);
                     }
                 }
@@ -397,6 +401,7 @@ public class PointerTracker {
                     // to the new keyboard layout.
                     if (mKeyboardLayoutHasBeenChanged) {
                         mKeyboardLayoutHasBeenChanged = false;
+                        y += mProxy.getSwapShiftY();
                         keyIndex = keyState.onMoveKey(x, y);
                     }
                     addSlideKey(oldKey);

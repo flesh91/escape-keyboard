@@ -64,6 +64,13 @@
         <attr name="keyEscapeTextColor" format="color" />
         <!-- Space bar label colour on its own keycap; unset: keyTextColor -->
         <attr name="keySpaceTextColor" format="color" />
+        <!-- Labels of function keys (Tab, Esc, ?123) and the cursor arrows in the letters' typeface
+             and weight instead of the semi-bold one; default false -->
+        <attr name="keyFunctionLabelPlain" format="boolean" />
+        <!-- Fill of the keys' area (inside the view's padding) under the keys: the gaps between
+             and beside them take this colour, the background shows only in the padding (below
+             the keys, under the navigation bar). Unset: the background shows everywhere -->
+        <attr name="keyboardPlateColor" format="color" />
 
         <!-- Do symbols need to be inverted (for light-background themes)? -->
         <attr name="invertSymbols" format="boolean" />

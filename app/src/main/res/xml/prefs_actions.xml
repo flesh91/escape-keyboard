@@ -27,6 +27,13 @@
         android:persistent="true"
         android:title="@string/title_space_swipe" />
         <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
+        android:defaultValue="off"
+        android:entries="@array/delete_swipe_entries"
+        android:entryValues="@array/delete_swipe_values"
+        android:key="pref_delete_swipe"
+        android:persistent="true"
+        android:title="@string/title_delete_swipe" />
+        <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
         android:defaultValue="@string/default_swipe_up"
         android:entries="@array/swipe_action_entries"
         android:entryValues="@array/swipe_action_values"

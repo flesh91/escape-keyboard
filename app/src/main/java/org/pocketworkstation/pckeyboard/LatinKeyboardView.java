@@ -34,6 +34,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
@@ -57,6 +58,8 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
     static final int KEYCODE_ONE_HAND_EXIT = -149;
     /** Long press on Enter: opens the clipboard history window */
     static final int KEYCODE_CLIPBOARD_LONGPRESS = -150;
+    /** One-handed mode on or off (the comma and settings key popups) */
+    static final int KEYCODE_ONE_HAND = -151;
     static final int KEYCODE_F1 = -103;
     static final int KEYCODE_NEXT_LANGUAGE = -104;
     static final int KEYCODE_PREV_LANGUAGE = -105;
@@ -259,8 +262,14 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
         } else if (primaryCode == '0' && getKeyboard() == mPhoneKeyboard) {
             // Long pressing on 0 in phone number keypad gives you a '+'.
             return invokeOnKey('+');
+        } else if (primaryCode == LatinIME.ASCII_SPACE && isSpaceSwipeStarted()) {
+            // A slow swipe along space (language or cursor) keeps going: no popup over it
+            return false;
         } else {
-            return super.onLongPress(key);
+            boolean opened = super.onLongPress(key);
+            // A popup on space (ZWNJ in Persian) takes the touch over: no cursor swipe after it
+            if (opened && primaryCode == LatinIME.ASCII_SPACE) mSpaceCursorArmed = false;
+            return opened;
         }
     }
 
@@ -354,6 +363,18 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
     private float mSpaceCursorStartX;
     private float mSpaceCursorLastX;
 
+    /**
+     * The finger has already moved along space past the touch slop: a language swipe (the
+     * keyboard keeps the touch on space) or a cursor swipe that hasn't started moving yet.
+     */
+    private boolean isSpaceSwipeStarted() {
+        final int slop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+        if (mSpaceCursorArmed) return Math.abs(mSpaceCursorLastX - mSpaceCursorStartX) > slop;
+        if (!(getKeyboard() instanceof LatinKeyboard)) return false;
+        final LatinKeyboard keyboard = (LatinKeyboard) getKeyboard();
+        return keyboard.isCurrentlyInSpace() && Math.abs(keyboard.getSpaceDragDiff()) > slop;
+    }
+
     private boolean handleSpaceCursor(MotionEvent me) {
         if (!LatinIME.sKeyboardSettings.spaceSwipeCursor || mIsExtensionType) return false;
         final float d = getResources().getDisplayMetrics().density;
@@ -372,6 +393,7 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
         case MotionEvent.ACTION_MOVE: {
             if (!mSpaceCursorArmed) return false;
             if (!mSpaceCursorActive) {
+                mSpaceCursorLastX = me.getX(); // for isSpaceSwipeStarted()
                 if (me.getPointerCount() > 1
                         || Math.abs(me.getX() - mSpaceCursorStartX) < 16 * d) return false;
                 // A swipe after all: the space key is let go without typing a space
@@ -402,17 +424,97 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
         }
     }
 
+    // Sliding left from Backspace (pref) selects the text before the cursor, one character or
+    // word per 10dp left of the press; lifting the finger deletes it, coming back cancels.
+    // It only starts before the key repeat does, and where LatinIME can select text.
+    private boolean mDeleteSwipeArmed;
+    private boolean mDeleteSwipeActive;
+    private float mDeleteSwipeStartX;
+    private int mDeleteSwipeSteps;
+
+    private boolean handleDeleteSwipe(MotionEvent me) {
+        if ("off".equals(LatinIME.sKeyboardSettings.deleteSwipe) || mIsExtensionType) return false;
+        final float d = getResources().getDisplayMetrics().density;
+        switch (me.getActionMasked()) {
+        case MotionEvent.ACTION_DOWN: {
+            mDeleteSwipeActive = false;
+            mDeleteSwipeArmed = false;
+            int x = (int) me.getX() - getPaddingLeft();
+            int y = (int) me.getY() - getPaddingTop();
+            for (Key key : getKeyboard().getKeys()) {
+                if (key.getPrimaryCode() == Keyboard.KEYCODE_DELETE
+                        && x >= key.x && x < key.x + key.width
+                        && y >= key.y && y < key.y + key.height) {
+                    mDeleteSwipeArmed = true;
+                    break;
+                }
+            }
+            mDeleteSwipeStartX = me.getX();
+            return false; // Backspace goes down (and deletes) as usual until the finger moves
+        }
+        case MotionEvent.ACTION_MOVE: {
+            if (!mDeleteSwipeArmed) return false;
+            if (!mDeleteSwipeActive) {
+                if (me.getPointerCount() > 1) return false;
+                if (me.getEventTime() - me.getDownTime()
+                        >= getResources().getInteger(R.integer.config_delay_before_key_repeat_start)) {
+                    mDeleteSwipeArmed = false; // already repeating: a held Backspace, as before
+                    return false;
+                }
+                if (mDeleteSwipeStartX - me.getX() < 16 * d) return false;
+                OnKeyboardActionListener listener = getOnKeyboardActionListener();
+                if (!(listener instanceof LatinIME) || !((LatinIME) listener).startDeleteSwipe()) {
+                    mDeleteSwipeArmed = false; // no selection here (a terminal): Backspace as before
+                    return false;
+                }
+                // The key is let go: no repeat, no more deleting until the finger is lifted
+                mDeleteSwipeActive = true;
+                mDeleteSwipeSteps = 0;
+                MotionEvent cancel = MotionEvent.obtain(me);
+                cancel.setAction(MotionEvent.ACTION_CANCEL);
+                super.onTouchEvent(cancel);
+                cancel.recycle();
+            }
+            int steps = Math.max(0, (int) ((mDeleteSwipeStartX - me.getX()) / (10 * d)));
+            if (steps != mDeleteSwipeSteps) {
+                mDeleteSwipeSteps = steps;
+                ((LatinIME) getOnKeyboardActionListener()).updateDeleteSwipe(steps);
+            }
+            return true;
+        }
+        case MotionEvent.ACTION_UP:
+        case MotionEvent.ACTION_CANCEL: {
+            boolean consumed = mDeleteSwipeActive;
+            if (consumed) {
+                ((LatinIME) getOnKeyboardActionListener()).finishDeleteSwipe(
+                        me.getActionMasked() == MotionEvent.ACTION_UP && mDeleteSwipeSteps > 0);
+            }
+            mDeleteSwipeArmed = mDeleteSwipeActive = false;
+            return consumed;
+        }
+        default:
+            return mDeleteSwipeActive;
+        }
+    }
+
     // One-handed mode: the keys leave an empty side (padding) holding two buttons,
-    // move to the other side and back to full width
+    // move to the other side and back to full width, and between them a handle: dragged
+    // sideways it changes the width, saved when the finger lifts
     private int mOneHandGap;
     private boolean mOneHandKeysRight;
+    private int mOneHandFullWidth; // the keys' width at 100%
     private int mOneHandButton = -1; // being pressed: 0 move, 1 full width
+    private boolean mOneHandOnHandle; // pressed on the handle: a drag resizes, a tap is the button
+    private boolean mOneHandResizing;
+    private float mOneHandDownX;
+    private int mOneHandPercent; // while resizing
     private android.graphics.drawable.Drawable mOneHandSwapIcon, mOneHandExitIcon;
     private final Paint mOneHandPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    void setOneHandGap(int gap, boolean keysRight) {
+    void setOneHandGap(int gap, boolean keysRight, int fullWidth) {
         mOneHandGap = gap;
         mOneHandKeysRight = keysRight;
+        mOneHandFullWidth = fullWidth;
         invalidate();
     }
 
@@ -428,14 +530,54 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
         return me.getY() < (keysTop + keysBottom) / 2f ? 0 : 1;
     }
 
+    /** The handle is the middle of the empty side, between the two buttons' icons. */
+    private boolean isOnOneHandHandle(MotionEvent me) {
+        int keysTop = getPaddingTop(), keysBottom = getHeight() - getPaddingBottom();
+        return Math.abs(me.getY() - (keysTop + keysBottom) / 2f) < (keysBottom - keysTop) / 8f;
+    }
+
+    /** The width setting (60-95%) for the handle dragged to x: the keys' edge follows the finger. */
+    private int oneHandPercentAt(float x) {
+        float moved = mOneHandKeysRight ? mOneHandDownX - x : x - mOneHandDownX;
+        int percent = Math.round(LatinIME.sKeyboardSettings.oneHandWidth
+                + moved * 100f / Math.max(1, mOneHandFullWidth));
+        return Math.max(60, Math.min(95, percent));
+    }
+
     private boolean handleOneHandButtons(MotionEvent me) {
         if (mOneHandGap <= 0 || mIsExtensionType) return false;
         switch (me.getActionMasked()) {
         case MotionEvent.ACTION_DOWN:
             mOneHandButton = oneHandButtonAt(me);
+            mOneHandOnHandle = mOneHandButton >= 0 && isOnOneHandHandle(me);
+            mOneHandResizing = false;
+            mOneHandDownX = me.getX();
             if (mOneHandButton >= 0) invalidate();
             return mOneHandButton >= 0;
+        case MotionEvent.ACTION_MOVE:
+            if (mOneHandOnHandle && !mOneHandResizing && Math.abs(me.getX() - mOneHandDownX)
+                    > ViewConfiguration.get(getContext()).getScaledTouchSlop()) {
+                mOneHandResizing = true; // a drag, not a tap on the button under the handle
+                mOneHandButton = -1;
+            }
+            if (mOneHandResizing) {
+                mOneHandPercent = oneHandPercentAt(me.getX());
+                invalidate();
+                return true;
+            }
+            return mOneHandButton >= 0;
         case MotionEvent.ACTION_UP:
+            mOneHandOnHandle = false;
+            if (mOneHandResizing) {
+                // The keyboard is rebuilt once, by the settings listener
+                mOneHandResizing = false;
+                invalidate();
+                OnKeyboardActionListener listener = getOnKeyboardActionListener();
+                if (listener instanceof LatinIME) {
+                    ((LatinIME) listener).setOneHandWidth(oneHandPercentAt(me.getX()));
+                }
+                return true;
+            }
             if (mOneHandButton < 0) return false;
             int button = mOneHandButton;
             mOneHandButton = -1;
@@ -446,12 +588,18 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
             }
             return true;
         case MotionEvent.ACTION_CANCEL:
+            mOneHandOnHandle = false;
+            if (mOneHandResizing) {
+                mOneHandResizing = false; // the width stays as it was
+                invalidate();
+                return true;
+            }
             if (mOneHandButton < 0) return false;
             mOneHandButton = -1;
             invalidate();
             return true;
         default:
-            return mOneHandButton >= 0;
+            return mOneHandButton >= 0 || mOneHandResizing;
         }
     }
 
@@ -478,6 +626,19 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
             icons[i].setBounds(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2);
             icons[i].draw(c);
         }
+        // The handle: a short bar between the icons, or while dragged, a line where the keys'
+        // edge will be (the keys themselves change once the finger lifts)
+        float mid = (keysTop + keysBottom) / 2f;
+        float half = Math.min(12 * d, quarter * 0.3f);
+        float barX = cx;
+        if (mOneHandResizing) {
+            int keys = Math.round(mOneHandFullWidth * mOneHandPercent / 100f);
+            barX = mOneHandKeysRight ? getWidth() - getPaddingRight() - keys : getPaddingLeft() + keys;
+            mOneHandPaint.setColor((color & 0x00FFFFFF) | 0x80000000);
+            c.drawRect(barX - d, keysTop, barX + d, keysBottom, mOneHandPaint);
+        }
+        mOneHandPaint.setColor(mOneHandResizing ? color : (color & 0x00FFFFFF) | 0x80000000);
+        c.drawRoundRect(barX - 2 * d, mid - half, barX + 2 * d, mid + half, 2 * d, 2 * d, mOneHandPaint);
     }
 
     @Override
@@ -490,11 +651,13 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
         }
         if (handleOneHandButtons(me)) return true;
         if (handleSpaceCursor(me)) return true;
+        if (handleDeleteSwipe(me)) return true;
 
         // If an extension keyboard is visible or this is an extension keyboard, don't look
         // for sudden jumps. Otherwise, if there was a sudden jump, return without processing the
-        // actual motion event.
-        if (!mExtensionVisible && !mIsExtensionType
+        // actual motion event. Nor after the keyboard was swapped under the finger: the view
+        // moving under it is not a jump.
+        if (!mExtensionVisible && !mIsExtensionType && !isInKeyboardSwap()
                 && handleSuddenJump(me)) return true;
         // Reset any bounding box controls in the keyboard
         if (me.getAction() == MotionEvent.ACTION_DOWN) {

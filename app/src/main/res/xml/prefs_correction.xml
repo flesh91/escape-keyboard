@@ -43,6 +43,13 @@
         android:defaultValue="@bool/default_quick_fixes"
         />
         <SwitchPreferenceCompat
+        android:key="pref_keep_addresses"
+        android:title="@string/title_keep_addresses"
+        android:summary="@string/summary_keep_addresses"
+        android:persistent="true"
+        android:defaultValue="@bool/default_keep_addresses"
+        />
+        <SwitchPreferenceCompat
         android:key="pref_double_space_period"
         android:title="@string/title_double_space_period"
         android:summary="@string/summary_double_space_period"

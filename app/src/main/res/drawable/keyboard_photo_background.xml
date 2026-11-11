@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Real keycaps theme: the aluminium case. The keys' area is covered by the dark plate
+     (keyboardPlateColor in layout/input_photo.xml), so it shows only in the keyboard's
+     padding: below the bottom row and under the navigation bar (and beside the keys where
+     the screen has a cutout). A vertical gradient and a faint sheen across the middle, like
+     brushed metal -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="270" android:startColor="@color/photo_case_top" android:endColor="@color/photo_case_bottom" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="0" android:startColor="@color/photo_sheen_clear" android:centerColor="@color/photo_sheen" android:endColor="@color/photo_sheen_clear" />
+        </shape>
+    </item>
+</layer-list>

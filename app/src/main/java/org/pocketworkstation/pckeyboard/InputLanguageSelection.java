@@ -74,32 +74,44 @@ public class InputLanguageSelection extends SettingsActivity {
     // the available keyboard resources and dictionaries.
     private static final String[] KBD_LOCALIZATIONS = {
         "ar", "bg", "bg_ST", "ca", "cs", "cs_QY", "da", "de", "de_NE",
-        "el", "en", "en_CX", "en_DV", "en_GB", "en_RU", "es", "es_LA", "es_US",
-        "fa", "fi", "fr", "fr_CA", "he", "hr", "hu", "hu_QY", "hy", "in",
-        "it", "iw", "ja", "ka", "ko", "lo", "lt", "lv", "nb", "nl", "pl",
+        "el", "en", "en_CX", "en_DV", "en_GB", "en_RU", "en_XM", "en_XN", "en_XW",
+        "en_XY", "en_XZ", "es", "es_LA", "es_US", "fa", "fi", "fr", "fr_CA", "he",
+        "hr", "hu", "hu_QY", "hy", "in", "it", "iw", "ja", "ka", "ko", "lo", "lt", "lv", "nb", "nl", "pl",
         "pt", "pt_PT", "rm", "ro", "ru", "ru_PH","ru_EN", "si", "sk", "sk_QY", "sl",
         "sr", "sv", "ta", "th", "tl", "tr", "uk", "vi", "zh_CN", "zh_TW"
     };
 
     private static final String[] KBD_5_ROW = {
         "ar", "bg", "bg_ST", "cs", "cs_QY", "da", "de", "de_NE", "el",
-        "en", "en_CX", "en_DV", "en_GB", "en_RU", "es", "es_LA", "fa", "fi", "fr",
-        "fr_CA", "he", "hr", "hu", "hu_QY", "hy", "it", "iw", "lo", "lt",
+        "en", "en_CX", "en_DV", "en_GB", "en_RU", "en_XM", "en_XN", "en_XW", "en_XY",
+        "en_XZ", "es", "es_LA", "fa", "fi", "fr", "fr_CA", "he", "hr", "hu", "hu_QY", "hy", "it", "iw", "lo", "lt",
         "nb", "pt_PT", "ro", "ru", "ru_PH", "ru_EN", "si", "sk", "sk_QY", "sl",
         "sr", "sv", "ta", "th", "tr", "uk"
     };
 
     private static final String[] KBD_4_ROW = {
         "ar", "bg", "bg_ST", "cs", "cs_QY", "da", "de", "de_NE", "el",
-        "en", "en_CX", "en_DV", "en_RU", "es", "es_LA", "es_US", "fa", "fr", "fr_CA",
-        "he", "hr", "hu", "hu_QY", "iw", "nb", "ru", "ru_PH", "ru_EN", "sk", "sk_QY",
+        "en", "en_CX", "en_DV", "en_RU", "en_XM", "en_XN", "en_XW", "en_XY", "en_XZ",
+        "es", "es_LA", "es_US", "fa", "fr", "fr_CA", "he", "hr", "hu", "hu_QY", "iw", "nb", "ru", "ru_PH", "ru_EN", "sk", "sk_QY",
         "sl", "sr", "sv", "tr", "uk"
     };
 
     private static String getLocaleName(Locale l) {
         String lang = l.getLanguage();
         String country = l.getCountry();
-        if (lang.equals("en") && country.equals("DV")) {
+        // English letter layouts on ISO 3166 user-assigned countries (X*), which never name
+        // a real region. XA, XB and XC are skipped: Android uses them for pseudo-locales.
+        if (lang.equals("en") && country.equals("XM")) {
+            return "English (Colemak)";
+        } else if (lang.equals("en") && country.equals("XN")) {
+            return "English (Colemak-DH)";
+        } else if (lang.equals("en") && country.equals("XW")) {
+            return "English (Workman)";
+        } else if (lang.equals("en") && country.equals("XY")) {
+            return "English (AZERTY)";
+        } else if (lang.equals("en") && country.equals("XZ")) {
+            return "English (QWERTZ)";
+        } else if (lang.equals("en") && country.equals("DV")) {
             return "English (Dvorak)";
         } else if (lang.equals("en") && country.equals("EX")) {
                 return "English (4x11)";

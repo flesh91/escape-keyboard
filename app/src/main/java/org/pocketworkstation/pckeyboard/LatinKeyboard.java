@@ -750,6 +750,11 @@ public class LatinKeyboard extends Keyboard {
         return mCurrentlyInSpace;
     }
 
+    /** How far the finger has moved along space since it went down there (language swipe). */
+    int getSpaceDragDiff() {
+        return mSpaceDragLastDiff;
+    }
+
     void setPreferredLetters(int[] frequencies) {
         mPrefLetterFrequencies = frequencies;
         mPrefLetter = 0;
