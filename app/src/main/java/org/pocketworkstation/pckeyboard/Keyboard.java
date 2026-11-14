@@ -621,6 +621,11 @@ public class Keyboard {
             return popup.toString();
         }
 
+        /**
+         * The long-press panel. One that opens to the right (keys on the left half) lists the
+         * characters in the order the key face shows them: the long-press character drawn top
+         * left first, under the finger, then the shifted one drawn top right, then the rest.
+         */
         public Keyboard getPopupKeyboard(Context context, int padding) {
             if (popupCharacters == null) {
                 if (popupResId != 0) {
@@ -634,6 +639,15 @@ public class Keyboard {
 
             String popup = getPopupKeyboardContent(keyboard.isShiftCaps(), keyboard.isShifted(isSimpleUppercase), true);
             //Log.i(TAG, "getPopupKeyboard: popup='" + popup + "' for " + this);
+            if (!popupReversed && popup.length() >= 2
+                    && !keyboard.isShifted(isSimpleUppercase) && !keyboard.isShiftCaps()) {
+                int shiftChar = getPrimaryCode(false, true);
+                String alts = getPopupKeyboardContent(false, false, false);
+                if (alts.length() > 0 && popup.charAt(0) == shiftChar
+                        && popup.substring(1).equals(alts)) {
+                    popup = alts.charAt(0) + popup.substring(0, 1) + alts.substring(1);
+                }
+            }
             if (popup.length() > 0) {
                 int resId = popupResId;
                 if (resId == 0) resId = R.xml.kbd_popup_template;
