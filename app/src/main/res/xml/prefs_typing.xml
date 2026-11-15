@@ -89,6 +89,20 @@
 
     <PreferenceCategory
         android:title="@string/cat_sliding">
+        <SwitchPreferenceCompat
+        android:key="pref_gesture_typing"
+        android:title="@string/title_gesture_typing"
+        android:summary="@string/summary_gesture_typing"
+        android:persistent="true"
+        android:defaultValue="@bool/default_gesture_typing"
+        />
+        <SwitchPreferenceCompat
+        android:key="pref_gesture_trail"
+        android:dependency="pref_gesture_typing"
+        android:title="@string/title_gesture_trail"
+        android:persistent="true"
+        android:defaultValue="@bool/default_gesture_trail"
+        />
         <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
         android:key="pref_slide_keys_int"
         android:title="@string/title_slide_keys"

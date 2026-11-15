@@ -28,6 +28,7 @@
         android:paddingBottom="@dimen/keyboard_bottom_padding"
         android:background="@color/google_dark_bg"
         latin:shadowRadius="0"
+        latin:gestureTrailColors="@array/gesture_trail_google_dark"
         latin:keyTextColor="@color/google_dark_text"
         latin:keyPreviewBackground="@drawable/key_preview_google_dark"
         latin:keyPreviewTextColor="@color/google_dark_text"

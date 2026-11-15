@@ -531,6 +531,9 @@
     <string name="title_momentary_symbols">Slide from ?123</string>
     <string name="summary_momentary_symbols_true">\?123 switches when pressed: slide to a symbol and let go to type it and return to the letters</string>
     <string name="summary_momentary_symbols_false">\?123 switches when you let go</string>
+    <string name="title_gesture_typing">Gesture typing</string>
+    <string name="summary_gesture_typing">Slide a finger over the letters to type a word (Ukrainian, Russian, English). A swipe action that starts on a letter needs a quick, straight swipe</string>
+    <string name="title_gesture_trail">Show the gesture trail</string>
     <string name="title_slide_keys">Sliding key events</string>
     <!-- Values are a bitmap, see use in PointerTracker -->
     <string-array name="slide_keys_entries">
@@ -946,4 +949,21 @@
     <string name="title_macro_keys">Keys in the row</string>
     <string name="message_macro_keys">Separate keys with spaces.\n\nNames: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nCombinations: Ctrl+C, Alt+F.\nEditing: Copy, Cut, Paste, SelectAll, SelectWord, Undo, Redo, DelWord.\nPanels: Clipboard, Emoji, Voice, OneHand.\nDate, Time, DateTime; a format after a colon: Date:dd.MM.yyyy, DateTime:\"d MMM HH:mm\".\nMedia: Play, Next, Prev, VolUp, VolDown, Mute.\nAny single character: | ~ /\nText in quotes is typed as is: \"sudo \", \"| grep \", \"\\n\" for a new line.</string>
     <string name="default_macro_keys" translatable="false">Esc Tab Ctrl Alt | ~ / - \"sudo \" \"| grep \"</string>
+    <!-- Voice input app: where the mic key sends voice input. The choices after Automatic are
+         built from the installed apps; %1$s is an app or keyboard name -->
+    <string name="title_voice_engine">Voice input app</string>
+    <string name="voice_engine_auto">Automatic (first voice typing keyboard)</string>
+    <string name="voice_engine_ime_voice">%1$s (voice typing)</string>
+    <!-- %2$s: the name of one of the keyboard's voice typing modes, e.g. its language -->
+    <string name="voice_engine_ime_voice_subtype">%1$s (voice typing, %2$s)</string>
+    <string name="voice_engine_ime">%1$s (keyboard)</string>
+    <string name="voice_engine_recognizer">%1$s (speech recognition)</string>
+    <string name="voice_engine_unavailable">The chosen app is no longer available, Automatic is used</string>
+    <string name="voice_engine_failed">Couldn\'t start speech recognition</string>
+    <string-array name="voice_engine_entries">
+        <item>@string/voice_engine_auto</item>
+    </string-array>
+    <string-array name="voice_engine_values" translatable="false">
+        <item>auto</item>
+    </string-array>
 </resources>

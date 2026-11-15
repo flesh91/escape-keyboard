@@ -237,6 +237,9 @@
     <string name="title_momentary_symbols">Ковзання з ?123</string>
     <string name="summary_momentary_symbols_true">\?123 перемикає одразу після натискання: проведіть до символу й відпустіть — символ введеться, і повернуться літери</string>
     <string name="summary_momentary_symbols_false">\?123 перемикає, коли відпускаєте палець</string>
+    <string name="title_gesture_typing">Набір жестами</string>
+    <string name="summary_gesture_typing">Ведіть пальцем по літерах, щоб набрати слово (українська, російська, англійська). Дія проведення, що починається з літери, спрацює лише від швидкого прямого руху</string>
+    <string name="title_gesture_trail">Показувати слід жесту</string>
     <string name="title_slide_keys">Клавіші під час ковзання</string>
     <string-array name="slide_keys_entries">
         <item>Ігнорувати клавіші під час ковзання (рекомендовано)</item>
@@ -535,4 +538,12 @@
     <string name="summary_macro_row_false">Вимкнено</string>
     <string name="title_macro_keys">Клавіші ряду</string>
     <string name="message_macro_keys">Клавіші через пробіл.\n\nНазви: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбінації: Ctrl+C, Alt+F.\nРедагування: Copy, Cut, Paste, SelectAll, SelectWord, Undo, Redo, DelWord.\nПанелі: Clipboard, Emoji, Voice, OneHand.\nDate, Time, DateTime; формат — після двокрапки: Date:dd.MM.yyyy, DateTime:\"d MMM HH:mm\".\nМедіа: Play, Next, Prev, VolUp, VolDown, Mute.\nБудь-який окремий символ: | ~ /\nТекст у лапках вводиться як є: \"sudo \", \"| grep \", \"\\n\" — новий рядок.</string>
+    <string name="title_voice_engine">Програма голосового введення</string>
+    <string name="voice_engine_auto">Автоматично (перша клавіатура голосового введення)</string>
+    <string name="voice_engine_ime_voice">%1$s (голосове введення)</string>
+    <string name="voice_engine_ime_voice_subtype">%1$s (голосове введення, %2$s)</string>
+    <string name="voice_engine_ime">%1$s (клавіатура)</string>
+    <string name="voice_engine_recognizer">%1$s (розпізнавання мовлення)</string>
+    <string name="voice_engine_unavailable">Вибрана програма більше недоступна, використовується «Автоматично»</string>
+    <string name="voice_engine_failed">Не вдалося запустити розпізнавання мовлення</string>
 </resources>

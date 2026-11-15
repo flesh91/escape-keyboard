@@ -1,3 +1,8 @@
+/*
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
+ * Licensed under the Apache License, Version 2.0
+ */
+
 package org.pocketworkstation.pckeyboard;
 
 import java.util.HashMap;
@@ -71,10 +76,17 @@ public final class GlobalKeyboardSettings {
     // ?123 switches as soon as it's pressed: slide to a symbol and let go to type it and
     // come back to the letters (also read by KeyboardSwitcher and LatinKeyboardBaseView)
     public boolean momentarySymbols = false;
+    // Words typed by tracing them over the letters (gesture typing), and its trail
+    // (also read by LatinKeyboardBaseView)
+    public boolean gestureTyping = false;
+    public boolean gestureTrail = true;
     // The emoji panel closes after an emoji is picked, back to the keys it covered
     public boolean emojiCloseAfterPick = false;
     // Text copied in the last minute is offered once as the first item of the suggestion strip
     public boolean clipboardOffer = false;
+    // Where the mic key sends voice input: "auto", "ime:<id>[:<subtype hash>]" or
+    // "recognizer:<component>" (see VoiceEngines)
+    public String voiceEngine = VoiceEngines.AUTO;
     //
     // Read by Suggest
     // How different a dictionary word may be from the typed one to replace it:
@@ -147,6 +159,8 @@ public final class GlobalKeyboardSettings {
     // Auto pref implementation follows
     private Map<String, BooleanPref> mBoolPrefs = new HashMap<String, BooleanPref>();
     private Map<String, StringPref> mStringPrefs = new HashMap<String, StringPref>();
+    static final String PREF_GESTURE_TYPING = "pref_gesture_typing";
+
     public static final int FLAG_PREF_NONE = 0;
     public static final int FLAG_PREF_NEED_RELOAD = 0x1;
     public static final int FLAG_PREF_NEW_PUNC_LIST = 0x2;
@@ -233,6 +247,12 @@ public final class GlobalKeyboardSettings {
             public void set(String val) { spaceSwipeCursor = "cursor".equals(val); }
             public String getDefault() { return "language"; }
             public int getFlags() { return FLAG_PREF_RESET_KEYBOARDS; } // the space bar's arrows
+        });
+
+        addStringPref(VoiceEngines.PREF_KEY, new StringPref() {
+            public void set(String val) { voiceEngine = val; }
+            public String getDefault() { return VoiceEngines.AUTO; }
+            public int getFlags() { return FLAG_PREF_NONE; }
         });
 
         addStringPref("pref_delete_swipe", new StringPref() {
@@ -376,6 +396,18 @@ public final class GlobalKeyboardSettings {
         addBooleanPref("pref_momentary_symbols", new BooleanPref() {
             public void set(boolean val) { momentarySymbols = val; }
             public boolean getDefault() { return res.getBoolean(R.bool.default_momentary_symbols); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref(PREF_GESTURE_TYPING, new BooleanPref() {
+            public void set(boolean val) { gestureTyping = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_gesture_typing); }
+            public int getFlags() { return FLAG_PREF_NONE; }
+        });
+
+        addBooleanPref("pref_gesture_trail", new BooleanPref() {
+            public void set(boolean val) { gestureTrail = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_gesture_trail); }
             public int getFlags() { return FLAG_PREF_NONE; }
         });
 

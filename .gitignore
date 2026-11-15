@@ -21,3 +21,5 @@ keystore.properties
 /app/.cxx
 __pycache__/
 *.pyc
+# gesture word list sources (tools/gesture-dict/build.py)
+tools/gesture-dict/.cache/

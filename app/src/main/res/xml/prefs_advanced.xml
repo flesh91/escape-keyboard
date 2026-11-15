@@ -48,5 +48,13 @@
         android:entries="@array/voice_input_modes"
         android:defaultValue="@string/voice_mode_symbols"
         />
+        <org.pocketworkstation.pckeyboard.AutoSummaryListPreference
+        android:key="pref_voice_engine"
+        android:title="@string/title_voice_engine"
+        android:persistent="true"
+        android:entries="@array/voice_engine_entries"
+        android:entryValues="@array/voice_engine_values"
+        android:defaultValue="auto"
+        />
 
 </PreferenceScreen>

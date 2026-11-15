@@ -17,9 +17,12 @@
 
 package org.pocketworkstation.pckeyboard;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -28,6 +31,7 @@ import android.text.AutoText;
 import android.text.InputType;
 import android.util.Log;
 
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -215,6 +219,7 @@ public class LatinIMESettings extends SettingsActivity
 
             updateSummaries();
             updateVoiceModeSummary();
+            updateVoiceEngineChoices();
 
             ListPreference renderMode = findPreference(LatinIME.PREF_RENDER_MODE);
             if (renderMode != null && LatinKeyboardBaseView.sSetRenderMode == null) {
@@ -248,6 +253,34 @@ public class LatinIMESettings extends SettingsActivity
                     LatinIME.sKeyboardSettings.editorPackageName,
                     inputTypeDesc(LatinIME.sKeyboardSettings.editorInputType)
                     ));
+        }
+
+        /** Built each time: keyboards and recognizer apps come and go. */
+        private void updateVoiceEngineChoices() {
+            ListPreference engine = findPreference(VoiceEngines.PREF_KEY);
+            if (engine == null) return;
+            List<CharSequence> labels = new ArrayList<>();
+            List<CharSequence> values = new ArrayList<>();
+            VoiceEngines.listChoices(requireContext(), labels, values);
+            engine.setEntries(labels.toArray(new CharSequence[0]));
+            engine.setEntryValues(values.toArray(new CharSequence[0]));
+            // A keyboard whose voice subtype changed is still the one the mic key uses: the
+            // choice follows it, as the keyboard does (VoiceEngines.resolveIme)
+            String value = engine.getValue();
+            if (value != null && value.startsWith(VoiceEngines.PREFIX_IME)
+                    && engine.findIndexOfValue(value) < 0) {
+                VoiceEngines.ImeChoice choice = VoiceEngines.resolveIme(requireContext(),
+                        (InputMethodManager) requireContext().getSystemService(
+                                Context.INPUT_METHOD_SERVICE), value);
+                if (choice != null && engine.findIndexOfValue(choice.value()) >= 0) {
+                    engine.setValue(choice.value());
+                }
+            }
+            // The keyboard falls back to Automatic then; the saved choice is kept in case
+            // the app comes back
+            if (engine.findIndexOfValue(engine.getValue()) < 0) {
+                engine.setSummary(R.string.voice_engine_unavailable);
+            }
         }
 
         private void updateVoiceModeSummary() {

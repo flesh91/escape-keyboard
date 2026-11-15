@@ -42,6 +42,8 @@ import android.graphics.drawable.InsetDrawable;
 import android.graphics.drawable.StateListDrawable;
 
 import org.pocketworkstation.pckeyboard.Keyboard.Key;
+import org.pocketworkstation.pckeyboard.gesture.GestureParams;
+import org.pocketworkstation.pckeyboard.gesture.GesturePath;
 
 import android.os.Build;
 import android.os.Handler;
@@ -57,7 +59,9 @@ import android.view.MotionEvent;
 import android.view.RoundedCorner;
 import android.view.View;
 import android.view.WindowInsets;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
+import android.view.ViewParent;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
@@ -175,6 +179,28 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         boolean swipeUp();
     }
 
+    /** Gesture typing: words traced over the letter keys (see PointerTracker). */
+    public interface GestureListener {
+        /**
+         * May a touch on a letter become a gesture now (setting, field, language, mode, the
+         * word list laid onto this keyboard)?
+         */
+        boolean isGestureTypingAllowed(Keyboard keyboard);
+
+        void onGestureStarted();
+
+        /**
+         * The finger lifted: the path is in key coordinates of the keyboard. False when it
+         * was no word and nothing was typed.
+         */
+        boolean onGestureCompleted(GesturePath path, Keyboard keyboard);
+
+        void onGestureCanceled();
+
+        /** The keys were laid out anew (a new keyboard, or a new width). */
+        void onKeyboardGeometryChanged(Keyboard keyboard);
+    }
+
     // Timing constants
     private final int mKeyRepeatInterval;
 
@@ -274,6 +300,20 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
 
     /** Listener for {@link OnKeyboardActionListener}. */
     private OnKeyboardActionListener mKeyboardActionListener;
+
+    // Gesture typing, main keyboard only (not on popups or the extension row). The tracker
+    // of the gesture going on, pointers that went down during it (ignored to the end, by
+    // id bit), and the trail drawn in the parent's overlay.
+    private GestureListener mGestureListener;
+    private PointerTracker mGestureTracker;
+    private int mIgnoredPointers;
+    // Median width and height of the letter keys, px (0: not measured for these keys yet)
+    private float mGestureKeyWidth;
+    private float mGestureKeyHeight;
+    private GestureTrailDrawable mTrail;
+    // The theme's trail palette (an <array> of colours), 0 for the default one
+    private int mGestureTrailColors;
+    private ViewGroup mTrailHost;
 
     private final ArrayList<PointerTracker> mPointerTrackers = new ArrayList<PointerTracker>();
     private boolean mIgnoreMove = false;
@@ -467,7 +507,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             LinkedList<PointerTracker> queue = mQueue;
             int oldestPos = 0;
             for (PointerTracker t = queue.get(oldestPos); t != tracker; t = queue.get(oldestPos)) {
-                if (t.isModifier()) {
+                if (t.isModifier() || t.isInGesture()) {
                     oldestPos++;
                 } else {
                     t.onUpEvent(t.getLastX(), t.getLastY(), eventTime);
@@ -479,19 +519,42 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         }
 
         public void releaseAllPointersExcept(PointerTracker tracker, long eventTime) {
+            // A gesture goes on (a Shift held for it was let go): it ends when its finger lifts
+            PointerTracker gesture = null;
             for (PointerTracker t : mQueue) {
                 if (t == tracker)
                     continue;
+                if (t.isInGesture()) {
+                    gesture = t;
+                    continue;
+                }
                 t.onUpEvent(t.getLastX(), t.getLastY(), eventTime);
                 t.setAlreadyProcessed();
             }
             mQueue.clear();
+            if (gesture != null)
+                mQueue.add(gesture);
             if (tracker != null)
                 mQueue.add(tracker);
         }
 
+        /** No pointer but this one is down, or only on modifier keys (Shift held for a gesture). */
+        public boolean onlyModifiersExcept(PointerTracker tracker) {
+            for (PointerTracker t : mQueue) {
+                if (t != tracker && !t.isModifier())
+                    return false;
+            }
+            return true;
+        }
+
         public void remove(PointerTracker tracker) {
             mQueue.remove(tracker);
+        }
+
+        public void dropGestureCandidates() {
+            for (PointerTracker t : mQueue) {
+                t.dropGestureCandidate();
+            }
         }
 
         public boolean isInSlidingKeyInput() {
@@ -582,6 +645,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
                 mFunctionLabelPlain = a.getBoolean(attr, false);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyboardPlateColor)
                 mKeyboardPlateColor = a.getColor(attr, 0);
+            else if(attr== R.styleable.LatinKeyboardBaseView_gestureTrailColors)
+                mGestureTrailColors = a.getResourceId(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keySpaceTextColor)
                 mKeySpaceTextColor = a.getColor(attr, 0);
             else if(attr== R.styleable.LatinKeyboardBaseView_keyHysteresisDistance)
@@ -673,6 +738,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             @Override
             public boolean onFling(MotionEvent me1, MotionEvent me2, float velocityX,
                     float velocityY) {
+                // A gesture typing a word is not a swipe, unless quick, straight and long
+                if (mGestureTracker != null && !isDeliberateFling(me1, me2)) return false;
                 final float absX = Math.abs(velocityX);
                 final float absY = Math.abs(velocityY);
                 float deltaX = me2.getX() - me1.getX();
@@ -748,6 +815,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
      * @param keyboard the keyboard to display in this view
      */
     public void setKeyboard(Keyboard keyboard) {
+        cancelGestureIfAny();
+        mGestureKeyWidth = 0;
         if (mKeyboard != null) {
             dismissKeyPreview();
         }
@@ -1014,6 +1083,11 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             onBufferDraw(canvas);
         }
         if (mBuffer != null) canvas.drawBitmap(mBuffer, 0, 0, null);
+        // The trail, when there is no parent to draw it over the keys
+        if (mTrail != null && mTrailHost == null && mGestureTracker != null) {
+            mTrail.setOffset(getPaddingLeft(), getPaddingTop());
+            mTrail.draw(canvas);
+        }
     }
     
     /** "2 ABC": the label and a smaller sub label after it, centred together on x. */
@@ -1279,6 +1353,11 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         //Log.i(TAG, "onBufferDraw called");
         if (/*mBuffer == null ||*/ mKeyboardChanged) {
             mKeyboard.setKeyboardWidth(mViewWidth);
+            // The keys have their final places now
+            if (mGestureListener != null) {
+                mGestureKeyWidth = 0;
+                mGestureListener.onKeyboardGeometryChanged(mKeyboard);
+            }
 //            if (mBuffer == null || mKeyboardChanged &&
 //                    (mBuffer.getWidth() != getWidth() || mBuffer.getHeight() != getHeight())) {
 //                // Make sure our bitmap is at least 1x1
@@ -2049,6 +2128,179 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         return false;
     }
     
+    /** Gesture typing on this keyboard (the main one); null turns it off. */
+    public void setGestureListener(GestureListener listener) {
+        mGestureListener = listener;
+    }
+
+    /*package*/ boolean isGestureInProgress() {
+        return mGestureTracker != null;
+    }
+
+    private boolean isIgnoredPointer(int id) {
+        return id < 32 && (mIgnoredPointers & (1 << id)) != 0;
+    }
+
+    public boolean canStartGesture(PointerTracker tracker, Key key) {
+        if (mGestureListener == null || mMiniKeyboardVisible || isInKeyboardSwap()) return false;
+        if (key.codes == null || key.codes.length == 0 || key.text != null || key.modifier
+                || !Character.isLetter(key.codes[0])) {
+            return false;
+        }
+        return mPointerQueue.onlyModifiersExcept(tracker)
+                && mGestureListener.isGestureTypingAllowed(mKeyboard);
+    }
+
+    private boolean measureLetterKeys() {
+        if (mGestureKeyWidth > 0) return true;
+        if (mKeys == null) return false;
+        ArrayList<Integer> widths = new ArrayList<Integer>();
+        ArrayList<Integer> heights = new ArrayList<Integer>();
+        for (Key key : mKeys) {
+            if (key.codes != null && key.codes.length > 0 && !key.modifier
+                    && Character.isLetter(key.codes[0])) {
+                widths.add(key.width);
+                heights.add(key.height);
+            }
+        }
+        if (widths.isEmpty()) return false;
+        Collections.sort(widths);
+        Collections.sort(heights);
+        mGestureKeyWidth = Math.max(1, widths.get(widths.size() / 2));
+        mGestureKeyHeight = Math.max(1, heights.get(heights.size() / 2));
+        return true;
+    }
+
+    /**
+     * Far enough from the down point for a gesture: in key widths across and key heights
+     * down, as the decoder measures it (keys are taller than wide in portrait), so a slide
+     * that starts one is never too short for the decoder; and a few dp at least.
+     */
+    public boolean isGestureStart(int dx, int dy) {
+        if (!measureLetterKeys()) return false;
+        final float kx = dx / mGestureKeyWidth;
+        final float ky = dy / mGestureKeyHeight;
+        final float start = Math.max(GestureParams.GESTURE_START_DIST, GestureParams.MIN_GESTURE_LEN);
+        if (kx * kx + ky * ky < start * start) return false;
+        final float minPx = GestureParams.GESTURE_START_MIN_DP * getResources().getDisplayMetrics().density;
+        return dx * dx + dy * dy >= minPx * minPx;
+    }
+
+    /** Length of a path in key units (as isGestureStart measures). */
+    private float keyUnitLength(GesturePath path) {
+        if (!measureLetterKeys()) return 0;
+        float len = 0;
+        for (int i = 1; i < path.size(); i++) {
+            len += (float) Math.hypot((path.getX(i) - path.getX(i - 1)) / mGestureKeyWidth,
+                    (path.getY(i) - path.getY(i - 1)) / mGestureKeyHeight);
+        }
+        return len;
+    }
+
+    public void onGestureStart(PointerTracker tracker) {
+        mGestureTracker = tracker;
+        mHandler.cancelKeyTimers();
+        if (LatinIME.sKeyboardSettings.gestureTrail) {
+            attachTrail();
+            mTrail.start();
+        }
+        mGestureListener.onGestureStarted();
+    }
+
+    public void onGestureMove(PointerTracker tracker, GesturePath path) {
+        if (mTrail == null || !LatinIME.sKeyboardSettings.gestureTrail) return;
+        mTrail.update(path);
+        if (mTrailHost == null) invalidate();
+    }
+
+    public boolean onGestureEnd(PointerTracker tracker, GesturePath path) {
+        mGestureTracker = null;
+        if (mTrail != null) {
+            if (mTrailHost != null) {
+                mTrail.finish();
+            } else {
+                mTrail.clear();
+                invalidate();
+            }
+        }
+        // A short slide that is no word: a tap that slid, its key is typed (by the tracker)
+        return !mGestureListener.onGestureCompleted(path, mKeyboard)
+                && keyUnitLength(path) < GestureParams.GESTURE_TAP_FALLBACK_LEN;
+    }
+
+    public void onGestureCancel(PointerTracker tracker) {
+        mGestureTracker = null;
+        if (mTrail != null) {
+            mTrail.clear();
+            if (mTrailHost == null) invalidate();
+        }
+        mGestureListener.onGestureCanceled();
+    }
+
+    /** Drops the gesture going on, if any: nothing is typed, the trail goes away. */
+    private void cancelGestureIfAny() {
+        if (mGestureTracker == null) return;
+        final PointerTracker tracker = mGestureTracker;
+        tracker.cancelGesture();
+        onGestureCancel(tracker);
+    }
+
+    /** A swipe that starts on a letter is one only when quick, straight and long. */
+    private boolean isDeliberateFling(MotionEvent me1, MotionEvent me2) {
+        if (me1 == null || me2 == null) return false;
+        if (me2.getEventTime() - me1.getEventTime() > GestureParams.FLING_MAX_MS) return false;
+        final float chord = (float) Math.hypot(me2.getX() - me1.getX(), me2.getY() - me1.getY());
+        final float travel = mGestureTracker.getGestureLength();
+        if (travel <= 0 || chord / travel < GestureParams.FLING_STRAIGHTNESS) return false;
+        final int travelMin = Math.min(getWidth() / 3, getHeight() / 3);
+        return chord >= Math.max(travelMin, 0.5f * Math.min(getWidth(), getHeight()));
+    }
+
+    /**
+     * Puts the trail into the overlay of the parent (the panel holding the suggestion strip
+     * and the keys): redrawing it there leaves the keys' software layer alone. Without a
+     * parent the keyboard draws it itself (onDraw).
+     */
+    private void attachTrail() {
+        if (mTrail == null) {
+            mTrail = new GestureTrailDrawable(getResources().getDisplayMetrics().density);
+        }
+        mTrail.setColors(loadTrailColors());
+        final ViewParent parent = getParent();
+        if (parent instanceof ViewGroup) {
+            final ViewGroup host = (ViewGroup) parent;
+            if (mTrailHost != host) {
+                detachTrail();
+                host.getOverlay().add(mTrail);
+                mTrailHost = host;
+            }
+            mTrail.setBounds(0, 0, host.getWidth(), host.getHeight());
+            mTrail.setOffset(getLeft() + getPaddingLeft(), getTop() + getPaddingTop());
+        } else {
+            detachTrail();
+        }
+    }
+
+    /** The theme's trail palette, or the default one when the theme sets none. */
+    private int[] loadTrailColors() {
+        final int id = mGestureTrailColors != 0 ? mGestureTrailColors : R.array.gesture_trail_default;
+        final TypedArray colors = getResources().obtainTypedArray(id);
+        try {
+            final int[] result = new int[Math.max(1, colors.length())];
+            for (int i = 0; i < result.length; i++) result[i] = colors.getColor(i, 0xFF33B5E5);
+            return result;
+        } finally {
+            colors.recycle();
+        }
+    }
+
+    private void detachTrail() {
+        if (mTrailHost != null && mTrail != null) {
+            mTrailHost.getOverlay().remove(mTrail);
+        }
+        mTrailHost = null;
+    }
+
     private PointerTracker getPointerTracker(final int id) {
         final ArrayList<PointerTracker> pointers = mPointerTrackers;
         final Key[] keys = mKeys;
@@ -2092,6 +2344,11 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         mOldPointerCount = pointerCount;
         // A new touch starts on the keyboard the view is laid out for (see getTouchY)
         if (action == MotionEvent.ACTION_DOWN) mSwapBottomOnScreen = -1;
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_CANCEL) {
+            // A new touch, or all of them gone: no gesture or ignored pointer is left over
+            mIgnoredPointers = 0;
+            cancelGestureIfAny();
+        }
         mTouchDown = action != MotionEvent.ACTION_UP && action != MotionEvent.ACTION_CANCEL;
         mSwapShiftY = 0;
         
@@ -2108,6 +2365,8 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         // Gesture detector must be enabled only when mini-keyboard is not on the screen.
         if (!mMiniKeyboardVisible
                 && mGestureDetector != null && mGestureDetector.onTouchEvent(me)) {
+            // A swipe action took the touch (its up event never reaches the tracker)
+            cancelGestureIfAny();
             dismissKeyPreview();
             mHandler.cancelKeyTimers();
             return true;
@@ -2179,7 +2438,20 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         if (action == MotionEvent.ACTION_MOVE) {
             if (!mIgnoreMove) {
                 for (int i = 0; i < pointerCount; i++) {
-                    PointerTracker tracker = getPointerTracker(me.getPointerId(i));
+                    final int pointerId = me.getPointerId(i);
+                    // During a gesture only its own finger counts
+                    if (mGestureTracker != null || isIgnoredPointer(pointerId)) {
+                        if (getPointerTracker(pointerId) != mGestureTracker) continue;
+                    }
+                    PointerTracker tracker = getPointerTracker(pointerId);
+                    if (tracker.isGestureCandidate()) {
+                        // The points between two move events make a smoother path
+                        for (int h = 0; h < me.getHistorySize(); h++) {
+                            tracker.addGestureHistoryPoint((int)me.getHistoricalX(i, h) - padLeft,
+                                    (int)me.getHistoricalY(i, h) - getPaddingTop(),
+                                    me.getHistoricalEventTime(h));
+                        }
+                    }
                     tracker.onMoveEvent((int)me.getX(i) - padLeft, getTouchY(me, i), eventTime);
                 }
             }
@@ -2188,11 +2460,20 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             switch (action) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
+                if (mGestureTracker != null && id < 32) {
+                    // Another finger during a gesture: ignored until it lifts
+                    mIgnoredPointers |= 1 << id;
+                    break;
+                }
                 mIgnoreMove = false;
                 onDownEvent(tracker, x, y, eventTime);
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
+                if (isIgnoredPointer(id)) {
+                    mIgnoredPointers &= ~(1 << id);
+                    break;
+                }
                 mIgnoreMove = false;
                 onUpEvent(tracker, x, y, eventTime);
                 break;
@@ -2212,6 +2493,9 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
             // Before processing a down event of modifier key, all pointers already being tracked
             // should be released.
             mPointerQueue.releaseAllPointersExcept(null, eventTime);
+        } else {
+            // A gesture starts only while its finger is the only one on a key
+            mPointerQueue.dropGestureCandidates();
         }
         tracker.onDownEvent(x, y, eventTime);
         mPointerQueue.add(tracker);
@@ -2258,6 +2542,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
 
     public void closing() {
         Log.i(TAG, "closing " + this);
+        cancelGestureIfAny();
         if (mPreviewPopup != null) mPreviewPopup.dismiss();
         mHandler.cancelAllMessages();
 
@@ -2283,6 +2568,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         super.onDetachedFromWindow();
         //Log.i(TAG, "onDetachedFromWindow() for " + this);
         closing();
+        detachTrail();
     }
 
     protected boolean popupKeyboardIsShowing() {
@@ -2290,6 +2576,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
     }
 
     protected void dismissPopupKeyboard() {
+        cancelGestureIfAny();
         if (mMiniKeyboardPopup != null) {
             //Log.i(TAG, "dismissPopupKeyboard() " + mMiniKeyboardPopup + " showing=" + mMiniKeyboardPopup.isShowing());
             if (mMiniKeyboardPopup.isShowing()) {

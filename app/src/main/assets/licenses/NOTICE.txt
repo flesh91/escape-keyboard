@@ -42,3 +42,17 @@ Third-party components, all under the Apache License, Version 2.0:
     Copyright Google LLC
   Material Design icons
     Copyright Google LLC
+
+Gesture typing word lists
+  The word lists for gesture (swipe) typing (assets/gesture: uk.txt, ru.txt,
+  en.txt) are adapted from the "large" word frequency lists of wordfreq 3.1.1
+  by Robyn Speer (https://github.com/rspeer/wordfreq,
+  https://pypi.org/project/wordfreq/3.1.1/), the same data as the dictionaries
+  above, with the same attributions. These files are licensed under the
+  Creative Commons Attribution-ShareAlike 4.0 International license
+  (https://creativecommons.org/licenses/by-sa/4.0/); they are separate data
+  files and the Apache License 2.0 does not apply to them. Changes: words
+  filtered to the letters of each language, apostrophes normalized, words
+  common in the other Cyrillic language left out, some spellings corrected
+  (hyphens, apostrophes, capitalization), common hyphenated words added,
+  frequencies scaled to 1..255. Build script: tools/gesture-dict/build.py.

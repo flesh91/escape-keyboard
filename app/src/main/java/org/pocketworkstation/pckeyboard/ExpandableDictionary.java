@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009 The Android Open Source Project
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,6 +210,34 @@ public class ExpandableDictionary extends Dictionary {
         }
         final int freq = getWordFrequency(word);
         return freq > -1;
+    }
+
+    /** Receives the words of {@link #forEachWord}. */
+    interface WordVisitor {
+        void visit(char[] word, int length, int frequency);
+    }
+
+    /**
+     * Visits every word with its frequency (gesture typing takes a copy of the user's words).
+     * Returns false, visiting nothing, while the words are being (re)loaded.
+     */
+    public synchronized boolean forEachWord(WordVisitor visitor) {
+        synchronized (mUpdatingLock) {
+            if (mUpdatingDictionary) return false;
+        }
+        visitWords(mRoots, new char[MAX_WORD_LENGTH], 0, visitor);
+        return true;
+    }
+
+    private static void visitWords(NodeArray children, char[] word, int depth,
+            WordVisitor visitor) {
+        if (children == null || depth >= word.length) return;
+        for (int i = 0; i < children.length; i++) {
+            final Node node = children.data[i];
+            word[depth] = node.code;
+            if (node.terminal) visitor.visit(word, depth + 1, node.frequency);
+            visitWords(node.children, word, depth + 1, visitor);
+        }
     }
 
     /**

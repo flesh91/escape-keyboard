@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -652,6 +653,16 @@ public class LatinKeyboardView extends LatinKeyboardBaseView {
         if (handleOneHandButtons(me)) return true;
         if (handleSpaceCursor(me)) return true;
         if (handleDeleteSwipe(me)) return true;
+        // A gesture typing a word: its long fast moves are not sudden jumps, and going above
+        // the keys does not open the extension row. Nor is the rest of the touch looked at
+        // for jumps: the last position kept for that is from before the gesture.
+        if (isGestureInProgress()) {
+            final int action = me.getActionMasked();
+            mDisableDisambiguation = action != MotionEvent.ACTION_UP
+                    && action != MotionEvent.ACTION_CANCEL;
+            mDroppingEvents = false;
+            return super.onTouchEvent(me);
+        }
 
         // If an extension keyboard is visible or this is an extension keyboard, don't look
         // for sudden jumps. Otherwise, if there was a sudden jump, return without processing the

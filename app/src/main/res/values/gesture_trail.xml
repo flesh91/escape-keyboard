@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gesture typing trail palettes (gestureTrailColors): the head of the trail takes the first
+     colour, the tail the last. Each theme takes its colours from its own accent keys; the
+     trail draws a darker edge under each colour by itself, like the side of a keycap. -->
+<resources>
+    <!-- Themes without accent keys: blue into violet -->
+    <array name="gesture_trail_default">
+        <item>#FF33B5E5</item>
+        <item>#FFAA66CC</item>
+    </array>
+    <!-- Keycap: the Enter, Space and Esc caps -->
+    <array name="gesture_trail_keycap">
+        <item>@color/keycap_enter</item>
+        <item>@color/keycap_space</item>
+        <item>@color/keycap_esc</item>
+    </array>
+    <array name="gesture_trail_keycap_dark">
+        <item>@color/keycap_dark_enter</item>
+        <item>@color/keycap_dark_space</item>
+        <item>@color/keycap_dark_esc</item>
+    </array>
+    <!-- Mechanical: the amber Enter into the red Esc -->
+    <array name="gesture_trail_mech">
+        <item>@color/mech_enter_hl</item>
+        <item>@color/mech_enter</item>
+        <item>@color/mech_esc</item>
+    </array>
+    <array name="gesture_trail_mech_dark">
+        <item>@color/mech_dark_enter_hl</item>
+        <item>@color/mech_dark_enter</item>
+        <item>@color/mech_dark_esc</item>
+    </array>
+    <!-- Retro terminal: a glowing amber -->
+    <array name="gesture_trail_retro">
+        <item>#FFE08A3C</item>
+        <item>@color/retro_esc_hi</item>
+        <item>@color/retro_esc</item>
+    </array>
+    <array name="gesture_trail_retro_dark">
+        <item>#FFFFD27A</item>
+        <item>@color/retro_dark_esc_hi</item>
+        <item>@color/retro_dark_esc</item>
+    </array>
+    <!-- Real keycaps: the warm accent of the photo -->
+    <array name="gesture_trail_photo">
+        <item>#FFF5A33A</item>
+        <item>#FFE0703A</item>
+        <item>#FFD9473D</item>
+    </array>
+    <!-- Google-like themes: the accent blue into violet -->
+    <array name="gesture_trail_google_light">
+        <item>@color/google_light_active</item>
+        <item>#FF8E5BE8</item>
+    </array>
+    <array name="gesture_trail_google_dark">
+        <item>@color/google_dark_active</item>
+        <item>#FFD0BCFF</item>
+    </array>
+    <!-- iOS-like themes: the accent blue into indigo -->
+    <array name="gesture_trail_ios_light">
+        <item>@color/ios_light_active</item>
+        <item>#FF5E5CE6</item>
+    </array>
+    <array name="gesture_trail_ios_dark">
+        <item>@color/ios_dark_active</item>
+        <item>#FF7D7AFF</item>
+    </array>
+</resources>

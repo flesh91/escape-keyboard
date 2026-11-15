@@ -18,6 +18,8 @@
 package org.pocketworkstation.pckeyboard;
 
 import org.pocketworkstation.pckeyboard.LatinIMEUtil.RingCharBuffer;
+import org.pocketworkstation.pckeyboard.gesture.GesturePath;
+import org.pocketworkstation.pckeyboard.gesture.GestureResult;
 
 import com.google.android.voiceime.VoiceRecognitionTrigger;
 
@@ -30,6 +32,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ClipboardManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -123,6 +126,7 @@ import java.util.regex.Matcher;
 public class LatinIME extends InputMethodService implements
         ComposeSequencing,
         LatinKeyboardBaseView.OnKeyboardActionListener,
+        LatinKeyboardBaseView.GestureListener,
         SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = "PCKeyboardIME";
     static Map<Integer, String> ESC_SEQUENCES;
@@ -354,6 +358,12 @@ public class LatinIME extends InputMethodService implements
 
     private VoiceRecognitionTrigger mVoiceRecognitionTrigger;
 
+    // Gesture typing (pref_gesture_typing): the word of the last gesture is still composing
+    // text, so a tap on an alternative in the strip replaces it and Backspace takes it whole
+    private GestureTypingEngine mGestureEngine;
+    private boolean mGestureComposing;
+    private int mGestureShiftState;
+
     public abstract static class WordAlternatives {
         protected CharSequence mChosenWord;
 
@@ -426,6 +436,7 @@ public class LatinIME extends InputMethodService implements
         KeyboardSwitcher.init(this);
         super.onCreate();
         sInstance = this;
+        mGestureEngine = new GestureTypingEngine(this);
         // setStatusIcon(R.drawable.ime_qwerty);
         mResources = getResources();
         final Configuration conf = mResources.getConfiguration();
@@ -487,6 +498,8 @@ public class LatinIME extends InputMethodService implements
         mVolUpAction = prefs.getString(PREF_VOL_UP, res.getString(R.string.default_vol_up));
         mVolDownAction = prefs.getString(PREF_VOL_DOWN, res.getString(R.string.default_vol_down));
         sKeyboardSettings.initPrefs(prefs, res);
+        mGestureEngine.setLanguage(inputLanguage);
+        mGestureEngine.setEnabled(sKeyboardSettings.gestureTyping);
 
         mVoiceRecognitionTrigger = new VoiceRecognitionTrigger(this);
         
@@ -1905,19 +1918,24 @@ public class LatinIME extends InputMethodService implements
 
     /**
      * Voice input: switch to an enabled voice typing keyboard (e.g. Google voice typing),
-     * which returns here when done. Escape Keyboard itself never records audio.
+     * which returns here when done, or to the one picked in "Voice input app", or ask the
+     * speech recognizer app picked there. Escape Keyboard itself never records audio.
      */
     private void startVoiceInput() {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        // A choice that is gone (app removed, keyboard turned off) falls back to Automatic
+        String engine = sKeyboardSettings.voiceEngine;
+        if (engine.startsWith(VoiceEngines.PREFIX_IME)) {
+            if (switchToChosenKeyboard(imm, engine)) return;
+        } else if (engine.startsWith(VoiceEngines.PREFIX_RECOGNIZER)) {
+            ComponentName recognizer = VoiceEngines.recognizer(this, engine);
+            if (recognizer != null && startRecognizer(recognizer)) return;
+        }
         for (InputMethodInfo imi : imm.getEnabledInputMethodList()) {
             if (imi.getPackageName().equals(getPackageName())) continue;
             for (InputMethodSubtype subtype : imm.getEnabledInputMethodSubtypeList(imi, true)) {
                 if (!"voice".equals(subtype.getMode())) continue;
-                if (Build.VERSION.SDK_INT >= 28) {
-                    switchInputMethod(imi.getId(), subtype);
-                } else if (mToken != null) {
-                    imm.setInputMethodAndSubtype(mToken, imi.getId(), subtype);
-                }
+                switchToKeyboard(imm, imi.getId(), subtype);
                 return;
             }
         }
@@ -1928,6 +1946,94 @@ public class LatinIME extends InputMethodService implements
         } catch (android.content.ActivityNotFoundException e) {
             // nothing to open
         }
+    }
+
+    /** Subtype null: the keyboard as it last was, for keyboards with no voice subtype. */
+    private void switchToKeyboard(InputMethodManager imm, String id, InputMethodSubtype subtype) {
+        if (Build.VERSION.SDK_INT >= 28) {
+            if (subtype != null) switchInputMethod(id, subtype);
+            else switchInputMethod(id);
+        } else if (mToken != null) {
+            if (subtype != null) imm.setInputMethodAndSubtype(mToken, id, subtype);
+            else imm.setInputMethod(mToken, id);
+        }
+    }
+
+    /**
+     * "ime:<id>[:<subtype hash>]": that keyboard's voice subtype, or the keyboard itself
+     * (VoiceEngines.resolveIme). False when it's no longer enabled.
+     */
+    private boolean switchToChosenKeyboard(InputMethodManager imm, String engine) {
+        VoiceEngines.ImeChoice choice = VoiceEngines.resolveIme(this, imm, engine);
+        if (choice == null) return false;
+        switchToKeyboard(imm, choice.id, choice.subtype);
+        return true;
+    }
+
+    // Text from a speech recognizer app, typed into the field the mic key was pressed in once
+    // that field is back (VoiceRecognitionActivity covers it meanwhile). Static, so the activity
+    // never holds the keyboard; used once, and only for a few seconds.
+    private static final long VOICE_RESULT_TIMEOUT_MS = 10000;
+    private static String sVoiceFieldPackage;
+    private static int sVoiceFieldId;
+    private static String sVoiceText;
+    private static long sVoiceTextUntil;
+
+    private boolean startRecognizer(ComponentName recognizer) {
+        EditorInfo editor = getCurrentInputEditorInfo();
+        if (editor == null) return false;
+        sVoiceFieldPackage = editor.packageName;
+        sVoiceFieldId = editor.fieldId;
+        sVoiceText = null;
+        Intent intent = new Intent(this, VoiceRecognitionActivity.class)
+                .putExtra(VoiceRecognitionActivity.EXTRA_RECOGNIZER, recognizer.flattenToString())
+                .putExtra(VoiceRecognitionActivity.EXTRA_LANGUAGE,
+                        sKeyboardSettings.inputLocale.toLanguageTag())
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
+
+    /** From VoiceRecognitionActivity: the recognized text, or null when there is none. */
+    static void onVoiceResult(String text) {
+        sVoiceText = text;
+        sVoiceTextUntil = SystemClock.uptimeMillis() + VOICE_RESULT_TIMEOUT_MS;
+        if (text == null) sVoiceFieldPackage = null;
+    }
+
+    @Override
+    public void onStartInput(EditorInfo attribute, boolean restarting) {
+        super.onStartInput(attribute, restarting);
+        if (sVoiceText == null || attribute == null) return;
+        if (SystemClock.uptimeMillis() > sVoiceTextUntil) {
+            sVoiceText = null;
+            sVoiceFieldPackage = null;
+            return;
+        }
+        if (!TextUtils.equals(attribute.packageName, sVoiceFieldPackage)
+                || attribute.fieldId != sVoiceFieldId) return;
+        final String text = sVoiceText;
+        sVoiceText = null;
+        sVoiceFieldPackage = null;
+        // After the start is done, like typing into the field
+        mHandler.post(() -> commitVoiceText(text));
+    }
+
+    private void commitVoiceText(String text) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return;
+        // Keep it apart from a word right before the cursor
+        CharSequence before = ic.getTextBeforeCursor(1, 0);
+        if (before != null && before.length() > 0
+                && (Character.isLetterOrDigit(before.charAt(0))
+                        || ".,;:!?".indexOf(before.charAt(0)) >= 0)) {
+            text = " " + text;
+        }
+        ic.commitText(text, 1);
     }
 
     /**
@@ -2227,6 +2333,7 @@ public class LatinIME extends InputMethodService implements
     private void resetPrediction() {
         mComposing.setLength(0);
         mPredicting = false;
+        mGestureComposing = false;
         mDeleteCount = 0;
         mJustAddedAutoSpace = false;
     }
@@ -2407,6 +2514,11 @@ public class LatinIME extends InputMethodService implements
         // requires correction
         checkReCorrectionOnStart();
 
+        if (sKeyboardSettings.gestureTyping) {
+            mGestureEngine.setLanguage(mLanguageSwitcher.getInputLanguage());
+            updateGestureWords();
+        }
+
 
     }
 
@@ -2447,6 +2559,7 @@ public class LatinIME extends InputMethodService implements
     public void onFinishInput() {
         super.onFinishInput();
         mSelecting = mSelectingCtrl = false;
+        mGestureComposing = false;
         mDeleteSwipeEnd = -1; // a swipe going on belongs to the old editor
         mDeleteSwipeText = null;
 
@@ -2496,6 +2609,7 @@ public class LatinIME extends InputMethodService implements
                 && (newSelStart != candidatesEnd || newSelEnd != candidatesEnd) && mLastSelectionStart != newSelStart)) {
             mComposing.setLength(0);
             mPredicting = false;
+            mGestureComposing = false;
             postUpdateSuggestions();
             TextEntryState.reset();
             InputConnection ic = getCurrentInputConnection();
@@ -2781,6 +2895,7 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void commitTyped(InputConnection inputConnection, boolean manual) {
+        mGestureComposing = false;
         // Punctuation the word only kept at its end ("tomorow." when the app takes the text):
         // the word is corrected as that punctuation would have done without keepAddresses,
         // then the punctuation follows it as typed
@@ -3645,6 +3760,11 @@ public class LatinIME extends InputMethodService implements
             mDeleteCount = 0;
         }
         mLastKeyTime = when;
+        // Any key but Backspace and Shift leaves the gesture's word as it is
+        if (mGestureComposing && primaryCode != Keyboard.KEYCODE_DELETE
+                && primaryCode != Keyboard.KEYCODE_SHIFT) {
+            commitGestureWord(ic);
+        }
         if (mSelecting && !isNavigationKey(primaryCode) && !keepsSelecting(primaryCode)) {
             endSelecting();
             if (primaryCode == Keyboard.KEYCODE_SHIFT) return; // that tap only ends the selection
@@ -3828,6 +3948,7 @@ public class LatinIME extends InputMethodService implements
         InputConnection ic = getCurrentInputConnection();
         if (ic == null)
             return;
+        if (mGestureComposing) commitGestureWord(ic);
         if (mPredicting && text.length() == 1) {
             // If adding a single letter, treat it as a regular keystroke so
             // that completion works as expected.
@@ -3853,6 +3974,159 @@ public class LatinIME extends InputMethodService implements
         mEnteredText = text;
     }
 
+    // Gesture typing (LatinKeyboardBaseView.GestureListener)
+
+    public boolean isGestureTypingAllowed(Keyboard keyboard) {
+        // Until the word list is laid onto these keys (in the background) a slide types keys
+        if (!sKeyboardSettings.gestureTyping || !mGestureEngine.isLaidOut(keyboard)) return false;
+        // Letters of the 4-row and compact layouts; not symbols, not the full layout
+        if (!mKeyboardSwitcher.isAlphabetMode() || sKeyboardSettings.keyboardMode == 2) return false;
+        EditorInfo ei = getCurrentInputEditorInfo();
+        if (ei == null || (ei.inputType & InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT) {
+            return false;
+        }
+        if (mPasswordText || isTerminalEditor() || sKeyboardSettings.addressField) return false;
+        return !mModCtrl && !mModAlt && !mModMeta && !mModFn && !mComposeMode && !mSelecting;
+    }
+
+    public void onGestureStarted() {
+        // Shift as it was when the gesture began: one capital, or all of them
+        mGestureShiftState = getShiftState();
+    }
+
+    public boolean onGestureCompleted(GesturePath path, Keyboard keyboard) {
+        final GestureResult result = mGestureEngine.decode(path, keyboard);
+        if (result.isEmpty()) return false; // not a word: nothing is typed, the trail fades
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return false;
+        ic.beginBatchEdit();
+        abortCorrection(false);
+        if (mGestureComposing) {
+            commitGestureWord(ic);
+        } else if (mPredicting) {
+            commitTyped(ic, true); // typed with taps: stays as typed
+        }
+        final boolean spaced = needsSpaceBefore(ic);
+        if (spaced) ic.commitText(" ", 1);
+        // A word right before the cursor gets a space after the gesture's word too (newCursor
+        // 0: the cursor stays before that space)
+        CharSequence after = ic.getTextAfterCursor(1, 0);
+        if (after != null && after.length() > 0 && Character.isLetterOrDigit(after.charAt(0))) {
+            ic.commitText(" ", 0);
+        }
+        // Shift as at the start of the gesture, or a capital where the space just typed
+        // began a sentence (after ". ") or a word in a field of names
+        int shiftState = mGestureShiftState;
+        if (spaced && shiftState == Keyboard.SHIFT_OFF
+                && getCursorCapsMode(ic, getCurrentInputEditorInfo()) != 0) {
+            shiftState = Keyboard.SHIFT_CAPS;
+        }
+        final List<CharSequence> words = applyGestureCase(result.words, shiftState);
+        final String word = words.get(0).toString();
+        mBestWord = word; // what the word history keeps for this composer
+        mWord.reset();
+        for (int i = 0; i < word.length(); i++) {
+            final char c = word.charAt(i);
+            mWord.add(c, new int[] { c });
+        }
+        mComposing.setLength(0);
+        mComposing.append(word);
+        mPredicting = true;
+        mGestureComposing = true;
+        ic.setComposingText(mComposing, 1);
+        ic.endBatchEdit();
+        // The strip shows the gesture's words, not what the dictionary makes of the first one
+        mHandler.removeMessages(MSG_UPDATE_SUGGESTIONS);
+        if (isCandidateStripVisible()) setSuggestions(words, false, true, true);
+        mJustAddedAutoSpace = false;
+        mJustRevertedSeparator = null;
+        mEnteredText = null;
+        TextEntryState.reset();
+        updateShiftKeyState(getCurrentInputEditorInfo());
+        return true;
+    }
+
+    public void onGestureCanceled() {
+    }
+
+    public void onKeyboardGeometryChanged(Keyboard keyboard) {
+        if (sKeyboardSettings.gestureTyping) mGestureEngine.prepare(keyboard);
+    }
+
+    /** Leaves the gesture's word in the text as it is (without learning it as typed). */
+    private void commitGestureWord(InputConnection ic) {
+        mGestureComposing = false;
+        if (!mPredicting) return;
+        mPredicting = false;
+        if (mComposing.length() > 0) {
+            if (ic != null) ic.commitText(mComposing, 1);
+            mCommittedLength = mComposing.length();
+            TextEntryState.acceptedTyped(mComposing);
+            mGestureEngine.noteAccepted(mComposing, isLearningAllowed());
+        }
+        updateSuggestions();
+    }
+
+    /** Words may be learned from what is typed (as in checkAddToDictionary). */
+    private boolean isLearningAllowed() {
+        return mLearnNewWords && !isIncognito();
+    }
+
+    /** A word typed by a gesture right after another word or a sign gets a space before it. */
+    private boolean needsSpaceBefore(InputConnection ic) {
+        if (!mLanguageSwitcher.allowAutoSpace()) return false;
+        CharSequence before = ic.getTextBeforeCursor(1, 0);
+        if (before == null || before.length() == 0) return false;
+        final char c = before.charAt(0);
+        return !Character.isWhitespace(c) && c != '\u00A0' && "([{<«„“‘\"'¿¡/@#-_".indexOf(c) < 0;
+    }
+
+    /** Shift on (or caps at the start of a sentence): a capital; Caps Lock: all capitals. */
+    private List<CharSequence> applyGestureCase(String[] words, int shiftState) {
+        final Locale locale = mLanguageSwitcher.getInputLocale();
+        ArrayList<CharSequence> out = new ArrayList<CharSequence>(words.length);
+        for (String w : words) {
+            if (shiftState == Keyboard.SHIFT_LOCKED || shiftState == Keyboard.SHIFT_CAPS_LOCKED) {
+                w = w.toUpperCase(locale);
+            } else if (shiftState != Keyboard.SHIFT_OFF && w.length() > 0) {
+                w = w.substring(0, 1).toUpperCase(locale) + w.substring(1);
+            }
+            out.add(w);
+        }
+        return out;
+    }
+
+    /**
+     * Gives gesture typing the user's own words in the current language: the user
+     * dictionary and the words learned by the auto dictionary. A dictionary still loading is
+     * asked again on the next field.
+     */
+    private void updateGestureWords() {
+        final ArrayList<String> userWords = new ArrayList<String>();
+        final ArrayList<String> learnedWords = new ArrayList<String>();
+        if (mUserDictionary != null) {
+            mUserDictionary.forEachWord(new ExpandableDictionary.WordVisitor() {
+                public void visit(char[] word, int length, int frequency) {
+                    userWords.add(new String(word, 0, length));
+                }
+            });
+        }
+        if (mAutoDictionary != null) {
+            mAutoDictionary.forEachValidWord(new ExpandableDictionary.WordVisitor() {
+                public void visit(char[] word, int length, int frequency) {
+                    learnedWords.add(new String(word, 0, length));
+                }
+            });
+        }
+        mGestureEngine.setUserWords(mLanguageSwitcher.getInputLanguage(), userWords, learnedWords);
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (level >= TRIM_MEMORY_RUNNING_LOW && mGestureEngine != null) mGestureEngine.trim();
+    }
+
     public void onCancel() {
         // User released a finger outside any key
         mKeyboardSwitcher.onCancelInput();
@@ -3872,6 +4146,19 @@ public class LatinIME extends InputMethodService implements
             mComposing=new StringBuilder();
             mJustRevertedSeparator = " ";
             EditingUtil.deleteWordAndSeparatorAtCursor(ic," .,?!:;(){}[]<>'\"@-=+*/#\\&~$%^|`");
+        }
+        else if (mGestureComposing && mPredicting) {
+            // Right after a gesture Backspace takes its whole word (the space before stays)
+            ic.beginBatchEdit();
+            ic.setComposingText("", 1);
+            ic.endBatchEdit();
+            mComposing.setLength(0);
+            mWord.reset();
+            mPredicting = false;
+            mGestureComposing = false;
+            TextEntryState.reset();
+            setNextSuggestions();
+            updateShiftKeyState(getCurrentInputEditorInfo());
         }
         else {
         ic.beginBatchEdit();
@@ -4445,13 +4732,16 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         mJustAccepted = true;
+        // The strip holds a gesture's words: none of them is "the typed word"
+        final boolean gesture = mGestureComposing && mPredicting;
         suppressAutospace=pickSuggestion(suggestion, correcting);
         // Add the word to the auto dictionary if it's not a known word
-        if (index == 0) {
+        if (index == 0 || gesture) {
             addToDictionaries(suggestion, AutoDictionary.FREQUENCY_FOR_PICKED);
         } else {
             addToBigramDictionary(suggestion, 1);
         }
+        if (gesture) mGestureEngine.noteAccepted(suggestion, isLearningAllowed());
         TextEntryState.acceptedSuggestion(mComposing.toString(), suggestion);
         // Follow it with a space
         if (mAutoSpace && sKeyboardSettings.spaceAfterSuggestion
@@ -4460,7 +4750,7 @@ public class LatinIME extends InputMethodService implements
             mJustAddedAutoSpace = true;
         }
 
-        final boolean showingAddToDictionaryHint = index == 0
+        final boolean showingAddToDictionaryHint = index == 0 && !gesture
                 && mCorrectionMode > 0 && !mSuggest.isValidWord(suggestion)
                 && !mSuggest.isValidWord(suggestion.toString().toLowerCase());
 
@@ -4519,6 +4809,7 @@ public class LatinIME extends InputMethodService implements
         }
         saveWordInHistory(suggestion);
         mPredicting = false;
+        mGestureComposing = false;
         mCommittedLength = suggestion.length();
         ((LatinKeyboard) inputView.getKeyboard()).setPreferredLetters(null);
         // If we just corrected a word, then don't show punctuations
@@ -4709,6 +5000,10 @@ public class LatinIME extends InputMethodService implements
                     || (!mSuggest.isValidWord(suggestion.toString()) && !mSuggest
                             .isValidWord(suggestion.toString().toLowerCase()))) {
                 mAutoDictionary.addWord(suggestion.toString(), frequencyDelta);
+                // A word picked often enough becomes one that gestures can type
+                if (sKeyboardSettings.gestureTyping && mAutoDictionary.isValidWord(suggestion)) {
+                    mGestureEngine.addLearnedWord(suggestion.toString());
+                }
             }
 
             if (mUserBigramDictionary != null) {
@@ -4901,12 +5196,17 @@ public class LatinIME extends InputMethodService implements
     }
 
     private void onInputLanguageChanged() {
+        if (mGestureComposing) commitGestureWord(getCurrentInputConnection());
         int currentKeyboardMode = mKeyboardSwitcher.getKeyboardMode();
         reloadKeyboards();
         mKeyboardSwitcher.makeKeyboards(true);
         mKeyboardSwitcher.setKeyboardMode(currentKeyboardMode, 0,
                 mEnableVoiceButton && mEnableVoice);
         initSuggest(mLanguageSwitcher.getInputLanguage());
+        if (mGestureEngine != null) {
+            mGestureEngine.setLanguage(mLanguageSwitcher.getInputLanguage());
+            if (sKeyboardSettings.gestureTyping) updateGestureWords();
+        }
         mLanguageSwitcher.persist();
         mAutoCapActive = mAutoCapPref && mLanguageSwitcher.allowAutoCap();
         mDeadKeysActive = mLanguageSwitcher.allowDeadKeys();
@@ -4964,6 +5264,7 @@ public class LatinIME extends InputMethodService implements
         if (ime != null) {
             if (ime.mAutoDictionary != null) ime.mAutoDictionary.clearLearnedWords();
             if (ime.mUserBigramDictionary != null) ime.mUserBigramDictionary.clearLearnedWords();
+            if (ime.mGestureEngine != null) ime.mGestureEngine.clearLearned();
         }
         AutoDictionary.clearDatabase(context);
         UserBigramDictionary.clearDatabase(context);
@@ -5004,6 +5305,14 @@ public class LatinIME extends InputMethodService implements
             Log.w(TAG, "Not all flag settings handled, remaining=" + unhandledFlags);
         }
 
+        if (GlobalKeyboardSettings.PREF_GESTURE_TYPING.equals(key)) {
+            // Turning it on reads the word list of the language in use, off frees it
+            mGestureEngine.setEnabled(sKeyboardSettings.gestureTyping);
+            if (sKeyboardSettings.gestureTyping) {
+                mGestureEngine.setLanguage(mLanguageSwitcher.getInputLanguage());
+                updateGestureWords();
+            }
+        }
         if (PREF_SELECTED_LANGUAGES.equals(key)) {
             mLanguageSwitcher.loadLocales(sharedPreferences);
             mRefreshKeyboardRequired = true;

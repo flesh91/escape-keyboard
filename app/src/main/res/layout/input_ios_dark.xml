@@ -10,6 +10,7 @@
         android:paddingBottom="@dimen/keyboard_bottom_padding"
         android:background="@color/ios_dark_bg"
         latin:shadowRadius="0"
+        latin:gestureTrailColors="@array/gesture_trail_ios_dark"
         latin:keyTextColor="@color/ios_dark_text"
         latin:keyPreviewBackground="@drawable/key_preview_ios_dark"
         latin:keyPreviewTextColor="@color/ios_dark_text"

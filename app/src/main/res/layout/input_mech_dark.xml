@@ -18,6 +18,7 @@
         android:background="@drawable/keyboard_mech_dark_background"
         latin:shadowRadius="0"
         latin:keyTextStyle="normal"
+        latin:gestureTrailColors="@array/gesture_trail_mech_dark"
         latin:keyTextColor="@color/mech_dark_text"
         latin:keyFunctionTextColor="@color/mech_dark_func_text"
         latin:keyAccentTextColor="@color/mech_dark_accent_text"

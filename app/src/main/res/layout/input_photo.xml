@@ -21,6 +21,7 @@
         latin:shadowRadius="0"
         latin:keyTextStyle="normal"
         latin:keyFunctionLabelPlain="true"
+        latin:gestureTrailColors="@array/gesture_trail_photo"
         latin:keyTextColor="@color/photo_text"
         latin:keyFunctionTextColor="@color/photo_func_text"
         latin:keyAccentTextColor="@color/photo_accent_text"

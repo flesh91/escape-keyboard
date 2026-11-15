@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 Google Inc.
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -21,6 +22,8 @@ import java.util.List;
 
 import org.pocketworkstation.pckeyboard.LatinKeyboardBaseView.OnKeyboardActionListener;
 import org.pocketworkstation.pckeyboard.LatinKeyboardBaseView.UIHandler;
+import org.pocketworkstation.pckeyboard.gesture.GestureParams;
+import org.pocketworkstation.pckeyboard.gesture.GesturePath;
 
 import android.content.res.Resources;
 import org.pocketworkstation.pckeyboard.Keyboard.Key;
@@ -37,6 +40,14 @@ public class PointerTracker {
         public void showPreview(int keyIndex, PointerTracker tracker);
         public boolean hasDistinctMultitouch();
         public int getSwapShiftY();
+        // Gesture typing: may a touch on this key become a gesture, has it moved far enough
+        public boolean canStartGesture(PointerTracker tracker, Key key);
+        public boolean isGestureStart(int dx, int dy);
+        public void onGestureStart(PointerTracker tracker);
+        public void onGestureMove(PointerTracker tracker, GesturePath path);
+        // True: the gesture was no word, the key it started on is typed instead
+        public boolean onGestureEnd(PointerTracker tracker, GesturePath path);
+        public void onGestureCancel(PointerTracker tracker);
     }
 
     public final int mPointerId;
@@ -82,6 +93,16 @@ public class PointerTracker {
 
     // pressed key
     private int mPreviousKey = NOT_A_KEY;
+
+    // Gesture typing: a touch that went down on a letter (mGestureCandidate) becomes a
+    // gesture once it has moved far enough; from then on no keys are typed, the path it
+    // traces goes to the proxy instead.
+    private boolean mGestureCandidate;
+    private boolean mInGesture;
+    private GesturePath mGesturePath;
+
+    // When a key was last typed by any pointer: a gesture doesn't start right after one
+    private static long sLastKeyTime;
 
     private static boolean sSlideKeyHack;
     private static List<Key> sSlideKeys = new ArrayList<Key>(10);
@@ -238,6 +259,52 @@ public class PointerTracker {
         return isModifierInternal(mKeyDetector.getKeyIndexAndNearbyCodes(x, y, null));
     }
 
+    /** Another finger went down on a key: this touch can't become a gesture any more. */
+    public void dropGestureCandidate() {
+        if (!mInGesture) mGestureCandidate = false;
+    }
+
+    public boolean isGestureCandidate() {
+        return mGestureCandidate;
+    }
+
+    public boolean isInGesture() {
+        return mInGesture;
+    }
+
+    /** A touch point between two move events (MotionEvent history), for a smoother path. */
+    public void addGestureHistoryPoint(int x, int y, long eventTime) {
+        if (mGestureCandidate && !mKeyAlreadyProcessed) mGesturePath.add(x, y, eventTime);
+    }
+
+    /** Length of the gesture traced so far, px. */
+    public float getGestureLength() {
+        return mGesturePath != null ? mGesturePath.length() : 0;
+    }
+
+    /** Drops the gesture: nothing more of this touch is typed. */
+    public void cancelGesture() {
+        if (!mGestureCandidate && !mInGesture) return;
+        mGestureCandidate = false;
+        mInGesture = false;
+        mKeyAlreadyProcessed = true;
+    }
+
+    private void enterGesture() {
+        mInGesture = true;
+        mHandler.cancelKeyTimers();
+        mHandler.cancelPopupPreview();
+        // The key pressed until now is let go without being typed
+        final Key key = getKey(mKeyState.getKeyIndex());
+        if (mListener != null && key != null && key.codes != null)
+            mListener.onRelease(key.getPrimaryCode());
+        showKeyPreviewAndUpdateKey(NOT_A_KEY);
+        mIsInSlidingKeyInput = false;
+        clearSlideKeys();
+        resetMultiTap();
+        mProxy.onGestureStart(this);
+    }
+
     public boolean isSpaceKey(int keyIndex) {
         Key key = getKey(keyIndex);
         return key != null && key.codes != null && key.codes[0] == LatinIME.ASCII_SPACE;
@@ -309,6 +376,16 @@ public class PointerTracker {
                 }
             }
         }
+        mInGesture = false;
+        // Not while typing with taps: a quick tap that slides would lose its letter
+        mGestureCandidate = isValidKeyIndex(keyIndex)
+                && eventTime - sLastKeyTime >= GestureParams.GESTURE_AFTER_TAP_MS
+                && mProxy.canStartGesture(this, mKeys[keyIndex]);
+        if (mGestureCandidate) {
+            if (mGesturePath == null) mGesturePath = new GesturePath(256);
+            mGesturePath.reset();
+            mGesturePath.add(x, y, eventTime);
+        }
         if (isValidKeyIndex(keyIndex)) {
             if (mKeys[keyIndex].repeatable) {
                 repeatKey(keyIndex);
@@ -362,6 +439,18 @@ public class PointerTracker {
             debugLog("onMoveEvent:", x, y);
         if (mKeyAlreadyProcessed)
             return;
+        if (mGestureCandidate) {
+            mGesturePath.add(x, y, eventTime);
+            if (!mInGesture) {
+                if (mProxy.isGestureStart(x - mKeyState.getStartX(), y - mKeyState.getStartY())) {
+                    enterGesture();
+                }
+            }
+            if (mInGesture) {
+                mProxy.onGestureMove(this, mGesturePath);
+                return;
+            }
+        }
         final KeyState keyState = mKeyState;
         int keyIndex = keyState.onMoveKey(x, y);
         final Key oldKey = getKey(keyState.getKeyIndex());
@@ -427,6 +516,25 @@ public class PointerTracker {
     public void onUpEvent(int x, int y, long eventTime) {
         if (DEBUG)
             debugLog("onUpEvent  :", x, y);
+        if (mInGesture) {
+            // The word is the gesture's, no key is typed
+            mGesturePath.add(x, y, eventTime);
+            mInGesture = false;
+            mGestureCandidate = false;
+            // Nothing else of this touch is typed, a late or made-up up event included
+            mKeyAlreadyProcessed = true;
+            mHandler.cancelKeyTimers();
+            mHandler.cancelPopupPreview();
+            clearSlideKeys();
+            if (mProxy.onGestureEnd(this, mGesturePath)) {
+                // A short slide that is no word was a tap that slid: its key is typed
+                final int startX = mKeyState.getStartX(), startY = mKeyState.getStartY();
+                detectAndSendKey(mKeyDetector.getKeyIndexAndNearbyCodes(startX, startY, null),
+                        startX, startY, eventTime);
+            }
+            return;
+        }
+        mGestureCandidate = false;
         mHandler.cancelKeyTimers();
         mHandler.cancelPopupPreview();
         showKeyPreviewAndUpdateKey(NOT_A_KEY);
@@ -452,6 +560,12 @@ public class PointerTracker {
     public void onCancelEvent(int x, int y, long eventTime) {
         if (DEBUG)
             debugLog("onCancelEvt:", x, y);
+        if (mInGesture) {
+            mKeyAlreadyProcessed = true;
+            mProxy.onGestureCancel(this);
+        }
+        mInGesture = false;
+        mGestureCandidate = false;
         mHandler.cancelKeyTimers();
         mHandler.cancelPopupPreview();
         showKeyPreviewAndUpdateKey(NOT_A_KEY);
@@ -584,6 +698,7 @@ public class PointerTracker {
                 }
             }
             mLastTapTime = eventTime;
+            if (eventTime > 0) sLastKeyTime = eventTime;
         }
     }
 

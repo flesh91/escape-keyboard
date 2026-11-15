@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 Google Inc.
+ * Modifications Copyright (C) 2026 Yaroslav Bezzubets
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -101,6 +102,15 @@ public class AutoDictionary extends ExpandableDictionary {
     public boolean isValidWord(CharSequence word) {
         final int frequency = getWordFrequency(word);
         return frequency >= VALIDITY_THRESHOLD;
+    }
+
+    /** Visits the learned words that are valid (see isValidWord). */
+    public boolean forEachValidWord(final WordVisitor visitor) {
+        return forEachWord(new WordVisitor() {
+            public void visit(char[] word, int length, int frequency) {
+                if (frequency >= VALIDITY_THRESHOLD) visitor.visit(word, length, frequency);
+            }
+        });
     }
 
     @Override

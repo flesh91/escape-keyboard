@@ -51,6 +51,8 @@
     <bool name="default_shift_lock_modifiers">true</bool>
     <bool name="default_shift_changes_case">false</bool>
     <bool name="default_momentary_symbols">false</bool>
+    <bool name="default_gesture_typing">false</bool>
+    <bool name="default_gesture_trail">true</bool>
     <bool name="default_keep_addresses">false</bool>
     <bool name="default_domain_popup">false</bool>
     <bool name="default_space_zwnj">false</bool>

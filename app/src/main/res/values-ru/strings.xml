@@ -409,6 +409,9 @@
     <string name="title_momentary_symbols">Скольжение с ?123</string>
     <string name="summary_momentary_symbols_true">\?123 переключает сразу при нажатии: проведите к символу и отпустите — символ введётся, и вернутся буквы</string>
     <string name="summary_momentary_symbols_false">\?123 переключает, когда отпускаете палец</string>
+    <string name="title_gesture_typing">Набор жестами</string>
+    <string name="summary_gesture_typing">Ведите пальцем по буквам, чтобы набрать слово (украинский, русский, английский). Действие свайпа, начатого с буквы, сработает только от быстрого прямого движения</string>
+    <string name="title_gesture_trail">Показывать след жеста</string>
     <string name="title_slide_keys">Действие при скольжении</string>
     <!-- Values are a bitmap, see use in PointerTracker -->
     <string-array name="slide_keys_entries">
@@ -715,4 +718,12 @@
     <string name="summary_macro_row_false">Выключено</string>
     <string name="title_macro_keys">Клавиши ряда</string>
     <string name="message_macro_keys">Клавиши через пробел.\n\nНазвания: Esc, Tab, Enter, Bksp, Del, Ins, Home, End, PgUp, PgDn, Up, Down, Left, Right, F1–F12, Ctrl, Alt.\nКомбинации: Ctrl+C, Alt+F.\nРедактирование: Copy, Cut, Paste, SelectAll, SelectWord, Undo, Redo, DelWord.\nПанели: Clipboard, Emoji, Voice, OneHand.\nDate, Time, DateTime; формат — после двоеточия: Date:dd.MM.yyyy, DateTime:\"d MMM HH:mm\".\nМедиа: Play, Next, Prev, VolUp, VolDown, Mute.\nЛюбой отдельный символ: | ~ /\nТекст в кавычках вводится как есть: \"sudo \", \"| grep \", \"\\n\" — новая строка.</string>
+    <string name="title_voice_engine">Приложение голосового ввода</string>
+    <string name="voice_engine_auto">Автоматически (первая клавиатура голосового ввода)</string>
+    <string name="voice_engine_ime_voice">%1$s (голосовой ввод)</string>
+    <string name="voice_engine_ime_voice_subtype">%1$s (голосовой ввод, %2$s)</string>
+    <string name="voice_engine_ime">%1$s (клавиатура)</string>
+    <string name="voice_engine_recognizer">%1$s (распознавание речи)</string>
+    <string name="voice_engine_unavailable">Выбранное приложение больше недоступно, используется «Автоматически»</string>
+    <string name="voice_engine_failed">Не удалось запустить распознавание речи</string>
 </resources>

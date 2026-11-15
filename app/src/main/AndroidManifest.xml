@@ -17,6 +17,10 @@
         <intent>
             <action android:name="android.view.InputMethod" />
         </intent>
+        <!-- ...or to a speech recognizer app picked in the settings -->
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
     </queries>
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.faketouch" android:required="false" />
@@ -74,6 +78,12 @@
         <activity android:name="ClipboardEditActivity" android:exported="false"
             android:theme="@style/Theme.HK.Dialog"
             android:label="@string/clipboard_edit_title"
+            android:excludeFromRecents="true"
+            android:taskAffinity="" />
+        <!-- Asks the speech recognizer app picked in the settings, see VoiceRecognitionActivity -->
+        <activity android:name="VoiceRecognitionActivity" android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:label="@string/title_voice_engine"
             android:excludeFromRecents="true"
             android:taskAffinity="" />
 </application>

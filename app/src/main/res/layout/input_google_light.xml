@@ -29,6 +29,7 @@
         android:background="@color/google_light_bg"
 	    latin:shadowRadius="0"
 	    latin:shadowColor="#ff777777"
+        latin:gestureTrailColors="@array/gesture_trail_google_light"
         latin:keyTextColor="@color/google_light_text"
         latin:keyPreviewBackground="@drawable/key_preview_google_light"
         latin:keyPreviewTextColor="@color/google_light_text"

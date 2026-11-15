@@ -42,7 +42,11 @@ by Klaus Weidner, including later changes by Maxim Pulya, rebuilt for Android 17
   "." in address fields offers .com, .ua, .net, .org and more.
 - Clipboard history in a floating window: pin, edit, swipe to delete with undo. Long-press
   Enter to open it; it closes after a paste.
-- Emoji panel and voice input through the installed voice keyboard.
+- Emoji panel and voice input through the voice keyboard or speech recognition app you pick
+  (Automatic by default: the first installed voice keyboard).
+- Gesture typing, off by default: slide a finger across the letters and lift to get the word,
+  with other guesses in the suggestion strip. Built-in Ukrainian, Russian and English word
+  lists; the trail takes the colours of the theme.
 - Inline autofill suggestions from your password manager (Android 11+).
 - Also optional and off by default:
   - Shift taps change the case of selected text: UPPER, lower, Capitalised.

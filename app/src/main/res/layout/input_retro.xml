@@ -14,6 +14,7 @@
         android:background="@drawable/keyboard_retro_background"
         latin:shadowRadius="0"
         latin:keyTextStyle="monospace|bold"
+        latin:gestureTrailColors="@array/gesture_trail_retro"
         latin:keyTextColor="@color/retro_text"
         latin:keyFunctionTextColor="@color/retro_func_text"
         latin:keyAccentTextColor="@color/retro_accent_text"
