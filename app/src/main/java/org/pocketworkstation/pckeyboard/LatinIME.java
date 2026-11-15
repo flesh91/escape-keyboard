@@ -3985,7 +3985,12 @@ public class LatinIME extends InputMethodService implements
         if (ei == null || (ei.inputType & InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT) {
             return false;
         }
-        if (mPasswordText || isTerminalEditor() || sKeyboardSettings.addressField) return false;
+        // The address bar of a browser (Chrome's search too) is a URL field: gestures type
+        // search words there; an email field is not for words
+        if (mPasswordText || isTerminalEditor()
+                || mKeyboardSwitcher.getKeyboardMode() == KeyboardSwitcher.MODE_EMAIL) {
+            return false;
+        }
         return !mModCtrl && !mModAlt && !mModMeta && !mModFn && !mComposeMode && !mSelecting;
     }
 
@@ -4078,6 +4083,10 @@ public class LatinIME extends InputMethodService implements
         CharSequence before = ic.getTextBeforeCursor(1, 0);
         if (before == null || before.length() == 0) return false;
         final char c = before.charAt(0);
+        // In an address only a word before gets a space: "example." + "com" stays an address
+        if (mKeyboardSwitcher.getKeyboardMode() == KeyboardSwitcher.MODE_URL) {
+            return Character.isLetterOrDigit(c);
+        }
         return !Character.isWhitespace(c) && c != '\u00A0' && "([{<«„“‘\"'¿¡/@#-_".indexOf(c) < 0;
     }
 
