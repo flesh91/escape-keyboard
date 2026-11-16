@@ -110,6 +110,7 @@ public final class GlobalKeyboardSettings {
     public float oneHandWidth = 80f;
     // One-handed mode in landscape too
     public boolean oneHandLandscape = false;
+    public boolean landscapeUnderCutout = false;
     // The one-hand key in the comma and settings key popups
     public boolean oneHandPopupKey = false;
     // Row of custom keys and text macros above the keys
@@ -276,6 +277,12 @@ public final class GlobalKeyboardSettings {
         addBooleanPref("pref_one_hand_landscape", new BooleanPref() {
             public void set(boolean val) { oneHandLandscape = val; }
             public boolean getDefault() { return res.getBoolean(R.bool.default_one_hand_landscape); }
+            public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW | FLAG_PREF_RESET_KEYBOARDS; }
+        });
+
+        addBooleanPref("pref_landscape_under_cutout", new BooleanPref() {
+            public void set(boolean val) { landscapeUnderCutout = val; }
+            public boolean getDefault() { return res.getBoolean(R.bool.default_landscape_under_cutout); }
             public int getFlags() { return FLAG_PREF_RECREATE_INPUT_VIEW | FLAG_PREF_RESET_KEYBOARDS; }
         });
 

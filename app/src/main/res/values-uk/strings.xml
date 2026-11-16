@@ -358,6 +358,10 @@
     <string name="title_nav_bar_space">Відступ для системних кнопок</string>
     <string name="summary_nav_bar_space_true">Клавіатура розташована над системними кнопками навігації</string>
     <string name="summary_nav_bar_space_false">Кнопки клавіатури під нею приховано (Android 16+). Місце лишається лише під системну панель навігації, коли вона показана</string>
+    <string name="title_cutout_category">Виріз камери</string>
+    <string name="title_landscape_under_cutout">Клавіші біля камери в горизонтальній орієнтації</string>
+    <string name="summary_landscape_under_cutout_true">У горизонтальній орієнтації клавіші заходять і на смугу біля камери</string>
+    <string name="summary_landscape_under_cutout_false">У горизонтальній орієнтації смуга біля камери лишається вільною</string>
     <string name="title_extension_row_portrait">Верхній додатковий ряд, вертикально</string>
     <string name="summary_extension_row_portrait_true">Показано: цифри в 4-рядній розкладці (є не для всіх мов), Esc, символи й Del у компактній, F1–F12, Home і End у повній</string>
     <string name="summary_extension_row_portrait_false">Приховано (жест проведення вгору може показати його до закриття клавіатури)</string>

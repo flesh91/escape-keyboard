@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The keys can go beside the camera from Android 11 (WindowMetrics) -->
+    <bool name="cutout_pref_available">true</bool>
+</resources>

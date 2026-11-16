@@ -977,7 +977,7 @@ public class LatinIME extends InputMethodService implements
      * in portrait: 80% of the long side is wider than a thumb reaches.
      */
     int getOneHandFullWidth() {
-        int width = getMaxWidth();
+        int width = getAvailableWidth();
         if (!isLandscapeNow()) return width;
         float d = getResources().getDisplayMetrics().density;
         return Math.min(width, Math.round(getResources().getConfiguration().smallestScreenWidthDp * d));
@@ -987,12 +987,30 @@ public class LatinIME extends InputMethodService implements
     int getKeyboardWidth() {
         return isOneHanded()
                 ? Math.round(getOneHandFullWidth() * sKeyboardSettings.oneHandWidth / 100f)
-                : getMaxWidth();
+                : getAvailableWidth();
+    }
+
+    /** Landscape with "pref_landscape_under_cutout": the keys go beside the camera too. */
+    private boolean keysUnderCutout() {
+        return Build.VERSION.SDK_INT >= 30 && sKeyboardSettings.landscapeUnderCutout && isLandscapeNow();
+    }
+
+    /**
+     * The window's width for the keys: getMaxWidth() leaves out the camera cutout and a
+     * side navigation bar; with the keys beside the camera only the navigation bar.
+     */
+    int getAvailableWidth() {
+        if (!keysUnderCutout()) return getMaxWidth();
+        android.view.WindowMetrics metrics =
+                getSystemService(WindowManager.class).getCurrentWindowMetrics();
+        android.graphics.Insets nav = metrics.getWindowInsets()
+                .getInsetsIgnoringVisibility(WindowInsets.Type.navigationBars());
+        return metrics.getBounds().width() - nav.left - nav.right;
     }
 
     /** Keeps the keys out of the cutout and, in one-handed mode, leaves the other side empty. */
     private void applyKeysSidePadding(View keyboard) {
-        int gap = isOneHanded() ? Math.max(0, getMaxWidth() - getKeyboardWidth()) : 0;
+        int gap = isOneHanded() ? Math.max(0, getAvailableWidth() - getKeyboardWidth()) : 0;
         boolean keysRight = "right".equals(sKeyboardSettings.oneHandMode);
         keyboard.setPadding(mSideInsetLeft + (keysRight ? gap : 0), keyboard.getPaddingTop(),
                 mSideInsetRight + (keysRight ? 0 : gap), keyboard.getPaddingBottom());
@@ -2096,6 +2114,11 @@ public class LatinIME extends InputMethodService implements
                     // With the system bar hidden this is 0 and the keys reach the bottom edge
                     bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
                 }
+                // The keys beside the camera too (by pref): only a side navigation bar is
+                // kept clear; the strip above keeps its words out of the cutout
+                if (keysUnderCutout()) {
+                    side = insets.getInsets(WindowInsets.Type.navigationBars());
+                }
                 mSideInsetLeft = side.left;
                 mSideInsetRight = side.right;
                 v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottom);
@@ -2238,19 +2261,25 @@ public class LatinIME extends InputMethodService implements
         return null;
     }
 
+    private int mWindowCutoutMode = -1; // the window's own mode, before Android 15
+
     /**
      * Android 15+ draws windows edge-to-edge, but the keyboard window still avoided the
      * camera cutout in landscape, leaving a black strip beside it. Let the window cover
-     * the cutout; setupNavBarInsets() pads the keys out of it.
+     * the cutout; setupNavBarInsets() pads the keys out of it, unless they go beside the
+     * camera (pref). Before Android 15 the window covers the cutout only for that pref,
+     * there being no insets listener to keep the keys out of it.
      */
     private void allowWindowUnderCutout() {
-        if (Build.VERSION.SDK_INT < 35 || getWindow() == null || getWindow().getWindow() == null) return;
+        if (Build.VERSION.SDK_INT < 30 || getWindow() == null || getWindow().getWindow() == null) return;
         android.view.Window window = getWindow().getWindow();
         android.view.WindowManager.LayoutParams lp = window.getAttributes();
-        if (lp.layoutInDisplayCutoutMode
-                != android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS) {
-            lp.layoutInDisplayCutoutMode =
-                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+        if (mWindowCutoutMode < 0) mWindowCutoutMode = lp.layoutInDisplayCutoutMode;
+        int mode = Build.VERSION.SDK_INT >= 35 || keysUnderCutout()
+                ? android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                : mWindowCutoutMode;
+        if (lp.layoutInDisplayCutoutMode != mode) {
+            lp.layoutInDisplayCutoutMode = mode;
             window.setAttributes(lp);
         }
     }

@@ -716,6 +716,10 @@
     <string name="title_nav_bar_space">Space for system buttons</string>
     <string name="summary_nav_bar_space_true">The keyboard sits above the system navigation buttons</string>
     <string name="summary_nav_bar_space_false">The keyboard\'s own buttons below it are hidden (Android 16+). Space stays only for the system navigation bar, when it is shown</string>
+    <string name="title_cutout_category">Camera cutout</string>
+    <string name="title_landscape_under_cutout">Keys beside the camera in landscape</string>
+    <string name="summary_landscape_under_cutout_true">In landscape the keys extend over the strip beside the camera too</string>
+    <string name="summary_landscape_under_cutout_false">In landscape the strip beside the camera stays empty</string>
     <string name="title_extension_row_portrait">Top extra row, portrait</string>
     <string name="summary_extension_row_portrait_true">Shown: digits in the 4-row layout (not every language has them), Esc, symbols and Del in the compact one, F1–F12, Home and End in the full one</string>
     <string name="summary_extension_row_portrait_false">Hidden (the swipe-up gesture can still show it until the keyboard closes)</string>

@@ -147,4 +147,16 @@
         android:summaryOff="@string/summary_nav_bar_space_false" />
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="@string/title_cutout_category"
+        hk:isPreferenceVisible="@bool/cutout_pref_available">
+        <SwitchPreferenceCompat
+        android:key="pref_landscape_under_cutout"
+        android:title="@string/title_landscape_under_cutout"
+        android:persistent="true"
+        android:defaultValue="@bool/default_landscape_under_cutout"
+        android:summaryOn="@string/summary_landscape_under_cutout_true"
+        android:summaryOff="@string/summary_landscape_under_cutout_false" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

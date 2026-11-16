@@ -45,6 +45,8 @@
     <bool name="default_force_keyboard_on">false</bool>
     <bool name="default_keyboard_notification">false</bool>
     <bool name="default_nav_bar_space">true</bool>
+    <bool name="default_landscape_under_cutout">false</bool>
+    <bool name="cutout_pref_available">false</bool>
     <bool name="default_extension_row_portrait">true</bool>
     <bool name="default_add_shift_to_popup">false</bool>
     <bool name="default_caps_lock">true</bool>

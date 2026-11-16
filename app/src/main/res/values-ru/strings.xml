@@ -538,6 +538,10 @@
     <string name="title_nav_bar_space">Отступ для системных кнопок</string>
     <string name="summary_nav_bar_space_true">Клавиатура расположена над системными кнопками навигации</string>
     <string name="summary_nav_bar_space_false">Кнопки клавиатуры под ней скрыты (Android 16+). Место остаётся только под системную панель навигации, когда она показана</string>
+    <string name="title_cutout_category">Вырез камеры</string>
+    <string name="title_landscape_under_cutout">Клавиши у камеры в горизонтальной ориентации</string>
+    <string name="summary_landscape_under_cutout_true">В горизонтальной ориентации клавиши занимают и полосу у камеры</string>
+    <string name="summary_landscape_under_cutout_false">В горизонтальной ориентации полоса у камеры остаётся пустой</string>
     <string name="title_extension_row_portrait">Верхний дополнительный ряд, вертикально</string>
     <string name="summary_extension_row_portrait_true">Показан: цифры в 4-рядной раскладке (есть не для всех языков), Esc, символы и Del в компактной, F1–F12, Home и End в полной</string>
     <string name="summary_extension_row_portrait_false">Скрыт (жест свайпа вверх может показать его до закрытия клавиатуры)</string>
