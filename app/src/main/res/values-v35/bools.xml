@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The keys can go beside the camera from Android 15, where the window is edge-to-edge
+         and the insets listener keeps the strip above out of the cutout -->
+    <bool name="cutout_pref_available">true</bool>
+</resources>

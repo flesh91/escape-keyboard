@@ -2045,6 +2045,7 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         } else if (x > (getMeasuredWidth() - mMiniKeyboardContainer.getMeasuredWidth())) {
             adjustedX = getMeasuredWidth() - mMiniKeyboardContainer.getMeasuredWidth();
         }
+        adjustedX = keepOutOfCutout(adjustedX, mMiniKeyboardContainer.getMeasuredWidth());
         // Log.i(TAG, "x=" + x + " y=" + y + " adjustedX=" + adjustedX + " getMeasuredWidth()=" + getMeasuredWidth());
         mMiniKeyboardOriginX = adjustedX + mMiniKeyboardContainer.getPaddingLeft() - mWindowOffset[0];
         mMiniKeyboardOriginY = y + mMiniKeyboardContainer.getPaddingTop() - mWindowOffset[1];
@@ -2070,6 +2071,22 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
 
         invalidateAllKeys();
         return true;
+    }
+
+    /**
+     * A popup window stays out of the camera cutout: the system moves it out when it is
+     * asked to show there (keys beside the camera, by pref). Put it there already, so that
+     * the finger sliding on it finds the keys where they are shown.
+     */
+    private int keepOutOfCutout(int x, int width) {
+        if (Build.VERSION.SDK_INT < 28) return x;
+        WindowInsets insets = getRootWindowInsets();
+        android.view.DisplayCutout cutout = insets != null ? insets.getDisplayCutout() : null;
+        if (cutout == null) return x;
+        int left = cutout.getSafeInsetLeft();
+        int right = getRootView().getWidth() - cutout.getSafeInsetRight() - width;
+        if (right < left) return x; // wider than the space between: as it was
+        return Math.min(Math.max(x, left), right);
     }
 
     private boolean shouldDrawIconFully(Key key) {

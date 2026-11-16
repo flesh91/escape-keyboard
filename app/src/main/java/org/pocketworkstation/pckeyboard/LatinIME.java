@@ -933,8 +933,8 @@ public class LatinIME extends InputMethodService implements
                 getResources().getDimensionPixelSize(R.dimen.candidate_strip_height)));
         applyStripBackground(mAutofillBar);
         LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
-        padAutofillBar(keyboard != null ? keyboard.getPaddingLeft() : 0,
-                keyboard != null ? keyboard.getPaddingRight() : 0);
+        padAutofillBar(Math.max(keyboard != null ? keyboard.getPaddingLeft() : 0, mStripInsetLeft),
+                Math.max(keyboard != null ? keyboard.getPaddingRight() : 0, mStripInsetRight));
         if (isAutofillShown() && mCandidateViewContainer != null) {
             mCandidateViewContainer.setVisibility(View.GONE);
         }
@@ -957,6 +957,9 @@ public class LatinIME extends InputMethodService implements
     // ---- One-handed mode (portrait, landscape too by pref): the keys narrower, against one side ----
 
     private int mSideInsetLeft, mSideInsetRight; // camera cutout or side navigation bar
+    // The same for the strip above the keys, which keeps out of the cutout even when the
+    // keys go beside the camera (pref)
+    private int mStripInsetLeft, mStripInsetRight;
 
     private boolean isLandscapeNow() {
         return getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT;
@@ -990,9 +993,12 @@ public class LatinIME extends InputMethodService implements
                 : getAvailableWidth();
     }
 
-    /** Landscape with "pref_landscape_under_cutout": the keys go beside the camera too. */
+    /**
+     * Landscape with "pref_landscape_under_cutout": the keys go beside the camera too. From
+     * Android 15, where the insets listener keeps the strip above out of the cutout.
+     */
     private boolean keysUnderCutout() {
-        return Build.VERSION.SDK_INT >= 30 && sKeyboardSettings.landscapeUnderCutout && isLandscapeNow();
+        return Build.VERSION.SDK_INT >= 35 && sKeyboardSettings.landscapeUnderCutout && isLandscapeNow();
     }
 
     /**
@@ -2101,6 +2107,8 @@ public class LatinIME extends InputMethodService implements
                             side.right, mCandidateViewContainer.getPaddingBottom());
                 }
                 padAutofillBar(side.left, side.right);
+                mStripInsetLeft = side.left;
+                mStripInsetRight = side.right;
                 int bottom;
                 if (mNavBarSpace) {
                     // Ignoring visibility: right after the bar is shown again (setting turned
@@ -2261,25 +2269,20 @@ public class LatinIME extends InputMethodService implements
         return null;
     }
 
-    private int mWindowCutoutMode = -1; // the window's own mode, before Android 15
-
     /**
      * Android 15+ draws windows edge-to-edge, but the keyboard window still avoided the
      * camera cutout in landscape, leaving a black strip beside it. Let the window cover
      * the cutout; setupNavBarInsets() pads the keys out of it, unless they go beside the
-     * camera (pref). Before Android 15 the window covers the cutout only for that pref,
-     * there being no insets listener to keep the keys out of it.
+     * camera (pref).
      */
     private void allowWindowUnderCutout() {
-        if (Build.VERSION.SDK_INT < 30 || getWindow() == null || getWindow().getWindow() == null) return;
+        if (Build.VERSION.SDK_INT < 35 || getWindow() == null || getWindow().getWindow() == null) return;
         android.view.Window window = getWindow().getWindow();
         android.view.WindowManager.LayoutParams lp = window.getAttributes();
-        if (mWindowCutoutMode < 0) mWindowCutoutMode = lp.layoutInDisplayCutoutMode;
-        int mode = Build.VERSION.SDK_INT >= 35 || keysUnderCutout()
-                ? android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-                : mWindowCutoutMode;
-        if (lp.layoutInDisplayCutoutMode != mode) {
-            lp.layoutInDisplayCutoutMode = mode;
+        if (lp.layoutInDisplayCutoutMode
+                != android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS) {
+            lp.layoutInDisplayCutoutMode =
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
             window.setAttributes(lp);
         }
     }
