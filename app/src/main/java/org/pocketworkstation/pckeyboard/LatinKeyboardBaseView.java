@@ -2145,6 +2145,67 @@ public class LatinKeyboardBaseView extends View implements PointerTracker.UIProx
         return false;
     }
     
+    /**
+     * This theme's colours for the clipboard window, from the drawables the keyboard itself is
+     * drawn with, so every theme gets its own: {the case behind the keys, an unpressed key's
+     * face, that key's corner radius in px, the key text colour, the hint colour}. A colour
+     * that can't be found is 0.
+     */
+    int[] clipboardColors() {
+        float d = getResources().getDisplayMetrics().density;
+        int size = Math.max(1, Math.round(56 * d));  // about a key: corners keep their real size
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        int mid = size / 2;
+        int back = 0;
+        if (getBackground() != null) {
+            Drawable copy = copyOf(getBackground());
+            copy.setBounds(0, 0, size, size);
+            copy.draw(canvas);
+            back = bitmap.getPixel(mid, mid);
+        }
+        int face = 0, radius = 0;
+        if (mKeyBackground != null) {
+            bitmap.eraseColor(0);
+            Drawable copy = copyOf(mKeyBackground);
+            copy.setState(new int[0]);  // a letter key, not pressed
+            copy.setBounds(0, 0, size, size);
+            copy.draw(canvas);
+            face = bitmap.getPixel(mid, mid);
+            // the face's edges, then from its top left corner along the diagonal to the face
+            // (by its colour: a plate or shadow around it may be opaque, the face translucent)
+            int left = 0, top = 0, k = 0;
+            while (left < mid && !near(bitmap.getPixel(left, mid), face)) left++;
+            while (top < mid && !near(bitmap.getPixel(mid, top), face)) top++;
+            while (left + k < mid && top + k < mid
+                    && !near(bitmap.getPixel(left + k, top + k), face)) k++;
+            radius = Math.round(k / (1 - (float) Math.sqrt(0.5)));
+            // a see-through key shows the case behind it
+            if (Color.alpha(face) < 255 && Color.alpha(back) == 255) face = blend(face, back);
+        }
+        bitmap.recycle();
+        return new int[] {back, face, radius, mKeyTextColor, mKeyHintColor};
+    }
+
+    private static boolean near(int a, int b) {
+        return Math.abs(Color.alpha(a) - Color.alpha(b)) < 24 && Math.abs(Color.red(a) - Color.red(b)) < 24
+                && Math.abs(Color.green(a) - Color.green(b)) < 24 && Math.abs(Color.blue(a) - Color.blue(b)) < 24;
+    }
+
+    private static Drawable copyOf(Drawable drawable) {
+        Drawable.ConstantState state = drawable.getConstantState();
+        return state != null ? state.newDrawable().mutate() : drawable;
+    }
+
+    /** A translucent colour over an opaque one. */
+    private static int blend(int over, int under) {
+        float a = Color.alpha(over) / 255f;
+        return Color.rgb(
+                Math.round(Color.red(over) * a + Color.red(under) * (1 - a)),
+                Math.round(Color.green(over) * a + Color.green(under) * (1 - a)),
+                Math.round(Color.blue(over) * a + Color.blue(under) * (1 - a)));
+    }
+
     /** Gesture typing on this keyboard (the main one); null turns it off. */
     public void setGestureListener(GestureListener listener) {
         mGestureListener = listener;

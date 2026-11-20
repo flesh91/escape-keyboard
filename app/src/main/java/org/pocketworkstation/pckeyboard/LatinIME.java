@@ -98,6 +98,7 @@ import android.widget.LinearLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.graphics.Color;
 
 import androidx.emoji2.emojipicker.DefaultRecentEmojiProvider;
 import androidx.emoji2.emojipicker.EmojiPickerView;
@@ -107,6 +108,7 @@ import androidx.autofill.inline.common.ImageViewStyle;
 import androidx.autofill.inline.common.TextViewStyle;
 import androidx.autofill.inline.common.ViewStyle;
 import androidx.autofill.inline.v1.InlineSuggestionUi;
+import androidx.core.graphics.ColorUtils;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -1918,7 +1920,45 @@ public class LatinIME extends InputMethodService implements
             s.divider = res.getColor(own[OWN_CLIP_DIVIDER]);
             s.radius = res.getInteger(own[OWN_CLIP_RADIUS]);
         }
+        // A part of the keyboard: its case behind, the entries as its keys, in the colours
+        // the keyboard is drawn with (so every theme matches, the classic ones too)
+        LatinKeyboardView keyboard = mKeyboardSwitcher.getInputView();
+        if (keyboard != null) {
+            int[] c = keyboard.clipboardColors();
+            int back = c[0], key = c[1];
+            if (Color.alpha(back) == 255 && Color.alpha(key) == 255) {
+                // Flat themes draw keys in the case's colour: lift the tiles off it a little
+                if (ColorUtils.calculateContrast(key, back) < 1.15) {
+                    key = ColorUtils.blendARGB(key, isDark(back) ? Color.WHITE : Color.BLACK,
+                            isDark(back) ? 0.08f : 0.06f);
+                }
+                s.bar = s.surface = back;
+                s.key = key;
+                s.light = !isDark(key);  // ripples on the tiles
+                // each colour checked on what it is drawn on: text, hints and the accent on
+                // the tiles, the bar's buttons and the empty list on the case
+                s.text = readable(key, 4.5f, c[3], s.text);
+                s.secondary = readable(key, 3f, c[4], s.secondary,
+                        ColorUtils.blendARGB(s.text, key, 0.35f));
+                s.accent = readable(key, 3f, s.accent, s.text);
+                s.barText = readable(back, 4.5f, s.text, c[3]);
+            }
+            float d = res.getDisplayMetrics().density;
+            s.keyRadius = Math.max(2, Math.min(14, c[2] / d));
+        }
         return s;
+    }
+
+    private static boolean isDark(int color) {
+        return ColorUtils.calculateLuminance(color) < 0.4;
+    }
+
+    /** The first opaque candidate that reads on the background, else black or white. */
+    private static int readable(int background, float contrast, int... candidates) {
+        for (int c : candidates) {
+            if (Color.alpha(c) == 255 && ColorUtils.calculateContrast(c, background) >= contrast) return c;
+        }
+        return isDark(background) ? Color.WHITE : Color.BLACK;
     }
 
     private void dismissClipboardWindow() {

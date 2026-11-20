@@ -649,6 +649,9 @@
     </string-array>
     <string name="clipboard_deleted">Запись удалена</string>
     <string name="clipboard_undo">Вернуть</string>
+    <string name="clipboard_title_count">Буфер обмена · %1$d/%2$d</string>
+    <string name="clipboard_just_now">только что</string>
+    <string name="clipboard_cleared">Удалено записей: %d</string>
     <string name="title_clipboard_history_expiry">Удалять незакреплённые записи через</string>
     <string-array name="clipboard_history_expiry_entries">
         <item>Никогда</item>

@@ -25,6 +25,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.text.format.DateUtils;
+import android.util.Patterns;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
@@ -33,40 +35,60 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * Clipboard history in a floating window over the keyboard. It is a popup of the keyboard's
  * own window, so it needs no "display over other apps" permission, and it goes away with the
- * keyboard. Drag it by the title bar (the place is remembered); tap an entry to paste it,
- * swipe it aside to delete it, hold it for pin/edit/delete. Nothing in it takes focus: a
- * focused popup would take it from the text field and close the keyboard.
+ * keyboard. Drag it by the title bar, resize it by a bottom corner (place and size are
+ * remembered); tap an entry to paste it, swipe it aside to delete it, hold it for
+ * pin/edit/delete. Nothing in it takes focus: a focused popup would take it from the text
+ * field and close the keyboard.
  */
 final class ClipboardWindow implements ClipboardHistory.Listener {
     private static final long UNDO_MS = 5000;
+    /** How often the "5 min ago" lines are brought up to date while the window is open. */
+    private static final long AGE_TICK_MS = 30000;
+    /** The corner grips: touch target, and the smallest window they make. */
+    private static final int GRIP_DP = 36, MIN_WIDTH_DP = 240, MIN_HEIGHT_DP = 160;
 
     private final LatinIME mIme;
     private final ClipboardHistory mHistory;
     private PopupWindow mPopup;
     private LinearLayout mList;
+    private TextView mTitle;
     private Context mCtx;
-    private int mTextColor, mSecondaryColor, mPinnedColor, mDividerColor;
+    private int mTextColor, mSecondaryColor, mPinnedColor, mKeyColor, mBarTextColor;
+    private float mKeyRadius;
     private int mX, mY;
     // Where the keyboard area is: the window position is kept relative to its top left
     private int mAreaX, mAreaY, mWindowTopOnScreen, mStatusBar, mScreenWidth, mScreenHeight;
     private int mWidth, mHeight;
+    // Without a remembered size the window has this one; resizing stops at the minimum
+    private int mDefaultWidth, mDefaultHeight, mMinWidth, mMinHeight;
     private long mExpandedId = -1;  // entry showing its pin/edit/delete strip
     private LinearLayout mUndoBar;
-    private ClipboardHistory.Entry mLastDeleted;
+    private TextView mUndoText;
+    private Runnable mUndo;  // puts back what the last delete or clear removed
     private final Runnable mHideUndo = this::hideUndo;
+    private final List<TextView> mAges = new ArrayList<>();  // tagged with the copy time
+    private final Runnable mAgeTick = this::updateAges;
 
     private static final String PREF_POSITION = "clipboard_window_";
+
+    private static final Pattern CODE = Pattern.compile("\\d{4,8}");
+    private static final Pattern DATE = Pattern.compile("\\d{1,4}([-/])\\d{1,2}\\1\\d{1,4}");
+    private static final Pattern SCHEME = Pattern.compile("[a-z][a-z0-9+.-]*://");
 
     /** Colours and corners of the window; LatinIME matches them to the keyboard theme. */
     static final class Style {
@@ -74,6 +96,9 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         int bar, surface;  // title bar, list
         int text, secondary, accent, divider;
         int outline;       // a rim like the theme's keycaps, 0 for none
+        int key;           // an entry's tile: the colour of the theme's letter keys
+        int barText;       // Clear, close and the empty list, on the case (0: text)
+        float keyRadius = 6; // dp, the keys' corners
         float radius = 16; // dp
 
         /** The plain window of the classic themes. */
@@ -110,12 +135,16 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
 
     void dismiss() {
         if (mUndoBar != null) mUndoBar.removeCallbacks(mHideUndo);
+        if (mList != null) mList.removeCallbacks(mAgeTick);
         mUndoBar = null;
-        mLastDeleted = null;
+        mUndoText = null;
+        mUndo = null;
         mExpandedId = -1;
         if (mPopup != null) mPopup.dismiss();
         mPopup = null;
         mList = null;
+        mTitle = null;
+        mAges.clear();
         mHistory.setListener(null);
     }
 
@@ -131,8 +160,10 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         float radius = style.radius * d;
         mTextColor = style.text;
         mSecondaryColor = style.secondary;
+        mBarTextColor = style.barText != 0 ? style.barText : style.text;
         mPinnedColor = style.accent;
-        mDividerColor = style.divider;
+        mKeyColor = style.key != 0 ? style.key : style.surface;
+        mKeyRadius = style.keyRadius * d;
 
         LinearLayout root = new LinearLayout(mCtx);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -156,27 +187,34 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         barBackground.setCornerRadii(new float[] {inner, inner, inner, inner, 0, 0, 0, 0});
         bar.setBackground(barBackground);
         bar.setPadding((int) (16 * d), 0, (int) (4 * d), 0);
-        TextView title = new TextView(mCtx);
-        title.setText(R.string.clipboard_title);
-        title.setTextColor(mTextColor);
-        title.setTextSize(16);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
-        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        // Just the count, "12/20" in a pill (showCount); TalkBack reads "Clipboard · 12/20"
+        mTitle = new TextView(mCtx);
+        mTitle.setTextColor(mSecondaryColor);
+        mTitle.setTextSize(13);
+        mTitle.setTypeface(Typeface.DEFAULT_BOLD);
+        mTitle.setSingleLine(true);
+        mTitle.setGravity(Gravity.CENTER);
+        mTitle.setMinHeight((int) (24 * d));
+        mTitle.setPadding((int) (10 * d), (int) (2 * d), (int) (10 * d), (int) (2 * d));
+        mTitle.setBackground(roundRect(mKeyColor, Math.min(mKeyRadius, 12 * d)));  // a small key
+        bar.addView(mTitle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        bar.addView(new View(mCtx), new LinearLayout.LayoutParams(0, 1, 1f));
         TextView clear = new TextView(mCtx);
         clear.setText(R.string.clipboard_clear);
-        clear.setTextColor(mTextColor);
+        clear.setTextColor(mBarTextColor);
         clear.setTextSize(14);
         clear.setTypeface(Typeface.DEFAULT_BOLD);
         clear.setGravity(Gravity.CENTER);
         clear.setPadding((int) (12 * d), 0, (int) (12 * d), 0);
         clear.setBackgroundResource(attrResource(android.R.attr.selectableItemBackgroundBorderless));
-        clear.setOnClickListener(v -> mHistory.clearUnpinned());
+        clear.setOnClickListener(v -> clear());
         clear.setOnTouchListener(mIme.feedbackOnTouch(0));
         bar.addView(clear, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
         ImageView close = new ImageView(mCtx);
         close.setImageResource(R.drawable.ic_close);
-        close.setColorFilter(mTextColor, PorterDuff.Mode.SRC_IN);
+        close.setColorFilter(mBarTextColor, PorterDuff.Mode.SRC_IN);
         close.setScaleType(ImageView.ScaleType.CENTER);
         close.setBackgroundResource(attrResource(android.R.attr.selectableItemBackgroundBorderless));
         close.setContentDescription(mIme.getString(R.string.clipboard_close));
@@ -186,31 +224,36 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
                 ViewGroup.LayoutParams.MATCH_PARENT));
         root.addView(bar, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, (int) (52 * d)));
-        root.addView(divider(), new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, (int) d)));
 
         ScrollView scroll = new ScrollView(mCtx);
+        // room at the end to scroll the last entry clear of the corner grips
+        int grip = (int) (GRIP_DP * d);
+        scroll.setPadding(0, 0, 0, grip);
+        scroll.setClipToPadding(false);
         mList = new LinearLayout(mCtx);
         mList.setOrientation(LinearLayout.VERTICAL);
+        // entries as keys on the keyboard's case, with the gaps between keys
+        mList.setPadding((int) (6 * d), 0, (int) (6 * d), 0);
+        mList.setClipToPadding(false);  // a tile swiped aside slides out under the window edge
         scroll.addView(mList, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(scroll, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        // "Entry deleted · Undo", for a few seconds after a delete
+        // "Entry deleted · Undo", for a few seconds after a delete or a clear. Undo ends
+        // where the resize grip begins, so the grip doesn't take its taps.
         mUndoBar = new LinearLayout(mCtx);
         mUndoBar.setOrientation(LinearLayout.HORIZONTAL);
         mUndoBar.setGravity(Gravity.CENTER_VERTICAL);
-        mUndoBar.setPadding((int) (16 * d), 0, (int) (4 * d), 0);
-        GradientDrawable undoBackground = new GradientDrawable();
-        undoBackground.setColor(mDividerColor);
-        undoBackground.setCornerRadii(new float[] {0, 0, 0, 0, inner, inner, inner, inner});
-        mUndoBar.setBackground(undoBackground);
-        TextView deleted = new TextView(mCtx);
-        deleted.setText(R.string.clipboard_deleted);
-        deleted.setTextColor(mSecondaryColor);
-        deleted.setTextSize(14);
-        mUndoBar.addView(deleted, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        mUndoBar.setPadding((int) (16 * d), 0, grip, 0);
+        mUndoBar.setBackground(roundRect(mKeyColor, mKeyRadius));
+        mUndoText = new TextView(mCtx);
+        mUndoText.setText(R.string.clipboard_deleted);
+        mUndoText.setTextColor(mSecondaryColor);
+        mUndoText.setTextSize(14);
+        mUndoText.setSingleLine(true);
+        mUndoText.setEllipsize(TextUtils.TruncateAt.END);
+        mUndoBar.addView(mUndoText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView undo = new TextView(mCtx);
         undo.setText(R.string.clipboard_undo);
         undo.setTextColor(mTextColor);
@@ -221,15 +264,26 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         undo.setBackgroundResource(attrResource(android.R.attr.selectableItemBackgroundBorderless));
         undo.setOnTouchListener(mIme.feedbackOnTouch(0));
         undo.setOnClickListener(v -> {
-            ClipboardHistory.Entry e = mLastDeleted;
+            Runnable restore = mUndo;
             hideUndo();
-            mHistory.restore(e);
+            if (restore != null) restore.run();
         });
         mUndoBar.addView(undo, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
         mUndoBar.setVisibility(View.GONE);
-        root.addView(mUndoBar, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, (int) (44 * d)));
+        LinearLayout.LayoutParams undoParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, (int) (44 * d));
+        undoParams.setMargins((int) (6 * d), 0, (int) (6 * d), (int) (6 * d));
+        root.addView(mUndoBar, undoParams);
+
+        // The resize grips lie over the content, in the bottom corners
+        FrameLayout content = new FrameLayout(mCtx);
+        content.addView(root, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        content.addView(new ResizeGrip(false, d),
+                new FrameLayout.LayoutParams(grip, grip, Gravity.BOTTOM | Gravity.RIGHT));
+        content.addView(new ResizeGrip(true, d),
+                new FrameLayout.LayoutParams(grip, grip, Gravity.BOTTOM | Gravity.LEFT));
 
         int anchorWidth = anchor.getWidth();
         int margin = (int) (8 * d);
@@ -251,27 +305,44 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         if (above) height = Math.min(height, spaceAbove);
         int width = (int) (Math.min(anchorWidth - 16 * d, Math.max(anchorWidth * 0.75f, 300 * d))
                 * (landscape ? 0.7f : 1f));
-        mWidth = width;
-        mHeight = height;
-        mPopup = new PopupWindow(root, width, height, false);
+        mDefaultWidth = mWidth = width;
+        mDefaultHeight = mHeight = height;
+        // The smallest size leaves room for the bar's buttons and the count at its widest
+        clear.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        int max = mHistory.maxSize();
+        int barWidth = 2 * rim + bar.getPaddingLeft() + bar.getPaddingRight()
+                + clear.getMeasuredWidth() + (int) (48 * d)
+                + mTitle.getPaddingLeft() + mTitle.getPaddingRight() + (int) Math.ceil(
+                        mTitle.getPaint().measureText(mIme.getString(R.string.clipboard_count, max, max)));
+        mMinWidth = Math.max((int) (MIN_WIDTH_DP * d), barWidth);
+        mMinHeight = (int) (MIN_HEIGHT_DP * d);
+        // the default size too has room for the whole title
+        if (mDefaultWidth < mMinWidth) mDefaultWidth = mWidth = Math.min(mMinWidth, mScreenWidth);
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mIme);
+        String key = PREF_POSITION + orientation();
+        if (sp.contains(key + "_w")) {
+            // the size the user left it at, if it still fits this screen
+            mWidth = sp.getInt(key + "_w", width);
+            mHeight = sp.getInt(key + "_h", height);
+            clampSize();
+        }
+        mPopup = new PopupWindow(content, mWidth, mHeight, false);
         mPopup.setBackgroundDrawable(roundRect(style.surface, radius));  // outline for the shadow
         mPopup.setElevation(8 * d);
         mPopup.setOutsideTouchable(false);
         mPopup.setTouchable(true);
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mIme);
-        String key = PREF_POSITION + orientation();
         if (sp.contains(key + "_x")) {
             mX = mAreaX + sp.getInt(key + "_x", 0);
             mY = mAreaY + sp.getInt(key + "_y", 0);
         } else {
-            mX = mAreaX + inputArea.getWidth() - width - margin;
+            mX = mAreaX + inputArea.getWidth() - mWidth - margin;
             if (above) {
-                mY = mAreaY - height - margin;
+                mY = mAreaY - mHeight - margin;
             } else {
                 int[] loc = new int[2];
                 anchor.getLocationInWindow(loc);
-                mY = loc[1] + anchor.getHeight() - anchor.getPaddingBottom() - height - margin;
+                mY = loc[1] + anchor.getHeight() - anchor.getPaddingBottom() - mHeight - margin;
             }
         }
         clampToScreen();
@@ -323,6 +394,61 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         mX = Math.max(0, Math.min(mX, mScreenWidth - mWidth));
     }
 
+    /** Keeps a remembered size between the smallest usable one and the screen. */
+    private void clampSize() {
+        int maxHeight = mScreenHeight - mStatusBar;
+        mWidth = Math.max(Math.min(mMinWidth, mScreenWidth), Math.min(mWidth, mScreenWidth));
+        mHeight = Math.max(Math.min(mMinHeight, maxHeight), Math.min(mHeight, maxHeight));
+    }
+
+    /**
+     * Resizing from a bottom corner: the bottom edge and that corner's side edge move, the
+     * opposite edges stay where they are.
+     */
+    private void resize(boolean left, int fromX, int fromWidth, int fromHeight, int dx, int dy) {
+        int minWidth = Math.min(mMinWidth, mScreenWidth);
+        if (left) {
+            int right = fromX + fromWidth;
+            mX = Math.max(0, Math.min(fromX + dx, right - minWidth));
+            mWidth = right - mX;
+        } else {
+            mWidth = Math.max(minWidth, Math.min(fromWidth + dx, mScreenWidth - mX));
+        }
+        // window coordinates, as in clampToScreen
+        int maxHeight = mScreenHeight - mWindowTopOnScreen - mY;
+        mHeight = Math.max(Math.min(mMinHeight, maxHeight), Math.min(fromHeight + dy, maxHeight));
+        clampToScreen();
+        mPopup.update(mX, mY, mWidth, mHeight);
+    }
+
+    /** Remembers the size, and the place too: the left grip moves the window's left edge. */
+    private void saveSize() {
+        String key = PREF_POSITION + orientation();
+        PreferenceManager.getDefaultSharedPreferences(mIme).edit()
+                .putInt(key + "_w", mWidth)
+                .putInt(key + "_h", mHeight)
+                .apply();
+        savePosition();
+    }
+
+    /** A double tap on a grip: back to the default size, which is no longer remembered. */
+    private void resetSize(boolean left) {
+        if (mPopup == null) return;
+        mIme.buttonFeedback(0);
+        int right = mX + mWidth;
+        mWidth = mDefaultWidth;
+        mHeight = mDefaultHeight;
+        if (left) mX = right - mWidth;
+        clampToScreen();
+        mPopup.update(mX, mY, mWidth, mHeight);
+        String key = PREF_POSITION + orientation();
+        PreferenceManager.getDefaultSharedPreferences(mIme).edit()
+                .remove(key + "_w")
+                .remove(key + "_h")
+                .apply();
+        if (left) savePosition();
+    }
+
     private void savePosition() {
         String key = PREF_POSITION + orientation();
         PreferenceManager.getDefaultSharedPreferences(mIme).edit()
@@ -349,13 +475,16 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
     private void refresh() {
         if (mList == null) return;
         mList.removeAllViews();
+        mList.removeCallbacks(mAgeTick);
+        mAges.clear();
+        showCount();
         float d = mIme.getResources().getDisplayMetrics().density;
         List<ClipboardHistory.Entry> entries = mHistory.entries();
         if (entries.isEmpty()) {
             TextView empty = new TextView(mCtx);
             empty.setText(ClipboardHistory.isEnabled(mIme)
                     ? R.string.clipboard_empty : R.string.clipboard_off);
-            empty.setTextColor(mSecondaryColor);
+            empty.setTextColor(mBarTextColor);
             empty.setTextSize(14);
             empty.setGravity(Gravity.CENTER);
             int pad = (int) (24 * d);
@@ -366,15 +495,18 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         }
         for (int i = 0; i < entries.size(); i++) {
             ClipboardHistory.Entry entry = entries.get(i);
-            if (i > 0) {
-                mList.addView(divider(), new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, Math.max(1, (int) d)));
-            }
+            // the entry as a key: the tile holds it and, when held, its pin/edit/delete strip
+            LinearLayout tile = new LinearLayout(mCtx);
+            tile.setOrientation(LinearLayout.VERTICAL);
+            tile.setBackground(roundRect(mKeyColor, mKeyRadius));
+            tile.setClipToOutline(true);
             LinearLayout row = new LinearLayout(mCtx);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding((int) (16 * d), (int) (12 * d), (int) (16 * d), (int) (12 * d));
+            row.setPadding((int) (12 * d), (int) (10 * d), (int) (12 * d), (int) (10 * d));
             row.setBackgroundResource(attrResource(android.R.attr.selectableItemBackground));
+            tile.addView(row, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             if (entry.pinned) {
                 ImageView pin = new ImageView(mCtx);
                 pin.setImageResource(R.drawable.ic_push_pin);
@@ -383,13 +515,23 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
                 lp.setMarginEnd((int) (12 * d));
                 row.addView(pin, lp);
             }
+            LinearLayout column = new LinearLayout(mCtx);
+            column.setOrientation(LinearLayout.VERTICAL);
             TextView text = new TextView(mCtx);
             text.setText(entry.text);
             text.setTextColor(entry.pinned ? mPinnedColor : mTextColor);
             text.setTextSize(15);
             text.setMaxLines(3);
             text.setEllipsize(TextUtils.TruncateAt.END);
-            row.addView(text, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            column.addView(text);
+            View meta = meta(entry, d);
+            if (meta != null) {
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp.topMargin = (int) (4 * d);
+                column.addView(meta, lp);
+            }
+            row.addView(column, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             final long id = entry.id;
             final String value = entry.text;
             row.setOnClickListener(v -> {
@@ -408,14 +550,96 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
                 refresh();
                 return true;
             });
-            row.setOnTouchListener(new SwipeToDelete(row, id, d));
-            mList.addView(row, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            row.setOnTouchListener(new SwipeToDelete(row, tile, id, d));
             if (id == mExpandedId) {
-                mList.addView(actions(entry, d), new LinearLayout.LayoutParams(
+                tile.addView(actions(entry, d), new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             }
+            LinearLayout.LayoutParams tileParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            tileParams.bottomMargin = (int) (5 * d);
+            mList.addView(tile, tileParams);
         }
+        if (!mAges.isEmpty()) mList.postDelayed(mAgeTick, AGE_TICK_MS);
+    }
+
+    /**
+     * "12/20" in the bar: the unpinned entries and the size setting, which doesn't count
+     * pinned ones either.
+     */
+    private void showCount() {
+        if (mTitle == null) return;
+        int count = mHistory.unpinnedCount();
+        int max = mHistory.maxSize();
+        mTitle.setText(mIme.getString(R.string.clipboard_count, count, max));
+        mTitle.setContentDescription(mIme.getString(R.string.clipboard_title_count, count, max));
+    }
+
+    /** The small line under an entry: what kind of text it is, and when it was copied. */
+    private View meta(ClipboardHistory.Entry entry, float d) {
+        int icon = kindIcon(entry.text);
+        if (icon == 0 && entry.time <= 0) return null;
+        LinearLayout line = new LinearLayout(mCtx);
+        line.setOrientation(LinearLayout.HORIZONTAL);
+        line.setGravity(Gravity.CENTER_VERTICAL);
+        if (icon != 0) {
+            ImageView image = new ImageView(mCtx);
+            image.setImageResource(icon);
+            image.setColorFilter(mSecondaryColor, PorterDuff.Mode.SRC_IN);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams((int) (14 * d), (int) (14 * d));
+            lp.setMarginEnd((int) (4 * d));
+            line.addView(image, lp);
+        }
+        if (entry.time > 0) {  // entries kept before times were saved have none
+            TextView age = new TextView(mCtx);
+            age.setTag(entry.time);
+            age.setText(ageText(entry.time));
+            age.setTextColor(mSecondaryColor);
+            age.setTextSize(12);
+            age.setSingleLine(true);
+            line.addView(age);
+            mAges.add(age);
+        }
+        return line;
+    }
+
+    /** "just now", "5 min. ago", "2 hr. ago", "yesterday", then a date. */
+    private CharSequence ageText(long time) {
+        long now = System.currentTimeMillis();
+        if (now - time < DateUtils.MINUTE_IN_MILLIS) return mIme.getString(R.string.clipboard_just_now);
+        return DateUtils.getRelativeTimeSpanString(time, now, DateUtils.MINUTE_IN_MILLIS,
+                DateUtils.FORMAT_ABBREV_RELATIVE);
+    }
+
+    private void updateAges() {
+        if (mList == null) return;
+        for (TextView age : mAges) age.setText(ageText((Long) age.getTag()));
+        mList.postDelayed(mAgeTick, AGE_TICK_MS);
+    }
+
+    /**
+     * An icon for a link, an e-mail address, a phone number or a one-time code (the whole
+     * entry is one), 0 for other text.
+     */
+    private static int kindIcon(String text) {
+        String t = text.trim();
+        if (t.isEmpty() || t.length() > 2000) return 0;
+        // 4 to 8 digits alone: a code more likely than a phone number
+        if (CODE.matcher(t).matches()) return R.drawable.ic_vpn_key;
+        if (Patterns.EMAIL_ADDRESS.matcher(t).matches()) return R.drawable.ic_mail;
+        if (Patterns.WEB_URL.matcher(t).matches()) {
+            // "example.com" or "file.txt" match too: a link has a scheme or www.
+            String lower = t.toLowerCase(Locale.ROOT);
+            return lower.startsWith("www.") || SCHEME.matcher(lower).lookingAt()
+                    ? R.drawable.ic_link : 0;
+        }
+        // not a date, an IP address or a version number
+        if (t.indexOf('.') < 0 && !DATE.matcher(t).matches() && Patterns.PHONE.matcher(t).matches()) {
+            int digits = 0;
+            for (int i = 0; i < t.length(); i++) if (Character.isDigit(t.charAt(i))) digits++;
+            if (digits >= 7 && digits <= 15) return R.drawable.ic_call;
+        }
+        return 0;
     }
 
     /** Pin / Edit / Delete under a held entry, inside this window (no focusable menu). */
@@ -462,15 +686,31 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
     private void delete(long id) {
         if (mExpandedId == id) mExpandedId = -1;
         ClipboardHistory.Entry removed = mHistory.remove(id);
-        if (removed == null || mUndoBar == null) return;
-        mLastDeleted = removed;
+        if (removed == null) return;
+        offerUndo(mIme.getString(R.string.clipboard_deleted), () -> mHistory.restore(removed));
+    }
+
+    /** "Clear": the unpinned entries go, and can be put back for a few seconds. */
+    private void clear() {
+        mExpandedId = -1;
+        List<ClipboardHistory.Entry> removed = mHistory.clearUnpinned();
+        if (removed.isEmpty()) return;
+        offerUndo(mIme.getString(R.string.clipboard_cleared, removed.size()),
+                () -> mHistory.restoreAll(removed));
+    }
+
+    /** Shows the undo bar; a newer delete or clear takes the place of the one before. */
+    private void offerUndo(CharSequence text, Runnable undo) {
+        if (mUndoBar == null) return;
+        mUndo = undo;
+        mUndoText.setText(text);
         mUndoBar.setVisibility(View.VISIBLE);
         mUndoBar.removeCallbacks(mHideUndo);
         mUndoBar.postDelayed(mHideUndo, UNDO_MS);
     }
 
     private void hideUndo() {
-        mLastDeleted = null;
+        mUndo = null;
         if (mUndoBar == null) return;
         mUndoBar.removeCallbacks(mHideUndo);
         mUndoBar.setVisibility(View.GONE);
@@ -481,7 +721,8 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
      * hold still work, until the finger has clearly moved sideways.
      */
     private final class SwipeToDelete implements View.OnTouchListener {
-        private final View mRow;
+        private final View mRow;   // takes the touches
+        private final View mTile;  // moves aside
         private final long mId;
         private final int mSlop;
         private final float mFling;
@@ -489,8 +730,9 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         private boolean mSwiping;
         private VelocityTracker mVelocity;
 
-        SwipeToDelete(View row, long id, float d) {
+        SwipeToDelete(View row, View tile, long id, float d) {
             mRow = row;
+            mTile = tile;
             mId = id;
             mSlop = ViewConfiguration.get(mCtx).getScaledTouchSlop();
             mFling = 800 * d;
@@ -521,8 +763,8 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
                     cancel.recycle();
                 }
                 if (!mSwiping) return false;
-                mRow.setTranslationX(dx);
-                mRow.setAlpha(Math.max(0.2f, 1f - Math.abs(dx) / Math.max(1, mRow.getWidth())));
+                mTile.setTranslationX(dx);
+                mTile.setAlpha(Math.max(0.2f, 1f - Math.abs(dx) / Math.max(1, mTile.getWidth())));
                 return true;
             }
             case MotionEvent.ACTION_UP:
@@ -536,15 +778,15 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
                 }
                 if (!mSwiping) return false;
                 mSwiping = false;
-                float dx = mRow.getTranslationX();
+                float dx = mTile.getTranslationX();
                 boolean away = e.getActionMasked() == MotionEvent.ACTION_UP
-                        && (Math.abs(dx) > mRow.getWidth() * 0.35f
+                        && (Math.abs(dx) > mTile.getWidth() * 0.35f
                             || (Math.abs(vx) > mFling && Math.signum(vx) == Math.signum(dx)));
                 if (away) {
-                    mRow.animate().translationX(Math.signum(dx) * mRow.getWidth()).alpha(0f)
+                    mTile.animate().translationX(Math.signum(dx) * mTile.getWidth()).alpha(0f)
                             .setDuration(150).withEndAction(() -> delete(mId)).start();
                 } else {
-                    mRow.animate().translationX(0f).alpha(1f).setDuration(150).start();
+                    mTile.animate().translationX(0f).alpha(1f).setDuration(150).start();
                 }
                 return true;
             }
@@ -553,10 +795,70 @@ final class ClipboardWindow implements ClipboardHistory.Listener {
         }
     }
 
-    private View divider() {
-        View line = new View(mCtx);
-        line.setBackgroundColor(mDividerColor);
-        return line;
+    /**
+     * A grip in a bottom corner, not drawn: drag the corner to resize the window, double tap
+     * it for the default size. Only the corner itself is the
+     * grip; a touch further in goes to the list under it.
+     */
+    private final class ResizeGrip extends View {
+        private final boolean mLeft;
+        private final float mReach;
+        private final int mSlop, mDoubleTap;
+        private float mStartX, mStartY;
+        private int mFromX, mFromWidth, mFromHeight;
+        private boolean mMoved, mSecondTap;
+        private long mLastTap;
+
+        ResizeGrip(boolean left, float d) {
+            super(mCtx);
+            mLeft = left;
+            mReach = 28 * d;  // just the corner: an entry's text starts 16dp in
+            mSlop = ViewConfiguration.get(mCtx).getScaledTouchSlop();
+            mDoubleTap = ViewConfiguration.getDoubleTapTimeout();
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent e) {
+            switch (e.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN: {
+                float fromSide = mLeft ? e.getX() : getWidth() - e.getX();
+                if (fromSide + getHeight() - e.getY() > mReach) return false;
+                mStartX = e.getRawX();
+                mStartY = e.getRawY();
+                mFromX = mX;
+                mFromWidth = mWidth;
+                mFromHeight = mHeight;
+                mMoved = false;
+                mSecondTap = e.getEventTime() - mLastTap <= mDoubleTap;
+                return true;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                if (mPopup == null) return false;
+                float dx = e.getRawX() - mStartX;
+                float dy = e.getRawY() - mStartY;
+                if (!mMoved && Math.abs(dx) <= mSlop && Math.abs(dy) <= mSlop) return true;
+                mMoved = true;
+                resize(mLeft, mFromX, mFromWidth, mFromHeight, (int) dx, (int) dy);
+                return true;
+            }
+            case MotionEvent.ACTION_UP:
+                if (mMoved) {
+                    mLastTap = 0;
+                    if (mPopup != null) saveSize();
+                } else if (mSecondTap) {
+                    mLastTap = 0;
+                    resetSize(mLeft);
+                } else {
+                    mLastTap = e.getEventTime();
+                }
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                if (mMoved && mPopup != null) saveSize();
+                mLastTap = 0;
+                return true;
+            }
+            return false;
+        }
     }
 
     private int attrResource(int attr) {

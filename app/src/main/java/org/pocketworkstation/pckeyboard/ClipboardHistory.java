@@ -229,13 +229,49 @@ final class ClipboardHistory {
         changed();
     }
 
-    /** Removes everything but the pinned entries. */
-    synchronized void clearUnpinned() {
+    /** Removes everything but the pinned entries and returns what it removed (for undo). */
+    synchronized List<Entry> clearUnpinned() {
         List<Entry> keep = new ArrayList<>();
-        for (Entry e : mEntries) if (e.pinned) keep.add(e);
+        List<Entry> removed = new ArrayList<>();
+        for (Entry e : mEntries) {
+            if (e.pinned) keep.add(e);
+            else removed.add(e);
+        }
         mEntries.clear();
         mEntries.addAll(keep);
         changed();
+        return removed;
+    }
+
+    /**
+     * Puts cleared entries back, with their ids and times (so in their old order). A text
+     * copied again since then stays as the newer copy.
+     */
+    synchronized void restoreAll(List<Entry> removed) {
+        boolean restored = false;
+        for (Entry e : removed) {
+            if (find(e.id) != null) continue;
+            boolean copiedAgain = false;
+            for (Entry kept : mEntries) {
+                if (kept.text.equals(e.text)) {
+                    copiedAgain = true;
+                    break;
+                }
+            }
+            if (copiedAgain) continue;
+            mEntries.add(e);
+            restored = true;
+        }
+        if (!restored) return;
+        trim();
+        changed();
+    }
+
+    /** The entries the size setting counts: the unpinned ones. */
+    synchronized int unpinnedCount() {
+        int n = 0;
+        for (Entry e : mEntries) if (!e.pinned) n++;
+        return n;
     }
 
     /** Applies the size and age settings (pinned entries don't count). */
@@ -244,7 +280,8 @@ final class ClipboardHistory {
         if (trim() || expired) changed();
     }
 
-    private int maxSize() {
+    /** How many unpinned entries are kept; pinned ones don't count. */
+    int maxSize() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
         try {
             return Integer.parseInt(sp.getString(PREF_SIZE, DEFAULT_SIZE));

@@ -844,6 +844,10 @@
     </string-array>
     <string name="clipboard_deleted">Entry deleted</string>
     <string name="clipboard_undo">Undo</string>
+    <string name="clipboard_title_count">Clipboard · %1$d/%2$d</string>
+    <string name="clipboard_count" translatable="false">%1$d/%2$d</string>
+    <string name="clipboard_just_now">just now</string>
+    <string name="clipboard_cleared">Entries cleared: %d</string>
     <string name="title_clipboard_history_expiry">Delete unpinned items after</string>
     <string-array name="clipboard_history_expiry_entries">
         <item>Never</item>
